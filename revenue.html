@@ -9,12 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2310b981' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%2310b981'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
 
   <!-- Google Firebase Compatibility SDKs (v10.7.1) -->
-  <!-- Auth stays on Firebase (matches index.html's login flow) — data now comes from Supabase. -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-  <!-- Supabase Client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -299,11 +296,8 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
     };
 
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
     const auth = firebase.auth();
-
-    const SUPABASE_URL = "https://yswwicdycbscurnpbqjb.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd3dpY2R5Y2JzY3VybnBicWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyOTUzNjAsImV4cCI6MjEwMDg3MTM2MH0.FESrSxt3ys6WJXF768q1lXJceQrff6T6WLgCn8prEw8";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
     function isUserAdmin(user) {
@@ -429,39 +423,27 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
       });
     }
 
-    // Real-time Supabase Listeners Setup
+    // Real-time Firestore Listeners Setup
     function initRealtimeRevenueListeners() {
-      const fetchTransactions = async () => {
-        try {
-          const { data, error } = await supabase.from('transactions').select('*');
-          if (error) throw error;
-          rawTransactions = data || [];
-          calculateAndRenderRevenue();
-        } catch (err) {
-          console.error("Transactions fetch error:", err);
-        }
-      };
-      fetchTransactions();
-      supabase
-        .channel('revenue-transactions')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchTransactions())
-        .subscribe();
+      db.collection("transactions").onSnapshot((snapshot) => {
+        rawTransactions = [];
+        snapshot.forEach(doc => {
+          rawTransactions.push({ id: doc.id, ...doc.data() });
+        });
+        calculateAndRenderRevenue();
+      }, (error) => {
+        console.error("Transactions realtime snapshot error:", error);
+      });
 
-      const fetchCards = async () => {
-        try {
-          const { data, error } = await supabase.from('cards').select('*');
-          if (error) throw error;
-          rawCards = data || [];
-          calculateAndRenderRevenue();
-        } catch (err) {
-          console.error("Cards fetch error:", err);
-        }
-      };
-      fetchCards();
-      supabase
-        .channel('revenue-cards')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => fetchCards())
-        .subscribe();
+      db.collection("cards").onSnapshot((snapshot) => {
+        rawCards = [];
+        snapshot.forEach(doc => {
+          rawCards.push({ id: doc.id, ...doc.data() });
+        });
+        calculateAndRenderRevenue();
+      }, (error) => {
+        console.error("Cards realtime snapshot error:", error);
+      });
     }
 
 
