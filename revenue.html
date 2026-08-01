@@ -9,6 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2310b981' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%2310b981'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
 
   <!-- Google Firebase Compatibility SDKs (v10.7.1) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -294,6 +297,15 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
+    function isUserAdmin(user) {
+      if (!user) return false;
+      const email = (user.email || '').toLowerCase();
+      const displayName = (user.displayName || '').toLowerCase();
+      return ADMIN_EMAILS.some(e => email.includes(e) || displayName.includes(e));
+    }
 
     const PLATFORM_TAX_RATE = 0.02; // 2%
     let rawTransactions = [];
@@ -630,7 +642,15 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('rev-lang-label').innerText = currentRevLang;
       applyRevenueTranslations();
-      initRealtimeRevenueListeners();
+
+      auth.onAuthStateChanged(user => {
+        if (!user || !isUserAdmin(user)) {
+          alert('Admin access required to view the Revenue Hub.');
+          window.location.href = 'index.html';
+          return;
+        }
+        initRealtimeRevenueListeners();
+      });
     });
 	
 	if ('serviceWorker' in navigator) {
@@ -643,7 +663,5 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
   </script>
 </div>
 
-<script type="module" src="js/supabase.js"></script>
-<script type="module" src="js/firebase-to-supabase.js"></script>
 </body>
 </html>
