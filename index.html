@@ -422,6 +422,7 @@
     <div class="modal-panel rounded-sm grid grid-cols-1 md:grid-cols-3 min-h-[420px] overflow-hidden">
       <div class="border-r md:col-span-1 p-3 space-y-1.5 overflow-y-auto max-h-[520px]" style="border-color:var(--line)">
         <p class="font-mono text-[0.6rem] tracking-[0.14em] uppercase mb-2 px-1" style="color:var(--text-muted)">Threads</p>
+        <input type="text" id="chat-search-input" placeholder="Search conversations…" class="input-field rounded-md px-3 py-2 text-xs w-full mb-2" oninput="filterChatThreads()">
         <div id="chat-threads-list"></div>
       </div>
       <div class="md:col-span-2 flex flex-col p-4">
@@ -645,6 +646,20 @@ function openAuthModal(mode) {
       '<div class="modal-panel rounded-sm w-full max-w-sm p-6 relative">' +
         '<button onclick="closeModal()" class="absolute top-4 right-4" style="color:var(--text-muted)">✕</button>' +
         '<h3 class="font-display text-xl text-parchment mb-4">' + (mode === 'signin' ? 'Sign In' : 'Create Account') + '</h3>' +
+        '<button type="button" onclick="signInWithGoogle()" class="btn-ghost rounded-md px-4 py-2 text-sm w-full flex items-center justify-center gap-2">' +
+          '<svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">' +
+            '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
+            '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.02l7.73 6c4.51-4.18 7.09-10.36 7.09-17.49z"/>' +
+            '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>' +
+            '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>' +
+          '</svg>' +
+          'Continue with Google' +
+        '</button>' +
+        '<div class="flex items-center gap-2 my-4">' +
+          '<div class="rule flex-1"></div>' +
+          '<span class="text-[0.6rem] font-mono uppercase" style="color:var(--text-muted)">or</span>' +
+          '<div class="rule flex-1"></div>' +
+        '</div>' +
         '<form class="space-y-3" onsubmit="submitAuthForm(event, \'' + mode + '\')">' +
           '<input required type="email" id="auth-email" placeholder="Email" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
           '<input required type="password" id="auth-password" placeholder="Password" minlength="6" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
@@ -657,6 +672,19 @@ function openAuthModal(mode) {
         '</p>' +
       '</div>' +
     '</div>';
+}
+
+async function signInWithGoogle() {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href },
+    });
+    if (error) throw error;
+    // Browser will redirect to Google; execution stops here on success.
+  } catch (err) {
+    showToast((err && err.message) || 'Could not start Google sign-in', 'error');
+  }
 }
 
 async function submitAuthForm(e, mode) {
@@ -1077,17 +1105,43 @@ async function respondTrade(id, status) {
 }
 
 /* ---------- Messages / Chat ---------- */
+let allChats = [];
+
 async function renderMessages() {
   const list = document.getElementById('chat-threads-list');
+  const searchInput = document.getElementById('chat-search-input');
   if (!list) return;
   if (!currentUser) { list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Sign in to view messages.</p>'; return; }
+  list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Loading…</p>';
   const { data, error } = await sb.from('chats').select('*').or('participant_a.eq.' + currentUser.id + ',participant_b.eq.' + currentUser.id).order('updated_at', { ascending: false });
   if (error) { list.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Could not load threads.</p>'; return; }
-  if (!data.length) { list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">No conversations yet.</p>'; return; }
-  list.innerHTML = data.map(function (c) {
+  allChats = data;
+  if (searchInput) searchInput.value = '';
+  renderChatThreadList(allChats);
+}
+
+function filterChatThreads() {
+  const q = (document.getElementById('chat-search-input').value || '').toLowerCase().trim();
+  if (!q) { renderChatThreadList(allChats); return; }
+  const filtered = allChats.filter(function (c) {
+    const otherName = (c.participant_a === currentUser.id ? c.participant_b_display : c.participant_a_display) || '';
+    return otherName.toLowerCase().includes(q) || (c.last_message || '').toLowerCase().includes(q);
+  });
+  renderChatThreadList(filtered, q);
+}
+
+function renderChatThreadList(chats, query) {
+  const list = document.getElementById('chat-threads-list');
+  if (!list) return;
+  if (!chats.length) {
+    list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">' + (query ? 'No conversations match “' + escapeHtml(query) + '”.' : 'No conversations yet.') + '</p>';
+    return;
+  }
+  list.innerHTML = chats.map(function (c) {
     const otherName = c.participant_a === currentUser.id ? (c.participant_b_display || 'Collector') : (c.participant_a_display || 'Collector');
+    const active = c.id === currentChatId;
     return (
-      '<button onclick="openChat(\'' + c.id + '\')" class="w-full text-left px-2 py-2 rounded-md hover:bg-white/5">' +
+      '<button onclick="openChat(\'' + c.id + '\')" class="w-full text-left px-2 py-2 rounded-md hover:bg-white/5' + (active ? ' bg-white/5' : '') + '">' +
         '<p class="text-sm text-parchment truncate">' + escapeHtml(otherName) + '</p>' +
         '<p class="text-xs truncate" style="color:var(--text-muted)">' + escapeHtml(c.last_message || '') + '</p>' +
       '</button>'
@@ -1097,6 +1151,7 @@ async function renderMessages() {
 
 async function openChat(chatId) {
   currentChatId = chatId;
+  filterChatThreads();
   const header = document.getElementById('chat-active-header');
   const body = document.getElementById('chat-messages-body');
   header.innerHTML = '<span class="text-sm text-parchment">Conversation</span>';
