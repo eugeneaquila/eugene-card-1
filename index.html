@@ -3197,33 +3197,77 @@
 
     function closeCardDetailModal() { document.getElementById('card-detail-modal').classList.add('hidden'); }
 
-    async function sellBackToAdmin(cardId) {
+    function sellBackToAdmin(cardId) {
       if (!currentUser) return showToast('Please log in.');
       const card = inventory.find(c => c.id === cardId);
-      const myIdent = currentUser.username || currentUser.name;
       if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
-
-      showConfirmModal({
-        title: currentLanguage === 'ID' ? 'Jual Kembali ke Admin?' : 'Sell Back to Admin?',
-        message: `${currentLanguage === 'ID' ? 'Jual kembali' : 'Sell back'} ${card.serial} (${card.name}) ${currentLanguage === 'ID' ? 'ke Admin via payout QRIS pada harga dasar' : 'to Admin via QRIS payout at floor price'} ${formatIDR(card.price)}. ${currentLanguage === 'ID' ? 'Tindakan ini tidak dapat dibatalkan.' : 'This action cannot be undone.'}`,
-        confirmText: currentLanguage === 'ID' ? 'Ya, Jual Kembali' : 'Yes, Sell Back',
-        confirmClass: 'bg-amber-500 hover:bg-amber-400 text-slate-950',
-        icon: 'fa-rotate-left text-amber-400',
-        onConfirm: () => performSellBackToAdmin(cardId)
-      });
+      openSellbackQrisModal(cardId);
     }
 
-    async function performSellBackToAdmin(cardId) {
+    function openSellbackQrisModal(cardId) {
       const card = inventory.find(c => c.id === cardId);
       if (!card) return;
 
+      document.getElementById('sellback-card-id-target').value = cardId;
+      document.getElementById('sellback-modal-serial').innerText = `${card.serial} (${card.name})`;
+      document.getElementById('sellback-modal-price').innerText = formatIDR(card.price);
+
+      document.getElementById('sellback-qris-img-data').value = '';
+      document.getElementById('sellback-qris-file-input').value = '';
+      document.getElementById('sellback-qris-preview-container').classList.add('hidden');
+      document.getElementById('sellback-qris-preview-img').src = '';
+
+      document.getElementById('sellback-qris-modal').classList.remove('hidden');
+    }
+
+    function closeSellbackQrisModal() {
+      document.getElementById('sellback-qris-modal').classList.add('hidden');
+    }
+
+    function handleSellbackQrisUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('sellback-qris-img-data').value = e.target.result;
+        document.getElementById('sellback-qris-preview-img').src = e.target.result;
+        document.getElementById('sellback-qris-preview-container').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitSellBackRequest() {
+      if (!currentUser) return showToast('Please log in.');
+
+      const cardId = document.getElementById('sellback-card-id-target').value;
+      const card = inventory.find(c => c.id === cardId);
+      if (!card) return showToast('Card not found.');
+      if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
+
+      const payoutQrisData = document.getElementById('sellback-qris-img-data').value;
+      if (!payoutQrisData) return showToast('Please upload your QRIS / e-wallet code screenshot to receive payout.');
+
+      const activeUserIdent = currentUser.username || currentUser.name;
+      const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const sellbackOrder = {
+        id: orderRef,
+        type: 'SELLBACK',
+        user_name: activeUserIdent,
+        items: [{ id: card.id, serial: card.serial, name: card.name, price: card.price }],
+        total_amount: card.price,
+        payoutQrisUrl: payoutQrisData,
+        status: 'PENDING',
+        created_at: new Date().toISOString()
+      };
+
       try {
-        await db.collection("cards").doc(cardId).update({ owner: null, status: 'AVAILABLE' });
-        showToast(`Successfully sold ${card.serial} back to Admin!`);
-        addNotification('Card Sold Back (QRIS Payout)', `Returned ${card.serial} to house stock.`, 'fa-rotate-left text-amber-400');
-        await loadAppState();
+        await db.collection("transactions").doc(orderRef).set(sellbackOrder);
+        showToast(`Sell-back request ${orderRef} submitted! Waiting for Admin payout.`);
+        addNotification('Sell-Back Requested', `Sell-back request ${orderRef} for ${card.serial} sent to Admin approval queue.`, 'fa-rotate-left text-amber-400');
+        closeSellbackQrisModal();
       } catch (e) {
-        showToast('Error selling back: ' + e.message);
+        showToast('Sell-back request error: ' + e.message);
       }
     }
 
@@ -4206,12 +4250,17 @@
         }
 
         container.innerHTML = pendingList.map(order => {
+          const isSellback = order.type === 'SELLBACK';
           let items = Array.isArray(order.items) ? order.items : [];
           const itemsListStr = items.map(i => i.serial || 'Card').join(', ');
 
-          const proofPreview = order.qrisProofUrl 
-            ? `<div class="mt-2"><a href="${order.qrisProofUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-receipt text-amber-400"></i> View QRIS Receipt Screenshot</a></div>`
-            : `<div class="mt-1 text-[10px] text-slate-500 italic">No receipt screenshot attached.</div>`;
+          const proofPreview = isSellback
+            ? (order.payoutQrisUrl
+                ? `<div class="mt-2"><a href="${order.payoutQrisUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/60 border border-amber-500/40 text-amber-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-qrcode text-amber-400"></i> View Payout Destination QRIS</a></div>`
+                : `<div class="mt-1 text-[10px] text-slate-500 italic">No payout QRIS attached.</div>`)
+            : (order.qrisProofUrl
+                ? `<div class="mt-2"><a href="${order.qrisProofUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-receipt text-amber-400"></i> View QRIS Receipt Screenshot</a></div>`
+                : `<div class="mt-1 text-[10px] text-slate-500 italic">No receipt screenshot attached.</div>`);
 
           const buyerAvatar = getCollectorAvatar(order.user_name);
 
@@ -4220,11 +4269,11 @@
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <span class="font-mono font-black text-indigo-400">${order.id}</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">PENDING QRIS</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isSellback ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">${isSellback ? 'PENDING SELL-BACK' : 'PENDING QRIS'}</span>
                 </div>
-                <p class="text-white font-bold flex items-center gap-2">Buyer: <img src="${buyerAvatar}" class="w-5 h-5 rounded-full object-cover"> <span class="text-amber-300">${order.user_name}</span></p>
+                <p class="text-white font-bold flex items-center gap-2">${isSellback ? 'Seller' : 'Buyer'}: <img src="${buyerAvatar}" class="w-5 h-5 rounded-full object-cover"> <span class="text-amber-300">${order.user_name}</span></p>
                 <p class="text-slate-400 text-[11px]">Items: <strong class="text-slate-200">${itemsListStr || 'N/A'}</strong></p>
-                <p class="text-emerald-400 font-mono font-black">${formatIDR(order.total_amount || 0)} <span class="text-[9px] font-amber-400 font-normal">(Includes 2% Tax)</span></p>
+                <p class="text-emerald-400 font-mono font-black">${formatIDR(order.total_amount || 0)} <span class="text-[9px] font-amber-400 font-normal">${isSellback ? '(Payout amount)' : '(Includes 2% Tax)'}</span></p>
                 ${proofPreview}
               </div>
               
@@ -4252,22 +4301,29 @@
         const doc = await docRef.get();
         if (doc.exists) {
           const order = doc.data();
+          const isSellback = order.type === 'SELLBACK';
           if (Array.isArray(order.items)) {
             const batch = db.batch();
             for (const item of order.items) {
               if (item.id) {
                 const cardRef = db.collection("cards").doc(item.id);
-                batch.update(cardRef, { owner: order.user_name, status: 'SOLD' });
+                batch.update(cardRef, isSellback
+                  ? { owner: null, status: 'AVAILABLE' }
+                  : { owner: order.user_name, status: 'SOLD' });
               }
             }
             batch.update(docRef, { status: 'APPROVED' });
             await batch.commit();
           }
+
+          showToast(isSellback
+            ? `Sell-back ${orderId} approved. Card returned to house stock — send the payout to their QRIS.`
+            : `Transaction ${orderId} approved and items transferred!`);
+          addNotification(isSellback ? 'Sell-Back Approved' : 'Order Approved',
+            isSellback ? `Sell-back ${orderId} approved. Remember to send the QRIS payout.` : `Order ${orderId} approved. Card ownership assigned.`,
+            'fa-circle-check text-emerald-400');
         }
 
-        showToast(`Transaction ${orderId} approved and items transferred!`);
-        addNotification('Order Approved', `Order ${orderId} approved. Card ownership assigned.`, 'fa-circle-check text-emerald-400');
-        
         await loadAppState();
         loadPendingTransactions();
       } catch (e) {
