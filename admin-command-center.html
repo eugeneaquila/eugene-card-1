@@ -1,104 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eugene Card — Admin Command Center 3.0</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-<style>
-body{background:#020617;color:#f8fafc}
-.glass{background:rgba(15,23,42,.76);backdrop-filter:blur(16px);border:1px solid rgba(148,163,184,.14)}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eugene Card — Admin Command Center 3.0</title>
+
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body { background: #020617; color: #f8fafc; }
+    .glass { background: rgba(15, 23, 42, 0.76); backdrop-filter: blur(16px); border: 1px solid rgba(148, 163, 184, 0.14); }
+  </style>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/card-import.js"></script>
+  <script src="js/backup.js"></script>
 </head>
 <body class="min-h-screen">
-<div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
-  
-<div class="glass rounded-3xl p-6 mb-5">
-<h2 class="text-xl font-black mb-4">Database Tools</h2>
-<div class="flex flex-wrap gap-3">
-<label class="cursor-pointer px-4 py-3 rounded-xl bg-violet-600 font-bold">
-Import Cards JSON
-<input id="jsonImport" type="file" accept=".json" hidden>
-</label>
-<button onclick="backupTable('cards')" class="px-4 py-3 rounded-xl bg-slate-700 font-bold">
-Backup Cards
-</button>
-</div>
-</div>
-<script src="js/card-import.js"></script>
-<script src="js/backup.js"></script>
-<script>
-document.getElementById('jsonImport').addEventListener('change',e=>{
- if(e.target.files[0]) importCards(e.target.files[0]);
-});
-</script>
-<header class="glass rounded-3xl p-6 md:p-8 mb-5">
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-      <div>
-        <span class="inline-flex px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-black uppercase tracking-widest">Eugene Card 3.0</span>
-        <h1 class="text-3xl md:text-5xl font-black mt-4">Admin Command Center</h1>
-        <p class="text-sm text-slate-400 mt-2 max-w-2xl">Marketplace control room: operations, collectors, inventory, auctions, trades and finance.</p>
+  <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+
+    <!-- Header Section -->
+    <header class="glass rounded-3xl p-6 md:p-8 mb-5">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+        <div>
+          <span class="inline-flex px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-black uppercase tracking-widest">
+            Eugene Card 3.0
+          </span>
+          <h1 class="text-3xl md:text-5xl font-black mt-4">Admin Command Center</h1>
+          <p class="text-sm text-slate-400 mt-2 max-w-2xl">Marketplace control room: operations, collectors, inventory, auctions, trades and finance.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-800 text-xs font-bold hover:bg-slate-700 transition">
+            <i class="fa-solid fa-store mr-1"></i> Marketplace
+          </a>
+          <a href="analytics.html" class="px-3 py-2 rounded-xl bg-amber-500/10 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition">
+            <i class="fa-solid fa-chart-line mr-1"></i> Analytics
+          </a>
+          <a href="revenue.html" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 text-xs font-bold hover:bg-emerald-500/20 transition">
+            <i class="fa-solid fa-wallet mr-1"></i> Revenue
+          </a>
+        </div>
       </div>
-      <div class="flex gap-2 flex-wrap">
-        <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-800 text-xs font-bold">Marketplace</a>
-        <a href="analytics.html" class="px-3 py-2 rounded-xl bg-amber-500/10 text-amber-300 text-xs font-bold">Analytics</a>
-        <a href="revenue.html" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 text-xs font-bold">Revenue</a>
-      </div>
-    </div>
-  </header>
+    </header>
 
-  <div id="auth-state" class="mb-5"></div>
-
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    <div class="glass rounded-2xl p-5"><p class="text-[10px] text-slate-500 uppercase font-black">Cards</p><p id="cards" class="text-3xl font-black mt-1">—</p></div>
-    <div class="glass rounded-2xl p-5"><p class="text-[10px] text-slate-500 uppercase font-black">Inventory Floor</p><p id="inventory" class="text-3xl font-black mt-1">—</p></div>
-    <div class="glass rounded-2xl p-5"><p class="text-[10px] text-slate-500 uppercase font-black">Collectors</p><p id="collectors" class="text-3xl font-black mt-1">—</p></div>
-    <div class="glass rounded-2xl p-5"><p class="text-[10px] text-slate-500 uppercase font-black">Pending Trades</p><p id="trades" class="text-3xl font-black mt-1">—</p></div>
-  </section>
-
-  <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-    <div class="glass rounded-3xl p-5 lg:col-span-2">
-      <h2 class="font-black">Operations</h2>
-      <p class="text-xs text-slate-500 mt-1">Open the area that needs attention.</p>
-      <div class="grid sm:grid-cols-2 gap-3 mt-4">
-        <a href="index.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-violet-500/40"><b>Marketplace Operations</b><p class="text-[10px] text-slate-500 mt-1">Inventory, auctions, trades, history and Inbox.</p></a>
-        <a href="analytics.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/40"><b>Market Analytics</b><p class="text-[10px] text-slate-500 mt-1">Valuation, demand and market signals.</p></a>
-        <a href="revenue.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/40"><b>Revenue</b><p class="text-[10px] text-slate-500 mt-1">Sales, fees, transaction funnel and exports.</p></a>
-        <a href="index.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40"><b>Past History</b><p class="text-[10px] text-slate-500 mt-1">Audit transactions and marketplace activity.</p></a>
+    <!-- Database Tools Panel -->
+    <div class="glass rounded-3xl p-6 mb-5">
+      <h2 class="text-xl font-black mb-4"><i class="fa-solid fa-database text-violet-400 mr-2"></i>Database Tools</h2>
+      <div class="flex flex-wrap gap-3">
+        <label class="cursor-pointer px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-sm transition inline-flex items-center">
+          <i class="fa-solid fa-file-import mr-2"></i> Import Cards JSON
+          <input id="jsonImport" type="file" accept=".json" class="hidden">
+        </label>
+        <button onclick="backupTable('cards')" class="px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold text-sm transition inline-flex items-center">
+          <i class="fa-solid fa-download mr-2"></i> Backup Cards
+        </button>
       </div>
     </div>
-    <div class="glass rounded-3xl p-5">
-      <h2 class="font-black">System Health</h2>
-      <div class="space-y-3 mt-4">
-        <div class="flex justify-between p-3 rounded-xl bg-slate-950"><span class="text-xs">Firestore</span><b class="text-[10px] text-emerald-400">CONNECTED</b></div>
-        <div class="flex justify-between p-3 rounded-xl bg-slate-950"><span class="text-xs">Admin Auth</span><b id="admin-status" class="text-[10px] text-slate-400">CHECKING</b></div>
-        <div class="flex justify-between p-3 rounded-xl bg-slate-950"><span class="text-xs">Realtime Data</span><b id="data-status" class="text-[10px] text-slate-400">CHECKING</b></div>
+
+    <!-- Auth Alert Container -->
+    <div id="auth-state" class="mb-5"></div>
+
+    <!-- Metrics Dashboard -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-layer-group mr-1"></i> Cards</p>
+        <p id="cards" class="text-3xl font-black mt-1">—</p>
       </div>
-    </div>
-  </section>
-</div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-coins mr-1"></i> Inventory Floor</p>
+        <p id="inventory" class="text-3xl font-black mt-1">—</p>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-users mr-1"></i> Collectors</p>
+        <p id="collectors" class="text-3xl font-black mt-1">—</p>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-handshake mr-1"></i> Pending Trades</p>
+        <p id="trades" class="text-3xl font-black mt-1">—</p>
+      </div>
+    </section>
 
-<script src="js/auth.js"></script>
-<script>
-(async()=>{
- const ok=await requireAdmin();
- if(!ok) return;
- const {data:rows}=await supabase.from("cards").select("*");
- const cards=rows||[];
- document.getElementById("cards").textContent=cards.length.toLocaleString();
- document.getElementById("inventory").textContent=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(cards.reduce((a,c)=>a+Number(c.price||0),0));
- document.getElementById("collectors").textContent=new Set(cards.map(c=>c.owner).filter(Boolean)).size.toLocaleString();
- document.getElementById("admin-status").textContent="VERIFIED";
- document.getElementById("admin-status").className="text-[10px] font-black text-emerald-400";
- document.getElementById("auth-state").innerHTML="<div class=\"glass rounded-2xl p-4 text-sm text-emerald-300\">Admin session verified.</div>";
- document.getElementById("data-status").textContent="LIVE";
-})();
-</script>>
+    <!-- Operations & Health Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+      <div class="glass rounded-3xl p-5 lg:col-span-2">
+        <h2 class="font-black"><i class="fa-solid fa-sliders mr-2 text-violet-400"></i>Operations</h2>
+        <p class="text-xs text-slate-500 mt-1">Open the area that needs attention.</p>
+        <div class="grid sm:grid-cols-2 gap-3 mt-4">
+          <a href="index.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-violet-500/40 transition">
+            <b>Marketplace Operations</b>
+            <p class="text-[10px] text-slate-500 mt-1">Inventory, auctions, trades, history and Inbox.</p>
+          </a>
+          <a href="analytics.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition">
+            <b>Market Analytics</b>
+            <p class="text-[10px] text-slate-500 mt-1">Valuation, demand and market signals.</p>
+          </a>
+          <a href="revenue.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/40 transition">
+            <b>Revenue</b>
+            <p class="text-[10px] text-slate-500 mt-1">Sales, fees, transaction funnel and exports.</p>
+          </a>
+          <a href="index.html" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 transition">
+            <b>Past History</b>
+            <p class="text-[10px] text-slate-500 mt-1">Audit transactions and marketplace activity.</p>
+          </a>
+        </div>
+      </div>
 
-<script type="module" src="js/supabase.js"></script>
+      <div class="glass rounded-3xl p-5">
+        <h2 class="font-black"><i class="fa-solid fa-heart-pulse mr-2 text-emerald-400"></i>System Health</h2>
+        <div class="space-y-3 mt-4">
+          <div class="flex justify-between p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Database Connection</span>
+            <b id="db-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+          <div class="flex justify-between p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Admin Auth</span>
+            <b id="admin-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+          <div class="flex justify-between p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Realtime Data</span>
+            <b id="data-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 
+  <!-- Page Logic -->
+  <script>
+    document.getElementById('jsonImport').addEventListener('change', e => {
+      if (e.target.files[0] && typeof importCards === 'function') {
+        importCards(e.target.files[0]);
+      }
+    });
+
+    (async () => {
+      try {
+        // Auth check execution
+        if (typeof requireAdmin === 'function') {
+          const ok = await requireAdmin();
+          if (!ok) return;
+        }
+
+        document.getElementById("admin-status").textContent = "VERIFIED";
+        document.getElementById("admin-status").className = "text-[10px] font-black text-emerald-400";
+        document.getElementById("auth-state").innerHTML = `
+          <div class="glass rounded-2xl p-4 text-sm text-emerald-300 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> Admin session verified.
+          </div>`;
+
+        // Database client check
+        const client = window.supabaseClient || window.supabase;
+        if (!client) throw new Error("Supabase client not initialized.");
+
+        // Query database cards
+        const { data: rows, error } = await client.from("cards").select("*");
+        if (error) throw error;
+
+        const cards = rows || [];
+
+        // UI Metric Updates
+        document.getElementById("cards").textContent = cards.length.toLocaleString();
+        
+        const totalValue = cards.reduce((acc, c) => acc + Number(c.price || 0), 0);
+        document.getElementById("inventory").textContent = new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0
+        }).format(totalValue);
+
+        const uniqueOwners = new Set(cards.map(c => c.owner).filter(Boolean));
+        document.getElementById("collectors").textContent = uniqueOwners.size.toLocaleString();
+
+        const pendingTrades = cards.filter(c => c.status === 'pending_trade').length;
+        document.getElementById("trades").textContent = pendingTrades.toLocaleString();
+
+        // System Health Updates
+        document.getElementById("db-status").textContent = "CONNECTED";
+        document.getElementById("db-status").className = "text-[10px] font-black text-emerald-400";
+
+        document.getElementById("data-status").textContent = "LIVE";
+        document.getElementById("data-status").className = "text-[10px] font-black text-emerald-400";
+
+      } catch (err) {
+        console.error("Dashboard Initialization Error:", err);
+        document.getElementById("db-status").textContent = "ERROR";
+        document.getElementById("db-status").className = "text-[10px] font-black text-rose-400";
+        document.getElementById("data-status").textContent = "OFFLINE";
+        document.getElementById("data-status").className = "text-[10px] font-black text-rose-400";
+      }
+    })();
+  </script>
 </body>
 </html>
