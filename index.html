@@ -105,9 +105,14 @@
         <button id="nav-analytics" onclick="switchTab('analytics')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-950/30 border border-amber-500/30">
           <i class="fa-solid fa-chart-line text-amber-400"></i> <span data-i18n="navAnalytics">Analytics</span>
         </button>
-        <a href="analytics.html" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-500/10 border border-amber-500/20">
+        <a href="analytics.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-500/10 border border-amber-500/20">
           <i class="fa-solid fa-chart-pie text-amber-400"></i> Analytics Hub
         </a>
+
+        <!-- Internal Revenue Tab -->
+        <button id="nav-revenue" onclick="switchTab('revenue')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/30 border border-emerald-500/30">
+          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> <span data-i18n="navRevenueTab">Revenue</span>
+        </button>
 
         <button id="nav-inbox" onclick="switchTab('inbox')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="navInbox">Inbox</span>
@@ -137,7 +142,7 @@
 
         <!-- External Link to Revenue -->
         <a href="revenue.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/40 border border-emerald-500/30">
-          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> Revenue
+          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> Revenue Hub
         </a>
 
         <button id="nav-inventory" onclick="switchTab('inventory')" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-rose-950/30 border border-rose-500/20">
@@ -399,6 +404,51 @@
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
         <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" data-i18n="topValuationIndex">Top Card Valuation Index</h3>
         <div id="analytics-valuation-list" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- REVENUE VIEW (ADMIN ONLY) -->
+    <section id="view-revenue" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 border border-emerald-500/40 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 tracking-wider" data-i18n="exclusiveAccess">EXCLUSIVE ACCESS</span>
+          <h2 class="text-2xl font-black text-white uppercase tracking-wide mt-1"><i class="fa-solid fa-sack-dollar text-emerald-400 mr-2"></i> <span data-i18n="revenueTabTitle">Revenue Overview</span></h2>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="revenueTabSubtitle">Gross sales, platform tax, and per-card profitability from approved QRIS orders.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="renderRevenueTab()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-400 rounded-xl border border-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshAnalytics">Refresh</span>
+          </button>
+          <a href="revenue.html" class="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-300 rounded-xl border border-emerald-500/30 flex items-center gap-2">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="openFullRevenueHub">Full Revenue Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- REVENUE METRIC CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiGrossSales">GROSS SALES REVENUE</p>
+          <p id="rev-tab-gross-sales" class="text-2xl font-black text-emerald-400 font-mono">Rp 0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiTax">PLATFORM TAX (2%)</p>
+          <p id="rev-tab-platform-tax" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiCompleted">COMPLETED SALES</p>
+          <p id="rev-tab-completed-sales" class="text-2xl font-black text-white font-mono">0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+          <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="kpiAov">AVERAGE ORDER VALUE</p>
+          <p id="rev-tab-avg-order" class="text-2xl font-black text-emerald-400 font-mono">Rp 0</p>
+        </div>
+      </div>
+
+      <!-- CARD-LEVEL PROFITABILITY -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" data-i18n="breakdownTitle">CARD-LEVEL PROFITABILITY BREAKDOWN</h3>
+        <div id="rev-tab-card-list" class="space-y-2"></div>
       </div>
     </section>
 
@@ -744,6 +794,18 @@
 
       <p class="text-[10px] text-slate-500">Admin will scan your code to send the payout, then confirm here with a receipt once it's sent.</p>
       <button onclick="submitSellBackRequest()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Submit Sell-Back Request</button>
+    </div>
+  </div>
+
+  <!-- GENERIC IMAGE PREVIEW MODAL (receipts / QRIS screenshots) -->
+  <div id="image-preview-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9998] hidden flex items-center justify-center p-4" onclick="closeImagePreviewModal()">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-5 space-y-3 relative shadow-2xl text-center" onclick="event.stopPropagation()">
+      <button onclick="closeImagePreviewModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="image-preview-title" class="text-sm font-black text-white pr-8 text-left"></h3>
+      <img id="image-preview-img" src="" class="w-full max-h-[70vh] object-contain rounded-2xl border border-slate-800 bg-white">
+      <a id="image-preview-download" href="" download="attachment.png" class="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition-all">
+        <i class="fa-solid fa-download"></i> Download / Save Image
+      </a>
     </div>
   </div>
 
@@ -1233,6 +1295,17 @@
         activeTradeReqs: "Active Trade Requests",
         pendingCountered: "Pending & countered",
         topValuationIndex: "Top Card Valuation Index",
+        navRevenueTab: "Revenue",
+        revenueTabTitle: "Revenue Overview",
+        revenueTabSubtitle: "Gross sales, platform tax, and per-card profitability from approved QRIS orders.",
+        openFullRevenueHub: "Full Revenue Hub",
+        kpiGrossSales: "GROSS SALES REVENUE",
+        kpiTax: "PLATFORM TAX (2%)",
+        kpiCompleted: "COMPLETED SALES",
+        kpiAov: "AVERAGE ORDER VALUE",
+        breakdownTitle: "CARD-LEVEL PROFITABILITY BREAKDOWN",
+        btnAddToCart: "Add to Cart",
+        btnOwned: "Owned",
         inboxTitle: "Direct Messages & Support Inbox",
         inboxSubtitle: "Search collectors to start a chat or view ongoing direct conversations.",
         refreshInbox: "Refresh Inbox",
@@ -1417,6 +1490,17 @@
         activeTradeReqs: "Permintaan Tukar Aktif",
         pendingCountered: "Menunggu & Kontra",
         topValuationIndex: "Indeks Valuasi Kartu Teratas",
+        navRevenueTab: "Pendapatan",
+        revenueTabTitle: "Ikhtisar Pendapatan",
+        revenueTabSubtitle: "Penjualan kotor, pajak platform, dan profitabilitas per kartu dari pesanan QRIS yang disetujui.",
+        openFullRevenueHub: "Buka Pusat Pendapatan",
+        kpiGrossSales: "PENDAPATAN PENJUALAN KOTOR",
+        kpiTax: "PAJAK PLATFORM (2%)",
+        kpiCompleted: "PENJUALAN SELESAI",
+        kpiAov: "RATA-RATA NILAI PESANAN",
+        breakdownTitle: "RINCIAN PROFITABILITAS PER KARTU",
+        btnAddToCart: "Tambah ke Keranjang",
+        btnOwned: "Dimiliki",
         inboxTitle: "Pesan Langsung & Kotak Masuk",
         inboxSubtitle: "Cari kolektor untuk memulai obrolan atau melihat percakapan aktif.",
         refreshInbox: "Muat Ulang Pesan",
@@ -1551,6 +1635,8 @@
       const btnLabel = document.getElementById('current-lang-label');
       if (btnLabel) btnLabel.innerText = currentLanguage;
       applyTranslations();
+      if (!document.getElementById('view-catalog').classList.contains('hidden')) renderCardGrid();
+      if (!document.getElementById('view-wishlist').classList.contains('hidden')) renderWishlistPage();
       showToast(currentLanguage === 'ID' ? 'Bahasa diubah ke Bahasa Indonesia' : 'Language switched to English');
     }
 
@@ -2442,6 +2528,66 @@
       }
     }
 
+    async function renderRevenueTab() {
+      if (!currentUser || !currentUser.isAdmin) {
+        switchTab('catalog');
+        return showToast('Admin access required.');
+      }
+
+      await fetchTransactionHistory();
+
+      const PLATFORM_TAX_RATE = 0.02;
+      const salesTx = transactionsList.filter(t => t.status === 'APPROVED' && t.type !== 'SELLBACK');
+
+      let totalGrossSales = 0;
+      const cardRevenueMap = {};
+      salesTx.forEach(tx => {
+        const amount = parseFloat(tx.total_amount) || 0;
+        totalGrossSales += amount;
+        if (Array.isArray(tx.items)) {
+          tx.items.forEach(item => {
+            const cardId = item.id || item.serial;
+            const itemPrice = parseFloat(item.price) || 0;
+            if (cardId) cardRevenueMap[cardId] = (cardRevenueMap[cardId] || 0) + itemPrice;
+          });
+        }
+      });
+
+      const totalPlatformTax = totalGrossSales * PLATFORM_TAX_RATE;
+      const completedSalesCount = salesTx.length;
+      const avgOrderValue = completedSalesCount > 0 ? totalGrossSales / completedSalesCount : 0;
+
+      document.getElementById('rev-tab-gross-sales').innerText = formatIDR(totalGrossSales);
+      document.getElementById('rev-tab-platform-tax').innerText = formatIDR(totalPlatformTax);
+      document.getElementById('rev-tab-completed-sales').innerText = completedSalesCount;
+      document.getElementById('rev-tab-avg-order').innerText = formatIDR(avgOrderValue);
+
+      const listEl = document.getElementById('rev-tab-card-list');
+      if (listEl) {
+        const sorted = [...inventory]
+          .map(c => ({ ...c, _revenue: cardRevenueMap[c.id] || cardRevenueMap[c.serial] || 0 }))
+          .sort((a, b) => b._revenue - a._revenue)
+          .slice(0, 10);
+
+        listEl.innerHTML = sorted.length ? sorted.map(c => `
+          <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+            <div class="flex items-center gap-3">
+              <img src="${c.imgUrl}" class="w-10 h-10 object-contain rounded bg-slate-900 border border-slate-800">
+              <div>
+                <p class="font-bold text-white">${c.name} (${c.serial})</p>
+                <p class="text-[10px] text-slate-400">${c.status === 'SOLD' ? 'Sold' : 'Available'}</p>
+              </div>
+            </div>
+            <div class="text-right font-mono">
+              <p class="font-extrabold text-emerald-400">${formatIDR(c._revenue)}</p>
+              <p class="text-[9px] text-amber-400">${c.type} Tier</p>
+            </div>
+          </div>
+        `).join('') : `<p class="text-xs text-slate-500">No sales revenue recorded yet.</p>`;
+      }
+    }
+
+
     function renderMarketAnalytics() {
       if (!currentUser || !currentUser.isAdmin) {
         switchTab('catalog');
@@ -2847,9 +2993,9 @@
               </div>
 
               ${!isSold ? `
-                <button onclick="addToCart('${card.id}')" class="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[10px] rounded-xl transition-all">Add to Cart</button>
+                <button onclick="addToCart('${card.id}')" class="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[10px] rounded-xl transition-all">${i18nDict[currentLanguage].btnAddToCart}</button>
               ` : `
-                <button disabled class="w-full py-1.5 bg-slate-950 text-slate-600 font-bold text-[10px] rounded-xl cursor-not-allowed">Owned</button>
+                <button disabled class="w-full py-1.5 bg-slate-950 text-slate-600 font-bold text-[10px] rounded-xl cursor-not-allowed">${i18nDict[currentLanguage].btnOwned}</button>
               `}
             </div>
           </div>
@@ -4011,17 +4157,17 @@
 
     function switchTab(tabName) {
       const adminTabs = ['admin', 'inventory'];
-      const analyticsTabs = ['analytics'];
+      const analyticsTabs = ['analytics', 'revenue'];
 
       if (adminTabs.includes(tabName) && !currentUser?.isAdmin) {
         return showToast('Admin access required.');
       }
 
       if (analyticsTabs.includes(tabName) && (!currentUser || !currentUser.isAdmin)) {
-        return showToast('Market Analytics is restricted exclusively to Admins.');
+        return showToast('Admin access required.');
       }
 
-      ['catalog', 'dashboard', 'wishlist', 'admin', 'inventory', 'trade', 'auction', 'trade-req', 'analytics', 'inbox', 'holders', 'history'].forEach(t => {
+      ['catalog', 'dashboard', 'wishlist', 'admin', 'inventory', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'history'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const nav = document.getElementById(`nav-${t}`);
         if (view) view.classList.add('hidden');
@@ -4047,6 +4193,7 @@
       if (tabName === 'inventory') renderInventoryTable();
       if (tabName === 'admin') loadPendingTransactions();
       if (tabName === 'analytics') renderMarketAnalytics();
+      if (tabName === 'revenue') renderRevenueTab();
       if (tabName === 'inbox') loadUserInboxThreads();
       if (tabName === 'holders') renderHoldersTable();
       if (tabName === 'history') fetchTransactionHistory();
@@ -4173,15 +4320,43 @@
         return;
       }
 
-      grid.innerHTML = items.map(card => `
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between cursor-pointer" onclick="openCardDetailModal('${card.id}')">
-          <div class="w-full aspect-[4/5] bg-slate-950 rounded-xl p-1.5 border border-slate-800 overflow-hidden flex items-center justify-center mb-2">
-            <img src="${card.imgUrl}" loading="lazy" class="w-full h-full object-contain rounded-lg">
+      grid.innerHTML = items.map(card => {
+        const isPremium = card.type === 'PREMIUM';
+        const isSold = card.status === 'SOLD';
+
+        return `
+        <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-2xl p-3 flex flex-col justify-between relative cursor-pointer" onclick="openCardDetailModal('${card.id}')">
+          <div class="flex items-center justify-between mb-2" onclick="event.stopPropagation()">
+            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isPremium ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${card.type}</span>
+            <button onclick="toggleWishlist('${card.id}')" class="text-xs text-rose-500 hover:text-rose-400 transition-colors" title="Remove from wishlist">
+              <i class="fa-solid fa-heart"></i>
+            </button>
           </div>
-          <p class="font-bold text-xs text-white truncate">${card.name}</p>
-          <p class="font-mono text-amber-400 text-xs font-black">${card.serial}</p>
+
+          <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-xl border border-slate-800 p-1.5 flex flex-col justify-between mb-2 text-center overflow-hidden">
+            <div class="w-full h-full flex items-center justify-center overflow-hidden rounded-lg bg-slate-900">
+              <img src="${card.imgUrl}" loading="lazy" class="w-full h-full object-contain">
+            </div>
+          </div>
+
+          <p class="text-center font-black ${isPremium ? 'text-amber-400' : 'text-blue-400'} font-mono mb-1">${card.serial}</p>
+
+          <div class="space-y-1.5" onclick="event.stopPropagation()">
+            <p class="text-[11px] font-extrabold text-white truncate">${card.name}</p>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono text-emerald-400 font-extrabold">${formatIDR(card.price)}</span>
+              <span class="text-[9px] text-slate-400 truncate max-w-[80px]">${card.owner || 'Unowned'}</span>
+            </div>
+
+            ${!isSold ? `
+              <button onclick="addToCart('${card.id}')" class="w-full py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[10px] rounded-xl transition-all">${i18nDict[currentLanguage].btnAddToCart}</button>
+            ` : `
+              <button disabled class="w-full py-1.5 bg-slate-950 text-slate-600 font-bold text-[10px] rounded-xl cursor-not-allowed">${i18nDict[currentLanguage].btnOwned}</button>
+            `}
+          </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function clearWishlist() {
@@ -4229,6 +4404,18 @@
       }).join('');
     }
 
+    function openImagePreviewModal(imgUrl, title) {
+      if (!imgUrl) return;
+      document.getElementById('image-preview-title').innerText = title || 'Image Preview';
+      document.getElementById('image-preview-img').src = imgUrl;
+      document.getElementById('image-preview-download').href = imgUrl;
+      document.getElementById('image-preview-modal').classList.remove('hidden');
+    }
+
+    function closeImagePreviewModal() {
+      document.getElementById('image-preview-modal').classList.add('hidden');
+    }
+
     async function loadPendingTransactions() {
       const container = document.getElementById('admin-pending-orders-list');
       if (!container) return;
@@ -4256,10 +4443,10 @@
 
           const proofPreview = isSellback
             ? (order.payoutQrisUrl
-                ? `<div class="mt-2"><a href="${order.payoutQrisUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/60 border border-amber-500/40 text-amber-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-qrcode text-amber-400"></i> View Payout Destination QRIS</a></div>`
+                ? `<div class="mt-2"><button onclick="openImagePreviewModal('${order.payoutQrisUrl}', 'Payout Destination QRIS — ${order.id}')" class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-950/60 border border-amber-500/40 text-amber-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-qrcode text-amber-400"></i> View Payout Destination QRIS</button></div>`
                 : `<div class="mt-1 text-[10px] text-slate-500 italic">No payout QRIS attached.</div>`)
             : (order.qrisProofUrl
-                ? `<div class="mt-2"><a href="${order.qrisProofUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-receipt text-amber-400"></i> View QRIS Receipt Screenshot</a></div>`
+                ? `<div class="mt-2"><button onclick="openImagePreviewModal('${order.qrisProofUrl}', 'QRIS Receipt — ${order.id}')" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold rounded-lg"><i class="fa-solid fa-receipt text-amber-400"></i> View QRIS Receipt Screenshot</button></div>`
                 : `<div class="mt-1 text-[10px] text-slate-500 italic">No receipt screenshot attached.</div>`);
 
           const buyerAvatar = getCollectorAvatar(order.user_name);
