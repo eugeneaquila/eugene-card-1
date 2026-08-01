@@ -53,6 +53,134 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #030712; }
     ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
+  
+    /* ===== EUGENE CARD UI/UX 2026 PREMIUM UPGRADE ===== */
+    :root {
+      --ec-glow: rgba(245,158,11,.22);
+      --ec-panel: rgba(15,23,42,.72);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 10% 0%, rgba(99,102,241,.16), transparent 35%),
+        radial-gradient(circle at 90% 10%, rgba(245,158,11,.12), transparent 30%),
+        #030712;
+      overflow-x:hidden;
+    }
+
+    body::before {
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+      background-size:40px 40px;
+      mask-image:linear-gradient(to bottom,black,transparent);
+      z-index:-1;
+    }
+
+    .premium-panel {
+      background:linear-gradient(145deg,rgba(15,23,42,.85),rgba(2,6,23,.75));
+      backdrop-filter:blur(18px);
+      border:1px solid rgba(148,163,184,.12);
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+
+    button, a, input, select {
+      transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background-color .2s ease,
+        box-shadow .2s ease;
+    }
+
+    button:hover:not(:disabled), a:hover {
+      transform:translateY(-1px);
+    }
+
+    .card-holo-premium,
+    .card-holo-standard {
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card-holo-premium::before,
+    .card-holo-standard::before {
+      content:"";
+      position:absolute;
+      inset:-80%;
+      background:linear-gradient(
+        120deg,
+        transparent 35%,
+        rgba(255,255,255,.12),
+        transparent 65%
+      );
+      transform:translateX(-60%) rotate(20deg);
+      transition:.7s;
+      pointer-events:none;
+    }
+
+    .card-holo-premium:hover::before,
+    .card-holo-standard:hover::before {
+      transform:translateX(60%) rotate(20deg);
+    }
+
+    .card-holo-premium:hover,
+    .card-holo-standard:hover {
+      transform:translateY(-8px) scale(1.02);
+    }
+
+    header {
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
+
+    nav button {
+      position:relative;
+    }
+
+    nav button.bg-slate-800::after {
+      content:"";
+      position:absolute;
+      bottom:-3px;
+      left:20%;
+      right:20%;
+      height:2px;
+      background:#fbbf24;
+      border-radius:999px;
+    }
+
+    .stat-card {
+      background:linear-gradient(135deg,rgba(30,41,59,.75),rgba(2,6,23,.8));
+      border:1px solid rgba(148,163,184,.15);
+      border-radius:1.25rem;
+      padding:1rem;
+    }
+
+    .empty-state {
+      padding:3rem;
+      text-align:center;
+      border-radius:1.5rem;
+      background:rgba(15,23,42,.6);
+      border:1px dashed rgba(148,163,184,.25);
+    }
+
+    @media(max-width:768px){
+      header nav {
+        order:3;
+        width:100%;
+      }
+
+      main {
+        padding-bottom:90px!important;
+      }
+    }
+
+    .mobile-safe-bottom {
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
@@ -4553,5 +4681,31 @@
       setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
     }
   </script>
+
+<script>
+/* Eugene Card Premium UX Layer */
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("section > div.bg-slate-900").forEach(el=>{
+    el.classList.add("premium-panel");
+  });
+
+  document.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("mousedown",()=>{
+      btn.style.transform="scale(.97)";
+    });
+    btn.addEventListener("mouseup",()=>{
+      btn.style.transform="";
+    });
+  });
+
+  // Better image loading fallback
+  document.querySelectorAll("img").forEach(img=>{
+    img.addEventListener("error",()=>{
+      img.src="https://placehold.co/600x750/020617/fbbf24?text=Eugene+Card";
+    });
+  });
+});
+</script>
+
 </body>
 </html>
