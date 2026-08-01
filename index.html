@@ -270,7 +270,6 @@
         <button class="tab-btn" data-view="trades" onclick="setView('trades')">Exchange</button>
         <button class="tab-btn" data-view="wishlist" onclick="setView('wishlist')">Wishlist</button>
         <button class="tab-btn" data-view="vault" onclick="setView('vault')">Your Vault</button>
-        <button class="tab-btn" data-view="messages" onclick="setView('messages')">Messages</button>
         <button class="tab-btn hidden" data-view="admin" id="admin-tab-btn" onclick="setView('admin')">Registrar</button>
       </nav>
 
@@ -302,7 +301,6 @@
       <button class="tab-btn text-left !border-b-0 py-2" data-view="trades" onclick="setView('trades')">Exchange</button>
       <button class="tab-btn text-left !border-b-0 py-2" data-view="wishlist" onclick="setView('wishlist')">Wishlist</button>
       <button class="tab-btn text-left !border-b-0 py-2" data-view="vault" onclick="setView('vault')">Your Vault</button>
-      <button class="tab-btn text-left !border-b-0 py-2" data-view="messages" onclick="setView('messages')">Messages</button>
       <button class="tab-btn hidden text-left !border-b-0 py-2" data-view="admin" id="admin-tab-btn-mobile" onclick="setView('admin')">Registrar</button>
     </nav>
   </div>
@@ -413,34 +411,6 @@
     <div id="vault-content"></div>
   </div>
 
-  <!-- MESSAGES VIEW -->
-  <div x-view id="view-messages" class="fade-in">
-    <div class="mb-6">
-      <h2 class="font-display text-2xl text-parchment">Correspondence</h2>
-      <p class="text-sm mt-1" style="color:var(--text-muted)">Private messages between collectors.</p>
-    </div>
-    <div class="modal-panel rounded-sm grid grid-cols-1 md:grid-cols-3 min-h-[420px] overflow-hidden">
-      <div class="border-r md:col-span-1 p-3 space-y-1.5 overflow-y-auto max-h-[520px]" style="border-color:var(--line)">
-        <div class="flex items-center justify-between mb-2 px-1">
-          <p class="font-mono text-[0.6rem] tracking-[0.14em] uppercase" style="color:var(--text-muted)">Threads</p>
-          <button onclick="openNewChatModal()" class="font-mono text-[0.6rem] uppercase tracking-wide" style="color:var(--brass)">+ New</button>
-        </div>
-        <input type="text" id="chat-search-input" placeholder="Search conversations…" class="input-field rounded-md px-3 py-2 text-xs w-full mb-2" oninput="filterChatThreads()">
-        <div id="chat-threads-list"></div>
-      </div>
-      <div class="md:col-span-2 flex flex-col p-4">
-        <div id="chat-active-header" class="pb-3 mb-3 border-b flex items-center justify-between" style="border-color:var(--line)">
-          <span class="text-sm" style="color:var(--text-muted)">Select a conversation</span>
-        </div>
-        <div id="chat-messages-body" class="flex-1 space-y-3 overflow-y-auto max-h-[360px] pr-1"></div>
-        <form onsubmit="sendChatMessage(event)" class="pt-3 mt-3 border-t flex gap-2" style="border-color:var(--line)">
-          <input type="text" id="chat-input-text" placeholder="Write a message…" class="input-field rounded-md flex-1 px-3 py-2 text-sm">
-          <button type="submit" class="btn-brass rounded-md px-4 py-2 text-sm">Send</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- ADMIN VIEW -->
   <div x-view id="view-admin" class="fade-in">
     <div class="mb-6">
@@ -473,1047 +443,851 @@
    Single-file marketplace backed by Supabase (project: eugene-card-2)
    ===================================================================== */
 
-/* ---------- Supabase client ---------- */
 const SUPABASE_URL = 'https://yswwicdycbscurnpbqjb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd3dpY2R5Y2JzY3VybnBicWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyOTUzNjAsImV4cCI6MjEwMDg3MTM2MH0.FESrSxt3ys6WJXF768q1lXJceQrff6T6WLgCn8prEw8';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com'];
 
 let currentUser = null;
-let currentProfile = null;
-let cartItems = [];
-let allCards = [];
-let currentChatId = null;
-let activeTradeTab = 'incoming';
-let activeAdminTab = 'orders';
+let myProfile = null;
+let cards = [];
+let activeAuction = null;
+let auctionHistory = [];
+let wishlistIds = new Set();
+let cart = new Set();
+let notifications = [];
+let tradeTab = 'incoming';
+let adminTab = 'orders';
+let myTradeRequests = [];
+let pendingCheckoutIds = [];
 
-/* ---------- Small helpers ---------- */
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str ?? '';
-  return div.innerHTML;
-}
+/* ---------------------------- BOOTSTRAP ---------------------------- */
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session?.user) await handleSession(session.user);
 
-function showToast(message, type) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = 'toast-enter modal-panel rounded-md px-4 py-3 text-sm shadow-xl max-w-xs';
-  el.style.borderColor = type === 'error' ? 'var(--oxblood)' : 'var(--line)';
-  el.textContent = message;
-  container.appendChild(el);
-  setTimeout(function () { el.remove(); }, 3500);
-}
-
-function skeletonCards(n) {
-  let out = '';
-  for (let i = 0; i < n; i++) out += '<div class="skeleton rounded-sm aspect-[3/4]"></div>';
-  return out;
-}
-
-function statusColor(status) {
-  const map = {
-    AVAILABLE: 'var(--emerald-bright)',
-    SOLD: '#B9C2D0',
-    OWNED: '#B9C2D0',
-    PENDING: 'var(--brass-bright)',
-    RESERVED: 'var(--oxblood-bright)',
-  };
-  return map[status] || 'var(--text-muted)';
-}
-
-const TAX_RATE = 0.02; // 2% transaction tax
-
-function formatRp(amount) {
-  return 'Rp ' + Math.round(Number(amount) || 0).toLocaleString('id-ID');
-}
-
-function round2(n) {
-  return Math.round((Number(n) || 0) * 100) / 100;
-}
-
-function closeModal() {
-  document.getElementById('modal-root').innerHTML = '';
-}
-
-/* ---------- View tabs ---------- */
-function setView(view) {
-  document.querySelectorAll('[x-view]').forEach(function (panel) {
-    panel.classList.toggle('active', panel.id === 'view-' + view);
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      await handleSession(session.user);
+      const savedTab = localStorage.getItem('redirect_after_login') || 'marketplace';
+      localStorage.removeItem('redirect_after_login');
+      setView(savedTab);
+    } else {
+      currentUser = null;
+      myProfile = null;
+      wishlistIds = new Set();
+      renderAuthSlot();
+    }
   });
-  document.querySelectorAll('[data-view]').forEach(function (btn) {
-    btn.classList.toggle('active', btn.dataset.view === view);
-  });
-  const mobileNav = document.getElementById('mobile-nav');
-  if (mobileNav && !mobileNav.classList.contains('hidden')) mobileNav.classList.add('hidden');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  refreshView(view);
-}
 
-function toggleMobileNav() {
-  const mobileNav = document.getElementById('mobile-nav');
-  if (mobileNav) mobileNav.classList.toggle('hidden');
-}
-
-function setTradeTab(tab) {
-  activeTradeTab = tab;
-  document.querySelectorAll('[data-tradetab]').forEach(function (btn) {
-    btn.classList.toggle('active', btn.dataset.tradetab === tab);
-  });
-  renderTrades();
-}
-
-function setAdminTab(tab) {
-  activeAdminTab = tab;
-  document.querySelectorAll('[data-admintab]').forEach(function (btn) {
-    btn.classList.toggle('active', btn.dataset.admintab === tab);
-  });
-  renderAdmin();
-}
-
-function getActiveView() {
-  const active = document.querySelector('[x-view].active');
-  return active ? active.id.replace('view-', '') : 'marketplace';
-}
-
-function refreshView(view) {
-  if (view === 'marketplace') renderMarketplace();
-  else if (view === 'auctions') renderAuctions();
-  else if (view === 'trades') renderTrades();
-  else if (view === 'wishlist') renderWishlist();
-  else if (view === 'vault') renderVault();
-  else if (view === 'messages') renderMessages();
-  else if (view === 'admin') renderAdmin();
-}
-
-function refreshCurrentView() { refreshView(getActiveView()); }
-
-/* ---------- Auth ---------- */
-async function initAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  await handleSession(session);
-  sb.auth.onAuthStateChange(function (_event, session) { handleSession(session); });
-}
-
-async function handleSession(session) {
-  currentUser = session && session.user ? session.user : null;
-  if (currentUser) {
-    await ensureProfile();
-    await loadProfileAndStats();
-  } else {
-    currentProfile = null;
-  }
   renderAuthSlot();
-  updateAdminVisibility();
-  updateCartCount();
-  refreshCurrentView();
+  await loadCards();
+  await loadActiveAuction();
+  setView('marketplace');
+});
+
+function myIdentity() {
+  return (myProfile?.username || myProfile?.name || currentUser?.username || '').toLowerCase();
+}
+function isAdminEmail(email) {
+  if (!email) return false;
+  const lower = email.toLowerCase();
+  return ADMIN_EMAILS.some(a => lower === a);
 }
 
-async function ensureProfile() {
-  const { data } = await sb.from('profiles').select('id').eq('id', currentUser.id).maybeSingle();
-  if (!data) {
-    const handle = (currentUser.email || 'collector').split('@')[0];
-    await sb.from('profiles').insert({ id: currentUser.id, email: currentUser.email, username: handle, name: handle });
-  }
+/* ---------------------------- TOASTS ---------------------------- */
+function showToast(msg, tone = 'default') {
+  const container = document.getElementById('toast-container');
+  const colors = { default: 'var(--line)', success: 'var(--emerald-bright)', error: 'var(--oxblood-bright)' };
+  const el = document.createElement('div');
+  el.className = 'toast-enter modal-panel rounded-md px-4 py-3 text-xs shadow-xl max-w-xs';
+  el.style.borderLeft = `3px solid ${colors[tone] || colors.default}`;
+  el.innerText = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 300ms'; setTimeout(() => el.remove(), 300); }, 3800);
 }
 
-async function loadProfileAndStats() {
-  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-  currentProfile = data;
+/* ---------------------------- MODAL HELPERS ---------------------------- */
+function openModal(innerHtml, size = 'max-w-md') {
+  document.getElementById('modal-root').innerHTML = `
+    <div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">
+      <div class="modal-panel rounded-lg w-full ${size} max-h-[88vh] overflow-y-auto p-6 relative fade-in" onclick="event.stopPropagation()">
+        <button onclick="closeModal()" class="absolute top-4 right-4 w-7 h-7 rounded-full btn-ghost flex items-center justify-center text-xs">✕</button>
+        ${innerHtml}
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+/* ---------------------------- AUTH ---------------------------- */
+async function handleSession(user) {
+  const email = (user.email || '').toLowerCase();
+  currentUser = {
+    id: user.id,
+    email,
+    name: user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0],
+    username: (user.user_metadata?.full_name || email.split('@')[0]).toLowerCase().replace(/\s+/g, '_'),
+    isAdmin: isAdminEmail(email),
+    avatarUrl: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${email}`
+  };
+
+  myProfile = await fetchOwnProfile();
+  if (!myProfile) { await new Promise(r => setTimeout(r, 700)); myProfile = await fetchOwnProfile(); }
+
+  document.querySelectorAll('#admin-tab-btn, #admin-tab-btn-mobile').forEach(b => b.classList.toggle('hidden', !currentUser.isAdmin));
+
+  await loadWishlist();
+  await loadNotifications();
+  renderAuthSlot();
+}
+
+async function fetchOwnProfile() {
+  const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  if (error) { console.error(error); return null; }
+  return data;
+}
+
+function openLoginModal() {
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-2">Sign In</h3>
+    <p class="text-xs mb-5" style="color:var(--text-muted)">Sign in with Google to buy, bid, trade, and track your collection.</p>
+    <button onclick="loginWithGoogle()" class="btn-brass rounded-md px-4 py-2.5 text-sm w-full flex items-center justify-center gap-2">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 11v2.8h6.5c-.3 1.6-2.1 4.7-6.5 4.7-3.9 0-7.1-3.2-7.1-7.2s3.2-7.2 7.1-7.2c2.2 0 3.7.9 4.6 1.7l3.1-3C17.7 1 15.1 0 12 0 5.4 0 0 5.4 0 12s5.4 12 12 12c6.9 0 11.5-4.9 11.5-11.7 0-.8-.1-1.4-.2-2H12z"/></svg>
+      Continue with Google
+    </button>`, 'max-w-sm');
+}
+
+async function loginWithGoogle() {
+  try {
+    localStorage.setItem('redirect_after_login', getCurrentView());
+    const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    if (error) throw error;
+  } catch (err) { showToast('Auth error: ' + err.message, 'error'); }
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+  currentUser = null; myProfile = null; wishlistIds = new Set();
+  renderAuthSlot();
+  setView('marketplace');
+  showToast('Signed out.');
 }
 
 function renderAuthSlot() {
   const slot = document.getElementById('auth-slot');
-  if (!slot) return;
   if (currentUser) {
-    const initial = ((currentProfile && currentProfile.username) || currentUser.email || '?')[0].toUpperCase();
-    slot.innerHTML =
-      '<div class="flex items-center gap-2">' +
-        '<button onclick="setView(\'vault\')" class="avatar-ring w-8 h-8 flex items-center justify-center rounded-full shrink-0" aria-label="Your vault">' +
-          '<span class="bg-ink-2 w-full h-full rounded-full flex items-center justify-center text-xs font-mono" style="background:var(--ink-2)">' + initial + '</span>' +
-        '</button>' +
-        '<button onclick="signOut()" class="btn-ghost rounded-md px-3 py-2 text-xs hidden sm:inline-flex">Sign Out</button>' +
-      '</div>';
+    slot.innerHTML = `
+      <div class="relative">
+        <button onclick="toggleAccountMenu()" class="avatar-ring w-9 h-9 rounded-full overflow-hidden block">
+          <img src="${currentUser.avatarUrl}" class="w-full h-full object-cover rounded-full">
+        </button>
+        <div id="account-menu" class="hidden absolute right-0 mt-2 w-52 modal-panel rounded-lg shadow-2xl p-2 z-50 text-xs">
+          <div class="px-2 py-2 border-b" style="border-color:var(--line)">
+            <p class="font-semibold text-parchment truncate">${currentUser.name}</p>
+            <p style="color:var(--text-muted)">${currentUser.isAdmin ? 'Registrar (Admin)' : '@' + currentUser.username}</p>
+          </div>
+          <button onclick="setView('vault'); toggleAccountMenu();" class="w-full text-left px-2 py-2 hover:bg-white/5 rounded">Your Vault</button>
+          <button onclick="logout()" class="w-full text-left px-2 py-2 hover:bg-white/5 rounded" style="color:var(--oxblood-bright)">Sign Out</button>
+        </div>
+      </div>`;
   } else {
-    slot.innerHTML = '<button onclick="openAuthModal(\'signin\')" class="btn-brass rounded-md px-4 py-2 text-sm">Sign In</button>';
+    slot.innerHTML = `<button onclick="openLoginModal()" class="btn-brass rounded-md px-3.5 py-2 text-xs">Sign In</button>`;
   }
 }
+function toggleAccountMenu() { document.getElementById('account-menu')?.classList.toggle('hidden'); }
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('account-menu');
+  if (menu && !e.target.closest('#auth-slot')) menu.classList.add('hidden');
+});
 
-function updateAdminVisibility() {
-  const isAdmin = currentProfile && currentProfile.role === 'admin';
-  const a = document.getElementById('admin-tab-btn');
-  const b = document.getElementById('admin-tab-btn-mobile');
-  if (a) a.classList.toggle('hidden', !isAdmin);
-  if (b) b.classList.toggle('hidden', !isAdmin);
+function requireLogin() { if (!currentUser) { openLoginModal(); return false; } return true; }
+
+/* ---------------------------- NAV / VIEWS ---------------------------- */
+function getCurrentView() {
+  const active = document.querySelector('[x-view].active');
+  return active ? active.id.replace('view-', '') : 'marketplace';
 }
 
-async function signOut() {
-  await sb.auth.signOut();
-  showToast('Signed out');
-  setView('marketplace');
+function toggleMobileNav() { document.getElementById('mobile-nav').classList.toggle('hidden'); }
+
+function setView(view) {
+  if (view === 'admin' && !currentUser?.isAdmin) return showToast('Registrar access only.', 'error');
+
+  document.querySelectorAll('[x-view]').forEach(v => v.classList.toggle('active', v.id === `view-${view}`));
+  document.querySelectorAll('.tab-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.getElementById('mobile-nav').classList.add('hidden');
+
+  if (view === 'marketplace') renderMarketplace();
+  if (view === 'auctions') renderAuctionView();
+  if (view === 'trades') renderTradesView();
+  if (view === 'wishlist') renderWishlistGrid();
+  if (view === 'vault') renderVaultView();
+  if (view === 'admin') renderAdminView();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openAuthModal(mode) {
-  const root = document.getElementById('modal-root');
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="modal-panel rounded-sm w-full max-w-sm p-6 relative">' +
-        '<button onclick="closeModal()" class="absolute top-4 right-4" style="color:var(--text-muted)">✕</button>' +
-        '<h3 class="font-display text-xl text-parchment mb-4">' + (mode === 'signin' ? 'Sign In' : 'Create Account') + '</h3>' +
-        '<button type="button" onclick="signInWithGoogle()" class="btn-ghost rounded-md px-4 py-2 text-sm w-full flex items-center justify-center gap-2">' +
-          '<svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">' +
-            '<path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>' +
-            '<path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.02l7.73 6c4.51-4.18 7.09-10.36 7.09-17.49z"/>' +
-            '<path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>' +
-            '<path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>' +
-          '</svg>' +
-          'Continue with Google' +
-        '</button>' +
-        '<div class="flex items-center gap-2 my-4">' +
-          '<div class="rule flex-1"></div>' +
-          '<span class="text-[0.6rem] font-mono uppercase" style="color:var(--text-muted)">or</span>' +
-          '<div class="rule flex-1"></div>' +
-        '</div>' +
-        '<form class="space-y-3" onsubmit="submitAuthForm(event, \'' + mode + '\')">' +
-          '<input required type="email" id="auth-email" placeholder="Email" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
-          '<input required type="password" id="auth-password" placeholder="Password" minlength="6" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
-          '<button type="submit" class="btn-brass rounded-md px-4 py-2 text-sm w-full">' + (mode === 'signin' ? 'Sign In' : 'Sign Up') + '</button>' +
-        '</form>' +
-        '<p class="text-xs mt-3" style="color:var(--text-muted)">' +
-          (mode === 'signin'
-            ? 'No account? <button class="text-brass underline" onclick="openAuthModal(\'signup\')">Create one</button>'
-            : 'Already registered? <button class="text-brass underline" onclick="openAuthModal(\'signin\')">Sign in</button>') +
-        '</p>' +
-      '</div>' +
-    '</div>';
+/* ---------------------------- DATA: CARDS ---------------------------- */
+function mapCard(row) {
+  return {
+    id: row.id, serial: row.serial || '', name: row.name, type: row.type || 'STANDARD',
+    price: Number(row.price || 0), baseFloorPrice: Number(row.base_floor_price ?? row.price ?? 0),
+    owner: row.owner || null, status: row.status || 'AVAILABLE',
+    imgUrl: row.img_url || row.image_url || `https://placehold.co/600x750/171C24/C79A46?text=${encodeURIComponent(row.serial || '?')}`,
+    edition: row.edition || 'Beta Edition', sn: row.sn || '', tier: row.tier || '', printing: row.printing || '1x'
+  };
 }
 
-async function signInWithGoogle() {
-  try {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.href },
-    });
-    if (error) throw error;
-    // Browser will redirect to Google; execution stops here on success.
-  } catch (err) {
-    showToast((err && err.message) || 'Could not start Google sign-in', 'error');
-  }
+async function loadCards() {
+  const { data, error } = await supabaseClient.from('cards').select('*').order('serial', { ascending: true });
+  if (error) { showToast('Could not load registry: ' + error.message, 'error'); return; }
+  cards = (data || []).map(mapCard);
+  populateTierFilter();
+  renderHeroStats();
 }
 
-async function submitAuthForm(e, mode) {
-  e.preventDefault();
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  try {
-    if (mode === 'signin') {
-      const { error } = await sb.auth.signInWithPassword({ email: email, password: password });
-      if (error) throw error;
-      showToast('Welcome back');
-    } else {
-      const { error } = await sb.auth.signUp({ email: email, password: password });
-      if (error) throw error;
-      showToast('Account created — check your email if confirmation is required');
-    }
-    closeModal();
-  } catch (err) {
-    showToast((err && err.message) || 'Authentication failed', 'error');
-  }
-}
-
-/* ---------- Registry stats (ledger strip) ---------- */
-async function loadStats() {
-  const { data, error } = await sb.from('cards').select('status');
-  if (error) { console.error(error); return; }
-  const { count: liveAuctions } = await sb.from('auctions').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE');
-
-  const total = data.length;
-  const available = data.filter(function (c) { return c.status === 'AVAILABLE'; }).length;
-  const owned = data.filter(function (c) { return c.status === 'SOLD' || c.status === 'OWNED'; }).length;
-
-  const totalEl = document.getElementById('stat-total');
-  const availEl = document.getElementById('stat-available');
-  const ownedEl = document.getElementById('stat-owned');
-  const aucEl = document.getElementById('stat-auction');
-  if (totalEl) totalEl.textContent = total;
-  if (availEl) availEl.textContent = available;
-  if (ownedEl) ownedEl.textContent = owned;
-  if (aucEl) aucEl.textContent = liveAuctions || 0;
-}
-
-/* ---------- Marketplace ---------- */
-function cardEntryHTML(c) {
-  const img = c.img_url || c.image_url || '';
-  return (
-    '<div class="card-entry rounded-sm overflow-hidden cursor-pointer" onclick="openCardModal(\'' + c.id + '\')">' +
-      '<div class="aspect-[3/4] flex items-center justify-center overflow-hidden" style="background:var(--ink-3)">' +
-        (img
-          ? '<img src="' + img + '" alt="' + escapeHtml(c.name) + '" class="w-full h-full object-cover" loading="lazy">'
-          : '<span class="font-mono text-xs" style="color:var(--text-muted)">No Image</span>') +
-      '</div>' +
-      '<div class="p-3">' +
-        '<p class="text-sm text-parchment truncate">' + escapeHtml(c.name) + '</p>' +
-        '<p class="card-serial text-[0.65rem] mt-0.5" style="color:var(--text-muted)">' + escapeHtml(c.serial || '') + '</p>' +
-        '<div class="flex items-center justify-between mt-2">' +
-          '<span class="font-mono text-sm" style="color:var(--brass-bright)">' + (c.price ? formatRp(c.price) : '—') + '</span>' +
-          '<span class="status-stamp" style="color:' + statusColor(c.status) + '">' + (c.status || '') + '</span>' +
-        '</div>' +
-      '</div>' +
-    '</div>'
-  );
-}
-
-function populateTierFilter(data) {
+function populateTierFilter() {
   const select = document.getElementById('filter-tier');
   if (!select) return;
-  const current = select.value;
-  const tiers = Array.from(new Set(data.map(function (c) { return c.tier; }).filter(Boolean))).sort();
-  select.innerHTML = '<option value="">All tiers</option>' + tiers.map(function (t) {
-    return '<option value="' + t + '">' + t + '</option>';
-  }).join('');
-  select.value = current;
+  const types = [...new Set(cards.map(c => c.type))];
+  select.innerHTML = `<option value="">All tiers</option>` + types.map(t => `<option value="${t}">${t}</option>`).join('');
 }
 
-async function renderMarketplace() {
+function renderHeroStats() {
+  document.getElementById('stat-total').innerText = cards.length;
+  document.getElementById('stat-available').innerText = cards.filter(c => c.status === 'AVAILABLE').length;
+  document.getElementById('stat-owned').innerText = cards.filter(c => c.status === 'SOLD' || c.owner).length;
+  document.getElementById('stat-auction').innerText = activeAuction ? 1 : 0;
+}
+
+/* ---------------------------- MARKETPLACE VIEW ---------------------------- */
+function renderMarketplace() {
   const grid = document.getElementById('marketplace-grid');
-  if (!grid) return;
-  grid.innerHTML = skeletonCards(8);
+  const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('filter-status')?.value || '';
+  const tierFilter = document.getElementById('filter-tier')?.value || '';
+  const sortOrder = document.getElementById('sort-order')?.value || 'serial';
 
-  const { data, error } = await sb.from('cards').select('*');
-  if (error) {
-    grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--oxblood-bright)">Could not reach the registry. ' + escapeHtml(error.message) + '</p>';
-    console.error(error);
+  let list = cards.filter(c => {
+    const matchesSearch = c.serial.toLowerCase().includes(search) || c.name.toLowerCase().includes(search);
+    const matchesTier = tierFilter ? c.type === tierFilter : true;
+    const matchesStatus = statusFilter ? c.status === statusFilter : true;
+    return matchesSearch && matchesTier && matchesStatus;
+  });
+
+  if (sortOrder === 'price-asc') list = list.slice().sort((a, b) => a.price - b.price);
+  else if (sortOrder === 'price-desc') list = list.slice().sort((a, b) => b.price - a.price);
+  else list = list.slice().sort((a, b) => a.serial.localeCompare(b.serial));
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="col-span-full text-center py-16 text-sm" style="color:var(--text-muted)">No entries match your search.</div>`;
     return;
   }
 
-  allCards = data;
-  populateTierFilter(data);
-
-  const search = (document.getElementById('search-input').value || '').toLowerCase();
-  const statusFilter = document.getElementById('filter-status').value;
-  const tierFilter = document.getElementById('filter-tier').value;
-  const sortOrder = document.getElementById('sort-order').value;
-
-  let filtered = data.filter(function (c) {
-    const matchesSearch = !search || (c.name && c.name.toLowerCase().includes(search)) || (c.serial && c.serial.toLowerCase().includes(search));
-    const matchesStatus = !statusFilter || c.status === statusFilter;
-    const matchesTier = !tierFilter || c.tier === tierFilter;
-    return matchesSearch && matchesStatus && matchesTier;
-  });
-
-  filtered.sort(function (a, b) {
-    if (sortOrder === 'price-asc') return (a.price || 0) - (b.price || 0);
-    if (sortOrder === 'price-desc') return (b.price || 0) - (a.price || 0);
-    return (a.serial || '').localeCompare(b.serial || '');
-  });
-
-  grid.innerHTML = filtered.length
-    ? filtered.map(cardEntryHTML).join('')
-    : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards match your search.</p>';
+  grid.innerHTML = list.map(cardEntryHtml).join('');
 }
 
-async function openCardModal(id) {
-  let card = allCards.find(function (c) { return c.id === id; });
-  if (!card) {
-    const res = await sb.from('cards').select('*').eq('id', id).maybeSingle();
-    card = res.data;
-  }
+function cardEntryHtml(card) {
+  const isOwned = card.status === 'SOLD' || !!card.owner;
+  const statusColor = isOwned ? 'var(--oxblood-bright)' : 'var(--emerald-bright)';
+  return `
+    <div class="card-entry rounded-sm p-3 cursor-pointer" onclick="openCardModal('${card.id}')">
+      <div class="aspect-[4/5] rounded-sm overflow-hidden mb-2.5 bg-black/20 flex items-center justify-center">
+        <img src="${card.imgUrl}" class="w-full h-full object-contain">
+      </div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="card-serial text-xs text-brass-bright" style="color:var(--brass-bright)">${card.serial}</span>
+        <span class="status-stamp" style="color:${statusColor}">${isOwned ? 'Owned' : 'Open'}</span>
+      </div>
+      <p class="text-sm text-parchment font-medium truncate">${card.name}</p>
+      <p class="font-mono text-xs mt-1" style="color:var(--text-muted)">IDR ${card.price.toLocaleString()}</p>
+    </div>`;
+}
+
+/* ---------------------------- CARD DETAIL MODAL ---------------------------- */
+let activeModalCard = null;
+
+function openCardModal(cardId) {
+  const card = cards.find(c => c.id === cardId);
   if (!card) return;
-  const root = document.getElementById('modal-root');
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="modal-panel rounded-sm w-full max-w-lg overflow-hidden relative">' +
-        '<button onclick="closeModal()" class="absolute top-3 right-3 z-10" style="color:var(--text-muted)">✕</button>' +
-        '<div class="aspect-[16/9] flex items-center justify-center overflow-hidden" style="background:var(--ink-3)">' +
-          (card.img_url ? '<img src="' + card.img_url + '" class="w-full h-full object-cover">' : '') +
-        '</div>' +
-        '<div class="p-6">' +
-          '<p class="font-mono text-[0.65rem] tracking-[0.14em] uppercase" style="color:var(--brass)">' + escapeHtml(card.tier || card.edition || '') + '</p>' +
-          '<h3 class="font-display text-2xl text-parchment mt-1">' + escapeHtml(card.name) + '</h3>' +
-          '<p class="card-serial text-xs mt-1" style="color:var(--text-muted)">' + escapeHtml(card.serial || '') + '</p>' +
-          '<p class="text-sm mt-3" style="color:var(--text-muted)">' + escapeHtml(card.description || '') + '</p>' +
-          '<div class="flex items-center justify-between mt-5">' +
-            '<span class="font-mono text-xl" style="color:var(--brass-bright)">' + (card.price ? formatRp(card.price) : '—') + '</span>' +
-            '<span class="status-stamp" style="color:' + statusColor(card.status) + '">' + card.status + '</span>' +
-          '</div>' +
-          '<div class="flex gap-2 mt-5">' +
-            '<button onclick="toggleWishlist(\'' + card.id + '\')" class="btn-ghost rounded-md px-4 py-2 text-sm flex-1">♥ Wishlist</button>' +
-            '<button ' + (card.status !== 'AVAILABLE' ? 'disabled' : '') + ' onclick="addToCart(\'' + card.id + '\')" class="btn-brass rounded-md px-4 py-2 text-sm flex-1">Add to Cart</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  activeModalCard = card;
+  const isOwned = card.status === 'SOLD' || !!card.owner;
+  const inWishlist = wishlistIds.has(card.id);
+
+  openModal(`
+    <div class="aspect-[4/5] rounded-sm overflow-hidden mb-4 bg-black/20 flex items-center justify-center">
+      <img src="${card.imgUrl}" class="w-full h-full object-contain">
+    </div>
+    <div class="flex items-center justify-between mb-1">
+      <span class="card-serial text-sm" style="color:var(--brass-bright)">${card.serial}</span>
+      <span class="status-stamp" style="color:${isOwned ? 'var(--oxblood-bright)' : 'var(--emerald-bright)'}">${card.status}${card.owner ? ' · ' + card.owner : ''}</span>
+    </div>
+    <h3 class="font-display text-xl text-parchment mb-1">${card.name}</h3>
+    <p class="text-xs mb-4" style="color:var(--text-muted)">${card.edition} · Tier ${card.type} · Printing ${card.printing}</p>
+    <p class="font-mono text-lg text-parchment mb-5">IDR ${card.price.toLocaleString()}</p>
+    <div class="space-y-2">
+      <button ${isOwned ? 'disabled' : ''} onclick="buyCardFromModal()" class="btn-brass w-full rounded-md py-2.5 text-sm">${isOwned ? 'Already Owned' : 'Buy / Pay via QRIS'}</button>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="toggleWishlist('${card.id}')" class="btn-ghost rounded-md py-2 text-xs">${inWishlist ? '♥ Wishlisted' : '♡ Wishlist'}</button>
+        <button ${isOwned && card.owner === myIdentity() ? 'disabled' : ''} onclick="openTradeModal('${card.id}')" class="btn-ghost rounded-md py-2 text-xs">Propose Trade</button>
+      </div>
+      ${currentUser?.isAdmin ? `<button onclick="openCardEditor('${card.id}')" class="btn-ghost w-full rounded-md py-2 text-xs mt-2">Edit Card (Registrar)</button>` : ''}
+    </div>`);
 }
 
-/* ---------- Wishlist ---------- */
-async function toggleWishlist(cardId) {
-  if (!currentUser) { openAuthModal('signin'); return; }
-  const { data: existing } = await sb.from('wishlists').select('*').eq('user_id', currentUser.id).eq('card_id', cardId).maybeSingle();
-  if (existing) {
-    await sb.from('wishlists').delete().eq('user_id', currentUser.id).eq('card_id', cardId);
-    showToast('Removed from wishlist');
-  } else {
-    await sb.from('wishlists').insert({ user_id: currentUser.id, card_id: cardId });
-    showToast('Added to wishlist');
-  }
-  if (getActiveView() === 'wishlist') renderWishlist();
-}
-
-async function renderWishlist() {
-  const grid = document.getElementById('wishlist-grid');
-  if (!grid) return;
-  if (!currentUser) {
-    grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--text-muted)">Sign in to build a wishlist.</p>';
-    return;
-  }
-  grid.innerHTML = skeletonCards(4);
-  const { data, error } = await sb.from('wishlists').select('card_id, cards(*)').eq('user_id', currentUser.id);
-  if (error) { grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--oxblood-bright)">Could not load wishlist.</p>'; return; }
-  const cards = data.map(function (w) { return w.cards; }).filter(Boolean);
-  grid.innerHTML = cards.length ? cards.map(cardEntryHTML).join('') : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards on your wishlist yet.</p>';
-}
-
-/* ---------- Cart / checkout ---------- */
-function addToCart(cardId) {
-  if (!currentUser) { openAuthModal('signin'); return; }
-  if (cartItems.indexOf(cardId) === -1) cartItems.push(cardId);
-  updateCartCount();
-  showToast('Added to cart');
+function buyCardFromModal() {
+  if (!requireLogin()) return;
+  if (!activeModalCard) return;
   closeModal();
+  openCheckoutModal([activeModalCard.id]);
 }
 
-function updateCartCount() {
-  const el = document.getElementById('cart-count');
-  if (!el) return;
-  if (cartItems.length) {
-    el.textContent = cartItems.length;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-  } else {
-    el.classList.add('hidden');
-    el.classList.remove('flex');
-  }
+/* ---------------------------- WISHLIST ---------------------------- */
+async function loadWishlist() {
+  if (!currentUser) { wishlistIds = new Set(); return; }
+  const { data, error } = await supabaseClient.from('wishlists').select('card_id').eq('user_id', currentUser.id);
+  if (error) { console.error(error); return; }
+  wishlistIds = new Set((data || []).map(r => r.card_id));
 }
 
-function removeFromCart(id) {
-  cartItems = cartItems.filter(function (x) { return x !== id; });
-  updateCartCount();
-  openCartModal();
+async function toggleWishlist(cardId) {
+  if (!requireLogin()) return;
+  try {
+    if (wishlistIds.has(cardId)) {
+      await supabaseClient.from('wishlists').delete().eq('user_id', currentUser.id).eq('card_id', cardId);
+      wishlistIds.delete(cardId);
+      showToast('Removed from wishlist.');
+    } else {
+      await supabaseClient.from('wishlists').insert({ user_id: currentUser.id, card_id: cardId });
+      wishlistIds.add(cardId);
+      showToast('Added to wishlist.', 'success');
+    }
+    if (document.getElementById('modal-root').innerHTML) openCardModal(cardId);
+    if (getCurrentView() === 'wishlist') renderWishlistGrid();
+  } catch (err) { showToast('Wishlist error: ' + err.message, 'error'); }
+}
+
+function renderWishlistGrid() {
+  const grid = document.getElementById('wishlist-grid');
+  if (!currentUser) { grid.innerHTML = `<div class="col-span-full text-center py-16 text-sm" style="color:var(--text-muted)">Sign in to build your wishlist.</div>`; return; }
+  const items = cards.filter(c => wishlistIds.has(c.id));
+  grid.innerHTML = items.length ? items.map(cardEntryHtml).join('') :
+    `<div class="col-span-full text-center py-16 text-sm" style="color:var(--text-muted)">Nothing watched yet — tap the heart on any card.</div>`;
+}
+
+/* ---------------------------- CART + CHECKOUT (real orders) ---------------------------- */
+function updateCartBadge() {
+  const badge = document.getElementById('cart-count');
+  badge.classList.toggle('hidden', cart.size === 0);
+  badge.classList.toggle('flex', cart.size > 0);
+  badge.innerText = cart.size;
 }
 
 function openCartModal() {
-  const root = document.getElementById('modal-root');
-  const cards = allCards.filter(function (c) { return cartItems.indexOf(c.id) !== -1; });
-  const subtotal = cards.reduce(function (sum, c) { return sum + Number(c.price || 0); }, 0);
-  const tax = round2(subtotal * TAX_RATE);
-  const total = round2(subtotal + tax);
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="modal-panel rounded-sm w-full max-w-md p-6 relative">' +
-        '<button onclick="closeModal()" class="absolute top-3 right-3" style="color:var(--text-muted)">✕</button>' +
-        '<h3 class="font-display text-xl text-parchment mb-4">Your Cart</h3>' +
-        (cards.length
-          ? '<div class="space-y-2 max-h-64 overflow-y-auto">' +
-              cards.map(function (c) {
-                return (
-                  '<div class="flex items-center justify-between text-sm">' +
-                    '<span>' + escapeHtml(c.name) + '</span>' +
-                    '<div class="flex items-center gap-2">' +
-                      '<span class="font-mono" style="color:var(--brass-bright)">' + formatRp(c.price || 0) + '</span>' +
-                      '<button onclick="removeFromCart(\'' + c.id + '\')" style="color:var(--text-muted)">✕</button>' +
-                    '</div>' +
-                  '</div>'
-                );
-              }).join('') +
-            '</div>' +
-            '<div class="rule my-4"></div>' +
-            '<div class="space-y-1 font-mono text-sm mb-4">' +
-              '<div class="flex items-center justify-between" style="color:var(--text-muted)"><span>Subtotal</span><span>' + formatRp(subtotal) + '</span></div>' +
-              '<div class="flex items-center justify-between" style="color:var(--text-muted)"><span>Tax (' + (TAX_RATE * 100) + '%)</span><span>' + formatRp(tax) + '</span></div>' +
-              '<div class="flex items-center justify-between text-base pt-1"><span>Total</span><span style="color:var(--brass-bright)">' + formatRp(total) + '</span></div>' +
-            '</div>' +
-            '<button onclick="openQrisModal()" class="btn-brass rounded-md px-4 py-2 text-sm w-full">Pay with QRIS</button>'
-          : '<p class="text-sm" style="color:var(--text-muted)">Your cart is empty.</p>') +
-      '</div>' +
-    '</div>';
+  const items = cards.filter(c => cart.has(c.id));
+  const total = items.reduce((s, c) => s + c.price, 0);
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-4">Cart</h3>
+    ${items.length ? `
+      <div class="space-y-2 mb-4">
+        ${items.map(c => `
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <img src="${c.imgUrl}" class="w-9 h-9 rounded object-contain bg-black/20">
+              <div><p class="text-parchment font-medium">${c.name}</p><p style="color:var(--text-muted)">${c.serial}</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono" style="color:var(--brass-bright)">IDR ${c.price.toLocaleString()}</span>
+              <button onclick="cart.delete('${c.id}'); updateCartBadge(); openCartModal();" style="color:var(--text-muted)">✕</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="rule mb-3"></div>
+      <div class="flex justify-between text-sm mb-4"><span style="color:var(--text-muted)">Total</span><span class="font-mono text-parchment">IDR ${total.toLocaleString()}</span></div>
+      <button onclick="closeModal(); openCheckoutModal([${items.map(c => `'${c.id}'`).join(',')}]);" class="btn-brass w-full rounded-md py-2.5 text-sm">Checkout via QRIS</button>
+    ` : `<p class="text-sm text-center py-6" style="color:var(--text-muted)">Cart is empty.</p>`}`);
 }
 
-/* ---------- QRIS payment ---------- */
-function fileToDataUrl(file) {
-  return new Promise(function (resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = function () { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+function addToCart(cardId) {
+  if (!requireLogin()) return;
+  cart.add(cardId); updateCartBadge(); showToast('Added to cart.', 'success');
 }
 
-function openQrisModal() {
-  if (!currentUser) { openAuthModal('signin'); return; }
-  const cards = allCards.filter(function (c) { return cartItems.indexOf(c.id) !== -1; });
-  if (!cards.length) return;
-  const subtotal = cards.reduce(function (s, c) { return s + Number(c.price || 0); }, 0);
-  const tax = round2(subtotal * TAX_RATE);
-  const total = round2(subtotal + tax);
-  const orderId = 'ECR-' + Date.now().toString(36).toUpperCase();
-  const qrPayload = encodeURIComponent('EUGENE CARD REGISTRY|ORDER:' + orderId + '|TOTAL:' + total);
-  const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + qrPayload;
+function openCheckoutModal(cardIds) {
+  if (!requireLogin()) return;
+  pendingCheckoutIds = cardIds;
+  const items = cards.filter(c => cardIds.includes(c.id));
+  const total = items.reduce((s, c) => s + c.price, 0);
 
-  const root = document.getElementById('modal-root');
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="modal-panel rounded-sm w-full max-w-sm p-6 relative">' +
-        '<button onclick="closeModal()" class="absolute top-3 right-3" style="color:var(--text-muted)">✕</button>' +
-        '<h3 class="font-display text-xl text-parchment mb-1">Scan to Pay</h3>' +
-        '<p class="text-xs font-mono mb-4" style="color:var(--text-muted)">Order ' + orderId + '</p>' +
-        '<div class="flex justify-center bg-white rounded-sm p-3 mb-4">' +
-          '<img src="' + qrImg + '" alt="QRIS code" width="200" height="200">' +
-        '</div>' +
-        '<div class="space-y-1 font-mono text-sm mb-4">' +
-          '<div class="flex items-center justify-between" style="color:var(--text-muted)"><span>Subtotal</span><span>' + formatRp(subtotal) + '</span></div>' +
-          '<div class="flex items-center justify-between" style="color:var(--text-muted)"><span>Tax (' + (TAX_RATE * 100) + '%)</span><span>' + formatRp(tax) + '</span></div>' +
-          '<div class="flex items-center justify-between text-base pt-1"><span>Total</span><span style="color:var(--brass-bright)">' + formatRp(total) + '</span></div>' +
-        '</div>' +
-        '<label class="block text-xs font-mono uppercase tracking-wide mb-2" style="color:var(--text-muted)">Upload payment proof</label>' +
-        '<input type="file" accept="image/*" id="qris-proof-file" class="input-field rounded-md px-3 py-2 text-sm w-full mb-4">' +
-        '<button onclick="submitQrisPayment(\'' + orderId + '\', ' + subtotal + ', ' + tax + ', ' + total + ')" class="btn-brass rounded-md px-4 py-2 text-sm w-full">Submit Payment</button>' +
-      '</div>' +
-    '</div>';
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-2">Pay via QRIS</h3>
+    <p class="text-xs mb-4" style="color:var(--text-muted)">${items.map(i => i.serial).join(', ')} — total due below.</p>
+    <div class="parchment-panel rounded-sm p-4 text-center mb-4">
+      <img src="qris.png" alt="QRIS payment code" class="w-48 h-48 mx-auto mb-3 rounded-sm border" style="border-color:var(--line)">
+      <p class="font-mono text-xs mb-1">Eugene Card, Toko Kartu — Toraja Utara</p>
+      <p class="font-mono text-lg font-semibold">IDR ${total.toLocaleString()}</p>
+    </div>
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Upload payment receipt</label>
+    <input type="file" id="checkout-proof-file" accept="image/*" class="input-field rounded-md w-full text-xs p-2 mb-4">
+    <button onclick="submitCheckout()" class="btn-brass w-full rounded-md py-2.5 text-sm">Confirm &amp; Submit for Review</button>
+    <p class="text-[10px] mt-3 text-center" style="color:var(--text-muted)">Your order is held pending manual verification by the Registrar.</p>`);
 }
 
-async function submitQrisPayment(orderId, subtotal, tax, total) {
-  const fileInput = document.getElementById('qris-proof-file');
-  const file = fileInput && fileInput.files[0];
-  if (!file) { showToast('Please attach your payment proof', 'error'); return; }
-
-  let proofDataUrl;
+async function submitCheckout() {
+  const fileInput = document.getElementById('checkout-proof-file');
+  if (!fileInput.files.length) return showToast('Please attach a receipt image.', 'error');
   try {
-    proofDataUrl = await fileToDataUrl(file);
-  } catch (err) {
-    showToast('Could not read the uploaded image', 'error');
-    return;
-  }
+    showToast('Uploading receipt...');
+    const file = fileInput.files[0];
+    const path = `${currentUser.id}/${Date.now()}-${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('receipts').upload(path, file);
+    if (upErr) throw upErr;
+    const { data: pub } = supabaseClient.storage.from('receipts').getPublicUrl(path);
 
-  const cards = allCards.filter(function (c) { return cartItems.indexOf(c.id) !== -1; });
-  const { error } = await sb.from('transactions').insert({
-    id: orderId,
-    user_id: currentUser.id,
-    user_name: (currentProfile && currentProfile.username) || currentUser.email,
-    amount: total,
-    subtotal: subtotal,
-    tax_amount: tax,
-    total_amount: total,
-    payment_method: 'QRIS',
-    payment_status: 'pending',
-    qris_proof_url: proofDataUrl,
-    type: 'purchase',
-    status: 'PENDING',
-    items: cards.map(function (c) { return { card_id: c.id, name: c.name, price: c.price }; }),
-  });
-  if (error) { showToast('Could not submit payment', 'error'); console.error(error); return; }
+    const { data, error } = await supabaseClient.rpc('create_order', { p_card_ids: pendingCheckoutIds, p_proof_url: pub.publicUrl });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
 
-  await sb.from('cards').update({ status: 'PENDING' }).in('id', cartItems);
-  cartItems = [];
-  updateCartCount();
-  closeModal();
-  showToast('Payment proof submitted — awaiting registrar review');
-  renderMarketplace();
+    pendingCheckoutIds.forEach(id => cart.delete(id));
+    updateCartBadge();
+    pendingCheckoutIds = [];
+    closeModal();
+    showToast(`Order ${row?.order_id || ''} submitted for review.`, 'success');
+    await loadCards();
+    renderMarketplace();
+  } catch (err) { showToast('Checkout error: ' + err.message, 'error'); }
 }
 
-/* ---------- Vault ---------- */
-async function renderVault() {
-  const el = document.getElementById('vault-content');
-  if (!el) return;
-  if (!currentUser) {
-    el.innerHTML =
-      '<div class="text-center py-16">' +
-        '<p class="text-sm mb-4" style="color:var(--text-muted)">Sign in to see your vault.</p>' +
-        '<button onclick="openAuthModal(\'signin\')" class="btn-brass rounded-md px-4 py-2 text-sm">Sign In</button>' +
-      '</div>';
-    return;
-  }
-  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
+/* ---------------------------- TRADES ---------------------------- */
+function openTradeModal(cardId) {
+  if (!requireLogin()) return;
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+  const ident = myIdentity();
+  const myCards = cards.filter(c => (c.owner || '').toLowerCase() === ident);
 
-  const [profileRes, statsRes, ownedRes] = await Promise.all([
-    sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
-    sb.from('vault_stats').select('*').eq('user_id', currentUser.id).maybeSingle(),
-    sb.from('cards').select('*').eq('owner_id', currentUser.id),
-  ]);
-  const profile = profileRes.data;
-  const stats = statsRes.data;
-  const owned = ownedRes.data || [];
-
-  el.innerHTML =
-    '<div class="flex items-center gap-4 mb-8">' +
-      '<span class="avatar-ring w-16 h-16 flex items-center justify-center rounded-full shrink-0">' +
-        '<span class="bg-ink-2 w-full h-full rounded-full flex items-center justify-center text-xl font-display" style="background:var(--ink-2)">' +
-          (((profile && profile.username) || currentUser.email || '?')[0].toUpperCase()) +
-        '</span>' +
-      '</span>' +
-      '<div>' +
-        '<h2 class="font-display text-2xl text-parchment">' + escapeHtml((profile && (profile.name || profile.username)) || currentUser.email) + '</h2>' +
-        '<p class="text-xs font-mono" style="color:var(--text-muted)">Level ' + ((profile && profile.collector_level) || 1) + ' · ' + ((profile && profile.reputation_score) || 0) + ' Reputation</p>' +
-      '</div>' +
-    '</div>' +
-    '<div class="ledger-strip rounded-sm overflow-hidden mb-8">' +
-      '<div class="ledger-cell" style="--cell-accent:var(--brass)"><span class="ledger-num text-parchment">' + owned.length + '</span><span class="ledger-label">Cards Owned</span></div>' +
-      '<div class="ledger-cell" style="--cell-accent:var(--emerald-bright)"><span class="ledger-num" style="color:var(--emerald-bright)">' + ((stats && stats.trades_completed) || 0) + '</span><span class="ledger-label">Trades Done</span></div>' +
-      '<div class="ledger-cell" style="--cell-accent:#7C8CA6"><span class="ledger-num" style="color:#B9C2D0">' + ((stats && stats.auctions_won) || 0) + '</span><span class="ledger-label">Auctions Won</span></div>' +
-      '<div class="ledger-cell" style="--cell-accent:var(--oxblood-bright)"><span class="ledger-num" style="color:#D98E86">' + formatRp((stats && stats.portfolio_value) || 0) + '</span><span class="ledger-label">Portfolio Value</span></div>' +
-    '</div>' +
-    '<h3 class="font-display text-lg text-parchment mb-3">Your Cards</h3>' +
-    '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">' +
-      (owned.length ? owned.map(cardEntryHTML).join('') : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards in your vault yet.</p>') +
-    '</div>';
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-1">Propose a Trade</h3>
+    <p class="text-xs mb-4" style="color:var(--text-muted)">For <strong class="text-parchment">${card.name}</strong> (${card.serial}) — currently held by ${card.owner || 'the registry'}.</p>
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Offer one of your cards (optional)</label>
+    <select id="trade-offer-select" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3">
+      <option value="">— Cash offer only —</option>
+      ${myCards.map(c => `<option value="${c.id}">${c.name} (${c.serial})</option>`).join('')}
+    </select>
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Add cash (IDR, optional)</label>
+    <input type="number" id="trade-cash-input" min="0" value="0" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3">
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Note to the owner</label>
+    <textarea id="trade-note-input" rows="2" class="input-field rounded-md w-full text-sm px-3 py-2 mb-4"></textarea>
+    <button onclick="submitTradeProposal('${card.id}')" class="btn-brass w-full rounded-md py-2.5 text-sm">Send Proposal</button>`);
 }
 
-/* ---------- Auctions ---------- */
-async function renderAuctions() {
-  const content = document.getElementById('auction-content');
-  const history = document.getElementById('auction-history');
-  if (!content) return;
-  content.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
-
-  const { data: active } = await sb.from('auctions').select('*').eq('status', 'ACTIVE').order('start_time', { ascending: false }).limit(1).maybeSingle();
-
-  if (active) {
-    content.innerHTML =
-      '<div class="card-entry rounded-sm p-6 grid sm:grid-cols-2 gap-6">' +
-        '<div class="aspect-[3/4] overflow-hidden rounded-sm" style="background:var(--ink-3)">' +
-          (active.card_img ? '<img src="' + active.card_img + '" class="w-full h-full object-cover">' : '') +
-        '</div>' +
-        '<div>' +
-          '<p class="font-mono text-[0.65rem] tracking-[0.14em] uppercase mb-2" style="color:var(--brass)">Live Lot</p>' +
-          '<h3 class="font-display text-2xl text-parchment">' + escapeHtml(active.card_name || '') + '</h3>' +
-          '<p class="card-serial text-xs mt-1" style="color:var(--text-muted)">' + escapeHtml(active.serial || '') + '</p>' +
-          '<div class="rule my-4"></div>' +
-          '<p class="text-xs font-mono" style="color:var(--text-muted)">Current Bid</p>' +
-          '<p class="font-mono text-3xl" style="color:var(--brass-bright)">' + formatRp(active.current_bid || active.starting_price || 0) + '</p>' +
-          '<p class="text-xs mt-1" style="color:var(--text-muted)">High bidder: ' + escapeHtml(active.high_bidder || '—') + '</p>' +
-          '<div class="flex gap-2 mt-5">' +
-            '<input type="number" id="bid-input" placeholder="Your bid" class="input-field rounded-md px-3 py-2 text-sm flex-1" min="' + (Number(active.current_bid || active.starting_price || 0) + 1) + '">' +
-            '<button onclick="placeBid(\'' + active.id + '\')" class="btn-brass rounded-md px-4 py-2 text-sm">Bid</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-  } else {
-    content.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">No lot is currently live.</p>';
-  }
-
-  const { data: past } = await sb.from('auctions').select('*').neq('status', 'ACTIVE').order('start_time', { ascending: false }).limit(10);
-  if (history) {
-    history.innerHTML = (past && past.length)
-      ? past.map(function (a) {
-          return (
-            '<div class="flex items-center justify-between card-entry rounded-sm px-4 py-3 text-sm">' +
-              '<span>' + escapeHtml(a.card_name || '') + '</span>' +
-              '<span class="font-mono" style="color:var(--brass-bright)">' + formatRp(a.current_bid || 0) + '</span>' +
-              '<span class="status-stamp" style="color:var(--text-muted)">' + a.status + '</span>' +
-            '</div>'
-          );
-        }).join('')
-      : '<p class="text-sm" style="color:var(--text-muted)">No past lots yet.</p>';
-  }
-}
-
-async function placeBid(auctionId) {
-  if (!currentUser) { openAuthModal('signin'); return; }
-  const input = document.getElementById('bid-input');
-  const amount = Number(input.value);
-  if (!amount) return;
-  const { data: auction } = await sb.from('auctions').select('*').eq('id', auctionId).maybeSingle();
-  if (!auction || amount <= Number(auction.current_bid || auction.starting_price || 0)) {
-    showToast('Bid must be higher than the current bid', 'error');
-    return;
-  }
-  const bidHistory = Array.isArray(auction.bid_history) ? auction.bid_history : [];
-  bidHistory.push({ user_id: currentUser.id, name: (currentProfile && currentProfile.username) || currentUser.email, amount: amount, at: new Date().toISOString() });
-  const { error } = await sb.from('auctions').update({
-    current_bid: amount,
-    highest_bidder: currentUser.id,
-    high_bidder: (currentProfile && currentProfile.username) || currentUser.email,
-    bid_history: bidHistory,
-  }).eq('id', auctionId);
-  if (error) { showToast('Could not place bid', 'error'); return; }
-  showToast('Bid placed');
-  renderAuctions();
-}
-
-/* ---------- Trades / Exchange ---------- */
-async function renderTrades() {
-  const el = document.getElementById('trades-content');
-  if (!el) return;
-  if (!currentUser) { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Sign in to see your trades.</p>'; return; }
-  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
-
-  let query = sb.from('trade_requests').select('*');
-  if (activeTradeTab === 'incoming') query = query.eq('target_owner_id', currentUser.id).eq('status', 'PENDING');
-  else if (activeTradeTab === 'outgoing') query = query.eq('proposer_id', currentUser.id).eq('status', 'PENDING');
-  else query = query.or('proposer_id.eq.' + currentUser.id + ',target_owner_id.eq.' + currentUser.id).neq('status', 'PENDING');
-
-  const { data, error } = await query.order('created_at', { ascending: false });
-  if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load trades.</p>'; console.error(error); return; }
-  if (!data.length) { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Nothing here yet.</p>'; return; }
-
-  el.innerHTML = data.map(function (t) {
-    return (
-      '<div class="card-entry rounded-sm p-4 flex items-center justify-between gap-4">' +
-        '<div>' +
-          '<p class="text-sm text-parchment">' + escapeHtml(t.card_name || '') + '</p>' +
-          '<p class="text-xs" style="color:var(--text-muted)">From ' + escapeHtml(t.proposer_name || '') + (t.plus_amount ? ' + ' + formatRp(t.plus_amount) : '') + '</p>' +
-        '</div>' +
-        '<div class="flex items-center gap-2">' +
-          '<span class="status-stamp" style="color:var(--text-muted)">' + t.status + '</span>' +
-          (activeTradeTab === 'incoming'
-            ? '<button onclick="respondTrade(\'' + t.id + '\',\'ACCEPTED\')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Accept</button>' +
-              '<button onclick="respondTrade(\'' + t.id + '\',\'REJECTED\')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Decline</button>'
-            : '') +
-        '</div>' +
-      '</div>'
-    );
-  }).join('');
-}
-
-async function respondTrade(id, status) {
-  const { error } = await sb.from('trade_requests').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) { showToast('Could not update trade', 'error'); return; }
-  showToast(status === 'ACCEPTED' ? 'Trade accepted' : 'Trade declined');
-  renderTrades();
-}
-
-/* ---------- Messages / Chat ---------- */
-let allChats = [];
-
-async function renderMessages() {
-  const list = document.getElementById('chat-threads-list');
-  const searchInput = document.getElementById('chat-search-input');
-  if (!list) return;
-  if (!currentUser) { list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Sign in to view messages.</p>'; return; }
-  list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Loading…</p>';
-  const { data, error } = await sb.from('chats').select('*').or('participant_a.eq.' + currentUser.id + ',participant_b.eq.' + currentUser.id).order('updated_at', { ascending: false });
-  if (error) { list.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Could not load threads.</p>'; return; }
-  allChats = data;
-  if (searchInput) searchInput.value = '';
-  renderChatThreadList(allChats);
-}
-
-function filterChatThreads() {
-  const q = (document.getElementById('chat-search-input').value || '').toLowerCase().trim();
-  if (!q) { renderChatThreadList(allChats); return; }
-  const filtered = allChats.filter(function (c) {
-    const otherName = (c.participant_a === currentUser.id ? c.participant_b_display : c.participant_a_display) || '';
-    return otherName.toLowerCase().includes(q) || (c.last_message || '').toLowerCase().includes(q);
-  });
-  renderChatThreadList(filtered, q);
-}
-
-function renderChatThreadList(chats, query) {
-  const list = document.getElementById('chat-threads-list');
-  if (!list) return;
-  if (!chats.length) {
-    list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">' + (query ? 'No conversations match “' + escapeHtml(query) + '”.' : 'No conversations yet.') + '</p>';
-    return;
-  }
-  list.innerHTML = chats.map(function (c) {
-    const otherName = c.participant_a === currentUser.id ? (c.participant_b_display || 'Collector') : (c.participant_a_display || 'Collector');
-    const active = c.id === currentChatId;
-    return (
-      '<button onclick="openChat(\'' + c.id + '\')" class="w-full text-left px-2 py-2 rounded-md hover:bg-white/5' + (active ? ' bg-white/5' : '') + '">' +
-        '<p class="text-sm text-parchment truncate">' + escapeHtml(otherName) + '</p>' +
-        '<p class="text-xs truncate" style="color:var(--text-muted)">' + escapeHtml(c.last_message || '') + '</p>' +
-      '</button>'
-    );
-  }).join('');
-}
-
-/* ---------- Search accounts to start a new conversation ---------- */
-function openNewChatModal() {
-  if (!currentUser) { openAuthModal('signin'); return; }
-  const root = document.getElementById('modal-root');
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="modal-panel rounded-sm w-full max-w-sm p-6 relative">' +
-        '<button onclick="closeModal()" class="absolute top-4 right-4" style="color:var(--text-muted)">✕</button>' +
-        '<h3 class="font-display text-xl text-parchment mb-4">New Message</h3>' +
-        '<input type="text" id="account-search-input" placeholder="Search by username or name…" class="input-field rounded-md px-3 py-2 text-sm w-full mb-3" oninput="searchAccounts()" autofocus>' +
-        '<div id="account-search-results" class="space-y-1 max-h-64 overflow-y-auto"></div>' +
-      '</div>' +
-    '</div>';
-  document.getElementById('account-search-input').focus();
-}
-
-let accountSearchTimer = null;
-function searchAccounts() {
-  clearTimeout(accountSearchTimer);
-  accountSearchTimer = setTimeout(runAccountSearch, 200);
-}
-
-async function runAccountSearch() {
-  const input = document.getElementById('account-search-input');
-  const results = document.getElementById('account-search-results');
-  if (!input || !results) return;
-  const q = input.value.trim();
-  if (!q) { results.innerHTML = ''; return; }
-  results.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Searching…</p>';
-  const { data, error } = await sb.from('profiles').select('id,username,name,avatar_url').or('username.ilike.%' + q + '%,name.ilike.%' + q + '%').neq('id', currentUser.id).limit(10);
-  if (error) { results.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Could not search accounts.</p>'; return; }
-  if (!data.length) { results.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">No collectors found.</p>'; return; }
-  results.innerHTML = data.map(function (p, i) {
-    const label = p.username || p.name || 'Collector';
-    return (
-      '<button onclick="startChatWithIndex(' + i + ')" class="w-full text-left px-2 py-2 rounded-md hover:bg-white/5 flex items-center gap-2">' +
-        '<span class="avatar-ring w-7 h-7 flex items-center justify-center rounded-full shrink-0">' +
-          '<span class="bg-ink-2 w-full h-full rounded-full flex items-center justify-center text-[10px] font-mono" style="background:var(--ink-2)">' + escapeHtml(label[0].toUpperCase()) + '</span>' +
-        '</span>' +
-        '<span class="text-sm text-parchment">' + escapeHtml(label) + '</span>' +
-      '</button>'
-    );
-  }).join('');
-  window.__accountSearchResults = data;
-}
-
-function startChatWithIndex(i) {
-  const p = (window.__accountSearchResults || [])[i];
-  if (!p) return;
-  startChatWith(p.id, p.username || p.name || 'Collector');
-}
-
-async function startChatWith(otherId, otherName) {
-  if (!currentUser) return;
-  const { data: existing } = await sb
-    .from('chats')
-    .select('*')
-    .or('and(participant_a.eq.' + currentUser.id + ',participant_b.eq.' + otherId + '),and(participant_a.eq.' + otherId + ',participant_b.eq.' + currentUser.id + ')')
-    .maybeSingle();
-
-  let chatId;
-  if (existing) {
-    chatId = existing.id;
-  } else {
-    chatId = crypto.randomUUID();
-    const myName = (currentProfile && currentProfile.username) || currentUser.email;
-    const { error } = await sb.from('chats').insert({
-      id: chatId,
-      participant_a: currentUser.id,
-      participant_b: otherId,
-      participant_a_display: myName,
-      participant_b_display: otherName,
+async function submitTradeProposal(targetCardId) {
+  const offeredId = document.getElementById('trade-offer-select').value || null;
+  const cashAddon = parseInt(document.getElementById('trade-cash-input').value || '0', 10);
+  const notes = document.getElementById('trade-note-input').value;
+  try {
+    const { error } = await supabaseClient.rpc('create_trade_request', {
+      p_card_id: targetCardId, p_offer_type: offeredId ? 'TRADE' : 'CASH',
+      p_offered_card_id: offeredId, p_plus_amount: cashAddon || 0, p_notes: notes
     });
-    if (error) { showToast('Could not start conversation', 'error'); return; }
-  }
-  closeModal();
-  await renderMessages();
-  openChat(chatId);
+    if (error) throw error;
+    closeModal();
+    showToast('Trade proposal sent.', 'success');
+    setView('trades');
+  } catch (err) { showToast('Trade error: ' + err.message, 'error'); }
 }
 
-async function openChat(chatId) {
-  currentChatId = chatId;
-  filterChatThreads();
-  const header = document.getElementById('chat-active-header');
-  const body = document.getElementById('chat-messages-body');
-  header.innerHTML = '<span class="text-sm text-parchment">Conversation</span>';
-  body.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Loading…</p>';
-  const { data, error } = await sb.from('chat_messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
-  if (error) { body.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Could not load messages.</p>'; return; }
-  body.innerHTML = data.map(function (m) {
-    const mine = m.sender_id === (currentUser && currentUser.id);
-    return (
-      '<div class="flex ' + (mine ? 'justify-end' : 'justify-start') + '">' +
-        '<div class="max-w-[75%] rounded-md px-3 py-2 text-sm ' + (mine ? 'btn-brass' : 'modal-panel') + '">' + escapeHtml(m.text || '') + '</div>' +
-      '</div>'
-    );
+function setTradeTab(tab) {
+  tradeTab = tab;
+  document.querySelectorAll('.tab-btn[data-tradetab]').forEach(b => b.classList.toggle('active', b.dataset.tradetab === tab));
+  renderTradesView();
+}
+
+async function renderTradesView() {
+  const container = document.getElementById('trades-content');
+  if (!currentUser) { container.innerHTML = `<div class="text-center py-16 text-sm" style="color:var(--text-muted)">Sign in to view your trade activity.</div>`; return; }
+
+  const { data, error } = await supabaseClient.from('trade_requests').select('*')
+    .or(`proposer_id.eq.${currentUser.id},target_owner_id.eq.${currentUser.id}`)
+    .order('created_at', { ascending: false });
+  if (error) { container.innerHTML = `<p class="text-xs" style="color:var(--oxblood-bright)">${error.message}</p>`; return; }
+
+  myTradeRequests = data || [];
+  const ident = currentUser.id;
+  let list;
+  if (tradeTab === 'incoming') list = myTradeRequests.filter(r => r.target_owner_id === ident && r.status === 'PENDING');
+  else if (tradeTab === 'outgoing') list = myTradeRequests.filter(r => r.proposer_id === ident && ['PENDING', 'COUNTERED'].includes(r.status));
+  else list = myTradeRequests.filter(r => ['ACCEPTED', 'REJECTED', 'WITHDRAWN'].includes(r.status));
+
+  if (!list.length) { container.innerHTML = `<div class="text-center py-16 text-sm" style="color:var(--text-muted)">Nothing here yet.</div>`; return; }
+
+  container.innerHTML = list.map(r => {
+    const incoming = r.target_owner_id === ident;
+    let actions = '';
+    if (r.status === 'PENDING' && incoming) {
+      actions = `<button onclick="tradeAction('${r.id}','accept')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Accept</button>
+        <button onclick="tradeAction('${r.id}','reject')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Reject</button>`;
+    } else if (r.status === 'PENDING' && !incoming) {
+      actions = `<button onclick="tradeAction('${r.id}','withdraw')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Withdraw</button>`;
+    } else if (r.status === 'COUNTERED' && !incoming) {
+      actions = `<button onclick="tradeAction('${r.id}','accept')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Accept Counter</button>`;
+    }
+    return `
+      <div class="card-entry rounded-sm p-4 flex items-center justify-between gap-4">
+        <div>
+          <span class="status-stamp" style="color:var(--brass-bright)">${r.status}</span>
+          <p class="text-sm text-parchment mt-1">${incoming ? 'From' : 'To'} <strong>${incoming ? r.proposer_name : r.target_owner_name}</strong> — ${r.card_name || r.serial}</p>
+          <p class="text-xs mt-0.5" style="color:var(--text-muted)">${r.offer_type === 'TRADE' ? 'Card offered in trade' : 'Cash offer'}${r.plus_amount > 0 ? ` + IDR ${Number(r.plus_amount).toLocaleString()}` : ''}${r.notes ? ` — "${r.notes}"` : ''}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">${actions}</div>
+      </div>`;
   }).join('');
-  body.scrollTop = body.scrollHeight;
 }
 
-async function sendChatMessage(e) {
-  e.preventDefault();
-  const input = document.getElementById('chat-input-text');
-  const text = input.value.trim();
-  if (!text || !currentChatId || !currentUser) return;
-  const { error } = await sb.from('chat_messages').insert({
-    chat_id: currentChatId, sender_id: currentUser.id, sender: (currentProfile && currentProfile.username) || currentUser.email, text: text,
-  });
-  if (error) { showToast('Could not send message', 'error'); return; }
-  input.value = '';
-  await sb.from('chats').update({ last_message: text, last_sender: currentUser.id, updated_at: new Date().toISOString() }).eq('id', currentChatId);
-  openChat(currentChatId);
+async function tradeAction(id, action) {
+  try {
+    const { error } = await supabaseClient.rpc('trade_action', { p_request_id: id, p_action: action });
+    if (error) throw error;
+    showToast('Done.', 'success');
+    await loadCards();
+    renderTradesView();
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
 }
 
-/* ---------- Notifications ---------- */
-async function toggleNotifPanel() {
-  const panel = document.getElementById('notif-panel');
-  if (!panel) return;
-  const isHidden = panel.classList.contains('hidden');
-  if (isHidden) {
-    panel.classList.remove('hidden');
-    await renderNotifications();
+/* ---------------------------- AUCTIONS ---------------------------- */
+async function loadActiveAuction() {
+  const { data, error } = await supabaseClient.from('auctions').select('*').eq('status', 'ACTIVE').maybeSingle();
+  if (!error) activeAuction = data || null;
+}
+
+async function renderAuctionView() {
+  await loadActiveAuction();
+  renderHeroStats();
+  const container = document.getElementById('auction-content');
+
+  if (!activeAuction) {
+    container.innerHTML = `<div class="text-center py-16 text-sm" style="color:var(--text-muted)">No lot is currently under the hammer.</div>`;
   } else {
+    const a = activeAuction;
+    const history = (a.bid_history || []).slice(-6).reverse();
+    container.innerHTML = `
+      <div class="card-entry rounded-sm p-6 grid sm:grid-cols-2 gap-6">
+        <div class="aspect-[4/5] rounded-sm overflow-hidden bg-black/20 flex items-center justify-center">
+          <img src="${a.card_img || ''}" class="w-full h-full object-contain">
+        </div>
+        <div>
+          <span class="card-serial text-sm" style="color:var(--brass-bright)">${a.serial || ''}</span>
+          <h3 class="font-display text-xl text-parchment mt-1 mb-3">${a.card_name || ''}</h3>
+          <div class="rule mb-3"></div>
+          <div class="flex justify-between text-sm mb-2"><span style="color:var(--text-muted)">Current bid</span><span class="font-mono text-parchment">IDR ${Number(a.current_bid || a.starting_price || 0).toLocaleString()}</span></div>
+          <div class="flex justify-between text-sm mb-4"><span style="color:var(--text-muted)">Leading bidder</span><span class="font-mono text-parchment">${a.high_bidder || '—'}</span></div>
+          <button onclick="placeBid(${Number(a.current_bid || a.starting_price || 0)})" class="btn-brass w-full rounded-md py-2.5 text-sm">Place Bid</button>
+          ${currentUser?.isAdmin ? `<div class="flex gap-2 mt-2"><button onclick="finalizeAuction()" class="btn-ghost flex-1 rounded-md py-2 text-xs">Finalize</button><button onclick="cancelAuction()" class="btn-ghost flex-1 rounded-md py-2 text-xs">Cancel</button></div>` : ''}
+          ${history.length ? `<div class="mt-5"><p class="text-xs mb-2" style="color:var(--text-muted)">Recent bids</p>${history.map(b => `<div class="flex justify-between text-xs py-1"><span style="color:var(--text-muted)">${b.bidder}</span><span class="font-mono">IDR ${Number(b.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  const { data: past } = await supabaseClient.from('auctions').select('*').eq('status', 'FINALIZED').order('updated_at', { ascending: false }).limit(10);
+  const histEl = document.getElementById('auction-history');
+  histEl.innerHTML = (past || []).length ? past.map(a => `
+    <div class="flex items-center justify-between text-xs py-2 border-b" style="border-color:var(--line)">
+      <span class="text-parchment">${a.card_name} (${a.serial})</span>
+      <span class="font-mono" style="color:var(--text-muted)">Sold for IDR ${Number(a.current_bid || 0).toLocaleString()} to ${a.high_bidder || 'no bidder'}</span>
+    </div>`).join('') : `<p class="text-xs" style="color:var(--text-muted)">No past lots yet.</p>`;
+}
+
+async function placeBid(currentBid) {
+  if (!requireLogin()) return;
+  const amount = parseFloat(prompt(`Enter your bid (higher than IDR ${currentBid.toLocaleString()}):`, currentBid + 50000));
+  if (!amount || amount <= currentBid) return showToast('Bid must exceed the current bid.', 'error');
+  try {
+    const { error } = await supabaseClient.rpc('place_auction_bid', { p_bid_amount: amount });
+    if (error) throw error;
+    showToast('Bid placed!', 'success');
+    renderAuctionView();
+  } catch (err) { showToast('Bid error: ' + err.message, 'error'); }
+}
+
+async function finalizeAuction() {
+  try {
+    const { error } = await supabaseClient.rpc('finalize_auction');
+    if (error) throw error;
+    showToast('Auction finalized.', 'success');
+    await loadCards();
+    renderAuctionView();
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+async function cancelAuction() {
+  if (!confirm('Cancel the active auction?')) return;
+  try {
+    const { error } = await supabaseClient.rpc('cancel_auction');
+    if (error) throw error;
+    showToast('Auction canceled.');
+    renderAuctionView();
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+function openStartAuctionModal(prefillCardId = null) {
+  const ident = myIdentity();
+  const eligible = currentUser?.isAdmin ? cards.filter(c => c.owner) : cards.filter(c => (c.owner || '').toLowerCase() === ident);
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-4">Start an Auction</h3>
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Card</label>
+    <select id="start-auction-card" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3">
+      ${eligible.map(c => `<option value="${c.id}" ${c.id === prefillCardId ? 'selected' : ''}>${c.name} (${c.serial})</option>`).join('')}
+    </select>
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Starting price (IDR)</label>
+    <input type="number" id="start-auction-price" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3" value="100000">
+    <label class="block text-xs mb-1.5" style="color:var(--text-muted)">Duration (hours)</label>
+    <select id="start-auction-hours" class="input-field rounded-md w-full text-sm px-3 py-2 mb-4">
+      <option value="12">12</option><option value="24" selected>24</option><option value="48">48</option>
+    </select>
+    <button onclick="submitStartAuction()" class="btn-brass w-full rounded-md py-2.5 text-sm">Launch Auction</button>`);
+}
+
+async function submitStartAuction() {
+  const cardId = document.getElementById('start-auction-card').value;
+  const price = parseInt(document.getElementById('start-auction-price').value, 10);
+  const hours = parseInt(document.getElementById('start-auction-hours').value, 10);
+  try {
+    const { error } = await supabaseClient.rpc('start_auction', { p_card_id: cardId, p_starting_price: price, p_duration_hours: hours });
+    if (error) throw error;
+    closeModal();
+    showToast('Auction launched!', 'success');
+    setView('auctions');
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+/* ---------------------------- VAULT (profile + owned cards) ---------------------------- */
+function renderVaultView() {
+  const container = document.getElementById('vault-content');
+  if (!currentUser) { container.innerHTML = `<div class="text-center py-16 text-sm" style="color:var(--text-muted)">Sign in to see your vault.</div>`; return; }
+
+  const ident = myIdentity();
+  const owned = cards.filter(c => (c.owner || '').toLowerCase() === ident);
+
+  container.innerHTML = `
+    <div class="flex items-center gap-4 mb-8">
+      <img src="${myProfile?.avatar_url || currentUser.avatarUrl}" class="w-16 h-16 rounded-full object-cover avatar-ring">
+      <div>
+        <h2 class="font-display text-2xl text-parchment">${myProfile?.name || currentUser.name}</h2>
+        <p class="text-xs font-mono" style="color:var(--text-muted)">@${myProfile?.username || currentUser.username} · ${owned.length} card${owned.length === 1 ? '' : 's'} held</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      ${owned.length ? owned.map(c => `
+        <div class="card-entry rounded-sm p-3">
+          <div class="aspect-[4/5] rounded-sm overflow-hidden mb-2.5 bg-black/20 flex items-center justify-center cursor-pointer" onclick="openCardModal('${c.id}')">
+            <img src="${c.imgUrl}" class="w-full h-full object-contain">
+          </div>
+          <span class="card-serial text-xs" style="color:var(--brass-bright)">${c.serial}</span>
+          <p class="text-sm text-parchment truncate mb-2">${c.name}</p>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="openStartAuctionModal('${c.id}')" class="btn-ghost rounded-md py-1.5 text-[10px]">Auction</button>
+            <button onclick="sellBackCard('${c.id}')" class="btn-ghost rounded-md py-1.5 text-[10px]">Sell Back</button>
+          </div>
+        </div>`).join('') : `<div class="col-span-full text-center py-10 text-sm" style="color:var(--text-muted)">No cards in your vault yet.</div>`}
+    </div>`;
+}
+
+async function sellBackCard(cardId) {
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+  if (!confirm(`Sell ${card.serial} back to the Registrar at floor price IDR ${card.baseFloorPrice.toLocaleString()}? This is immediate and returns the card to the open registry.`)) return;
+  try {
+    const { error } = await supabaseClient.rpc('sell_back_to_admin', { p_card_id: cardId });
+    if (error) throw error;
+    showToast('Card returned to the registry.', 'success');
+    await loadCards();
+    renderVaultView();
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+/* ---------------------------- ADMIN ---------------------------- */
+function setAdminTab(tab) {
+  adminTab = tab;
+  document.querySelectorAll('.tab-btn[data-admintab]').forEach(b => b.classList.toggle('active', b.dataset.admintab === tab));
+  renderAdminView();
+}
+
+async function renderAdminView() {
+  const container = document.getElementById('admin-content');
+  if (adminTab === 'orders') return renderAdminOrders(container);
+  if (adminTab === 'cards') return renderAdminCards(container);
+  if (adminTab === 'auction') return renderAdminAuctionControl(container);
+}
+
+async function renderAdminOrders(container) {
+  const { data, error } = await supabaseClient.from('transactions').select('*').eq('status', 'PENDING').order('created_at', { ascending: false });
+  if (error) { container.innerHTML = `<p class="text-xs" style="color:var(--oxblood-bright)">${error.message}</p>`; return; }
+  if (!data || !data.length) { container.innerHTML = `<p class="text-sm" style="color:var(--text-muted)">No pending orders.</p>`; return; }
+
+  container.innerHTML = data.map(o => `
+    <div class="card-entry rounded-sm p-4 flex items-center gap-4 mb-2">
+      <div class="w-16 h-16 shrink-0 rounded-sm overflow-hidden bg-black/20 flex items-center justify-center ${o.qris_proof_url ? 'cursor-pointer' : ''}" ${o.qris_proof_url ? `onclick="viewReceiptFull('${o.qris_proof_url}')"` : ''}>
+        ${o.qris_proof_url ? `<img src="${o.qris_proof_url}" class="w-full h-full object-cover">` : `<span class="text-[9px] text-center px-1" style="color:var(--text-muted)">No receipt</span>`}
+      </div>
+      <div class="flex-1">
+        <p class="text-sm text-parchment">${(o.items || []).map(i => i.name).join(', ') || o.id}</p>
+        <p class="text-xs mt-0.5" style="color:var(--text-muted)">${o.user_name || 'Unknown'} — IDR ${Number(o.total_amount || 0).toLocaleString()}</p>
+        ${o.qris_proof_url ? `<button onclick="viewReceiptFull('${o.qris_proof_url}')" class="text-xs underline mt-0.5" style="color:var(--brass-bright)">View receipt full size</button>` : ''}
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button onclick="reviewOrder('${o.id}','APPROVED')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Approve</button>
+        <button onclick="reviewOrder('${o.id}','REJECTED')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+function viewReceiptFull(url) {
+  openModal(`
+    <h3 class="font-display text-lg text-parchment mb-3">Payment Receipt</h3>
+    <img src="${url}" class="w-full rounded-sm border" style="border-color:var(--line)">`, 'max-w-lg');
+}
+
+async function reviewOrder(orderId, decision) {
+  try {
+    const { error } = await supabaseClient.rpc('review_order', { p_order_id: orderId, p_decision: decision });
+    if (error) throw error;
+    showToast(`Order ${decision.toLowerCase()}.`, 'success');
+    await loadCards();
+    renderAdminOrders(document.getElementById('admin-content'));
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+function renderAdminCards(container) {
+  container.innerHTML = `
+    <div class="flex justify-end mb-3"><button onclick="openCardEditor()" class="btn-brass rounded-md px-3 py-2 text-xs">+ Mint New Card</button></div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead><tr style="color:var(--text-muted)" class="text-left"><th class="pb-2">Serial</th><th class="pb-2">Name</th><th class="pb-2">Tier</th><th class="pb-2">Price</th><th class="pb-2">Status</th><th class="pb-2">Owner</th><th></th></tr></thead>
+        <tbody>
+          ${cards.map(c => `
+            <tr class="border-t" style="border-color:var(--line)">
+              <td class="py-2 font-mono" style="color:var(--brass-bright)">${c.serial}</td>
+              <td class="py-2 text-parchment">${c.name}</td>
+              <td class="py-2">${c.type}</td>
+              <td class="py-2 font-mono">IDR ${c.price.toLocaleString()}</td>
+              <td class="py-2">${c.status}</td>
+              <td class="py-2 font-mono" style="color:var(--text-muted)">${c.owner || '-'}</td>
+              <td class="py-2 text-right space-x-2">
+                <button onclick="openCardEditor('${c.id}')" style="color:var(--brass-bright)">Edit</button>
+                <button onclick="deleteCard('${c.id}')" style="color:var(--oxblood-bright)">Delete</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function openCardEditor(cardId = null) {
+  const card = cardId ? cards.find(c => c.id === cardId) : null;
+  const n = cards.length + 1;
+  openModal(`
+    <h3 class="font-display text-xl text-parchment mb-4">${card ? 'Edit Card' : 'Mint New Card'}</h3>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Serial</label><input id="ce-serial" class="input-field rounded-md w-full text-sm px-3 py-2" value="${card?.serial || '*' + String(n).padStart(2, '0')}"></div>
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Tier</label><select id="ce-type" class="input-field rounded-md w-full text-sm px-3 py-2"><option value="PREMIUM" ${card?.type === 'PREMIUM' ? 'selected' : ''}>PREMIUM</option><option value="STANDARD" ${card?.type === 'STANDARD' ? 'selected' : ''}>STANDARD</option></select></div>
+    </div>
+    <label class="block text-xs mb-1" style="color:var(--text-muted)">Name</label>
+    <input id="ce-name" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3" value="${card?.name || `Eugene Premium #${String(n).padStart(2, '0')}`}">
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Price (IDR)</label><input type="number" id="ce-price" class="input-field rounded-md w-full text-sm px-3 py-2" value="${card?.price || 500000}"></div>
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Floor Price</label><input type="number" id="ce-floor" class="input-field rounded-md w-full text-sm px-3 py-2" value="${card?.baseFloorPrice || 500000}"></div>
+    </div>
+    <label class="block text-xs mb-1" style="color:var(--text-muted)">Image URL</label>
+    <input id="ce-img" class="input-field rounded-md w-full text-sm px-3 py-2 mb-3" value="${card?.imgUrl || ''}">
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Status</label><select id="ce-status" class="input-field rounded-md w-full text-sm px-3 py-2"><option value="AVAILABLE" ${card?.status === 'AVAILABLE' ? 'selected' : ''}>AVAILABLE</option><option value="SOLD" ${card?.status === 'SOLD' ? 'selected' : ''}>SOLD</option></select></div>
+      <div><label class="block text-xs mb-1" style="color:var(--text-muted)">Owner (blank = none)</label><input id="ce-owner" class="input-field rounded-md w-full text-sm px-3 py-2" value="${card?.owner || ''}"></div>
+    </div>
+    <button onclick="saveCardEditor('${cardId || ''}')" class="btn-brass w-full rounded-md py-2.5 text-sm">${card ? 'Save Changes' : 'Mint Card'}</button>`);
+}
+
+async function saveCardEditor(cardId) {
+  const payload = {
+    serial: document.getElementById('ce-serial').value,
+    type: document.getElementById('ce-type').value,
+    name: document.getElementById('ce-name').value,
+    price: parseInt(document.getElementById('ce-price').value, 10),
+    base_floor_price: parseInt(document.getElementById('ce-floor').value, 10),
+    img_url: document.getElementById('ce-img').value,
+    image_url: document.getElementById('ce-img').value,
+    status: document.getElementById('ce-status').value,
+    owner: document.getElementById('ce-owner').value || null
+  };
+  try {
+    if (cardId) {
+      const { error } = await supabaseClient.from('cards').update(payload).eq('id', cardId);
+      if (error) throw error;
+      showToast('Card updated.', 'success');
+    } else {
+      const { error } = await supabaseClient.from('cards').insert(payload);
+      if (error) throw error;
+      showToast('Card minted.', 'success');
+    }
+    closeModal();
+    await loadCards();
+    renderAdminCards(document.getElementById('admin-content'));
+  } catch (err) { showToast('Save error: ' + err.message, 'error'); }
+}
+
+async function deleteCard(cardId) {
+  if (!confirm('Delete this card permanently?')) return;
+  try {
+    const { error } = await supabaseClient.from('cards').delete().eq('id', cardId);
+    if (error) throw error;
+    await loadCards();
+    renderAdminCards(document.getElementById('admin-content'));
+    showToast('Card deleted.');
+  } catch (err) { showToast('Error: ' + err.message, 'error'); }
+}
+
+function renderAdminAuctionControl(container) {
+  container.innerHTML = `
+    <div class="card-entry rounded-sm p-6">
+      ${activeAuction ? `
+        <p class="text-sm text-parchment mb-3">Active lot: <strong>${activeAuction.card_name}</strong> (${activeAuction.serial}) — current bid IDR ${Number(activeAuction.current_bid || activeAuction.starting_price || 0).toLocaleString()}</p>
+        <div class="flex gap-2"><button onclick="finalizeAuction()" class="btn-brass rounded-md px-4 py-2 text-xs">Finalize</button><button onclick="cancelAuction()" class="btn-ghost rounded-md px-4 py-2 text-xs">Cancel</button></div>
+      ` : `
+        <p class="text-sm mb-3" style="color:var(--text-muted)">No auction is currently live.</p>
+        <button onclick="openStartAuctionModal()" class="btn-brass rounded-md px-4 py-2 text-xs">Start New Auction</button>
+      `}
+    </div>`;
+}
+
+/* ---------------------------- NOTIFICATIONS ---------------------------- */
+async function loadNotifications() {
+  if (!currentUser) { notifications = []; return; }
+  const { data } = await supabaseClient.from('notifications').select('*').eq('recipient_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+  notifications = data || [];
+  const unread = notifications.filter(n => !n.read).length;
+  document.getElementById('notif-dot').classList.toggle('hidden', unread === 0);
+}
+
+function toggleNotifPanel() {
+  if (!requireLogin()) return;
+  const panel = document.getElementById('notif-panel');
+  const willShow = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if (willShow) {
+    panel.innerHTML = notifications.length
+      ? notifications.map(n => `<div class="p-2.5 text-xs border-b" style="border-color:var(--line)"><p class="text-parchment font-medium">${n.title}</p><p style="color:var(--text-muted)">${n.message}</p></div>`).join('')
+      : `<div class="p-4 text-xs text-center" style="color:var(--text-muted)">No notifications yet.</div>`;
+    supabaseClient.rpc('mark_all_notifications_read').then(() => {
+      document.getElementById('notif-dot').classList.add('hidden');
+    });
+  }
+}
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notif-panel');
+  if (panel && !panel.classList.contains('hidden') && !e.target.closest('#notif-panel') && !e.target.closest('[onclick="toggleNotifPanel()"]')) {
     panel.classList.add('hidden');
   }
-}
-
-async function renderNotifications() {
-  const panel = document.getElementById('notif-panel');
-  const dot = document.getElementById('notif-dot');
-  if (!panel) return;
-  if (!currentUser) { panel.innerHTML = '<p class="text-xs p-3" style="color:var(--text-muted)">Sign in to see notifications.</p>'; if (dot) dot.classList.add('hidden'); return; }
-  const { data, error } = await sb.from('notifications').select('*').eq('recipient_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
-  if (error) { panel.innerHTML = '<p class="text-xs p-3" style="color:var(--text-muted)">Could not load notifications.</p>'; return; }
-  if (dot) dot.classList.toggle('hidden', !data.some(function (n) { return !n.read; }));
-  panel.innerHTML = data.length
-    ? data.map(function (n) {
-        return (
-          '<div class="p-2.5 rounded-md ' + (n.read ? '' : 'bg-white/5') + ' text-sm">' +
-            '<p class="text-parchment">' + escapeHtml(n.title || '') + '</p>' +
-            '<p class="text-xs mt-0.5" style="color:var(--text-muted)">' + escapeHtml(n.message || '') + '</p>' +
-          '</div>'
-        );
-      }).join('')
-    : '<p class="text-xs p-3" style="color:var(--text-muted)">No notifications.</p>';
-}
-
-function openProofModal(imgUrl) {
-  const root = document.getElementById('modal-root');
-  root.innerHTML =
-    '<div class="fixed inset-0 modal-backdrop z-[95] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
-      '<div class="relative max-w-lg w-full">' +
-        '<button onclick="closeModal()" class="absolute -top-9 right-0 text-white">✕</button>' +
-        '<img src="' + imgUrl + '" class="w-full rounded-sm">' +
-      '</div>' +
-    '</div>';
-}
-
-/* ---------- Admin / Registrar ---------- */
-async function renderAdmin() {
-  const el = document.getElementById('admin-content');
-  if (!el) return;
-  if (!currentProfile || currentProfile.role !== 'admin') { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Registrar access only.</p>'; return; }
-  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
-
-  if (activeAdminTab === 'orders') {
-    const { data, error } = await sb.from('transactions').select('*').eq('status', 'PENDING').order('created_at', { ascending: false });
-    if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load orders.</p>'; return; }
-    el.innerHTML = data.length ? data.map(function (t) {
-      return (
-        '<div class="card-entry rounded-sm p-4 flex items-center justify-between gap-4 mb-2">' +
-          '<div class="flex items-center gap-3">' +
-            (t.qris_proof_url
-              ? '<img src="' + t.qris_proof_url + '" onclick="openProofModal(\'' + t.qris_proof_url + '\')" class="w-14 h-14 object-cover rounded-sm cursor-pointer border" style="border-color:var(--line)" alt="Payment proof">'
-              : '') +
-            '<div>' +
-              '<p class="text-sm text-parchment">' + escapeHtml(t.user_name || '') + '</p>' +
-              '<p class="text-xs" style="color:var(--text-muted)">' + formatRp(t.total_amount || t.amount || 0) + ' · ' + t.type + (t.payment_method ? ' · ' + escapeHtml(t.payment_method) : '') + '</p>' +
-              (t.subtotal ? '<p class="text-[0.65rem] font-mono" style="color:var(--text-muted)">Subtotal ' + formatRp(t.subtotal) + ' + Tax ' + formatRp(t.tax_amount || 0) + '</p>' : '') +
-            '</div>' +
-          '</div>' +
-          '<div class="flex gap-2">' +
-            '<button onclick="reviewOrder(\'' + t.id + '\',\'APPROVED\')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Approve</button>' +
-            '<button onclick="reviewOrder(\'' + t.id + '\',\'REJECTED\')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Reject</button>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('') : '<p class="text-sm" style="color:var(--text-muted)">No pending orders.</p>';
-  } else if (activeAdminTab === 'cards') {
-    const { data, error } = await sb.from('cards').select('*').order('serial');
-    if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load cards.</p>'; return; }
-    el.innerHTML =
-      '<div class="overflow-x-auto"><table class="w-full text-sm">' +
-        '<thead><tr class="text-left" style="color:var(--text-muted)"><th class="py-2 pr-4">Serial</th><th class="py-2 pr-4">Name</th><th class="py-2 pr-4">Status</th><th class="py-2 pr-4">Price</th></tr></thead>' +
-        '<tbody>' +
-          data.map(function (c) {
-            const opts = ['AVAILABLE', 'PENDING', 'SOLD', 'OWNED', 'RESERVED'].map(function (s) {
-              return '<option value="' + s + '" ' + (c.status === s ? 'selected' : '') + '>' + s + '</option>';
-            }).join('');
-            return (
-              '<tr class="border-t" style="border-color:var(--line)">' +
-                '<td class="py-2 pr-4 font-mono text-xs">' + escapeHtml(c.serial || '') + '</td>' +
-                '<td class="py-2 pr-4">' + escapeHtml(c.name) + '</td>' +
-                '<td class="py-2 pr-4"><select onchange="updateCardStatus(\'' + c.id + '\', this.value)" class="input-field rounded-md px-2 py-1 text-xs">' + opts + '</select></td>' +
-                '<td class="py-2 pr-4 font-mono">' + formatRp(c.price || 0) + '</td>' +
-              '</tr>'
-            );
-          }).join('') +
-        '</tbody>' +
-      '</table></div>';
-  } else if (activeAdminTab === 'auction') {
-    const activeRes = await sb.from('auctions').select('*').eq('status', 'ACTIVE').maybeSingle();
-    const active = activeRes.data;
-    if (active) {
-      el.innerHTML =
-        '<div class="card-entry rounded-sm p-4 mb-4">' +
-          '<p class="text-sm text-parchment">' + escapeHtml(active.card_name || '') + ' — current bid ' + formatRp(active.current_bid || 0) + '</p>' +
-          '<button onclick="finalizeAuction(\'' + active.id + '\')" class="btn-brass rounded-md px-3 py-1.5 text-xs mt-2">Finalize Lot</button>' +
-        '</div>';
-    } else {
-      const cardsRes = await sb.from('cards').select('id,name,serial,img_url').eq('status', 'AVAILABLE');
-      const cardsAvailable = cardsRes.data || [];
-      el.innerHTML =
-        '<div class="flex gap-2 mb-4">' +
-          '<select id="new-auction-card" class="input-field rounded-md px-3 py-2 text-sm flex-1">' +
-            cardsAvailable.map(function (c) { return '<option value="' + c.id + '">' + escapeHtml(c.name) + ' (' + escapeHtml(c.serial || '') + ')</option>'; }).join('') +
-          '</select>' +
-          '<input type="number" id="new-auction-price" placeholder="Starting price" class="input-field rounded-md px-3 py-2 text-sm w-40">' +
-          '<button onclick="startAuction()" class="btn-brass rounded-md px-4 py-2 text-sm">Start Lot</button>' +
-        '</div>';
-    }
-  }
-}
-
-async function reviewOrder(id, status) {
-  const { data: tx } = await sb.from('transactions').select('*').eq('id', id).maybeSingle();
-  const paymentStatus = status === 'APPROVED' ? 'paid' : status === 'REJECTED' ? 'failed' : 'pending';
-  const { error } = await sb.from('transactions').update({ status: status, payment_status: paymentStatus, reviewed_at: new Date().toISOString() }).eq('id', id);
-  if (error) { showToast('Could not update order', 'error'); return; }
-  if (status === 'APPROVED' && tx && tx.items) {
-    const cardIds = tx.items.map(function (i) { return i.card_id; });
-    await sb.from('cards').update({ status: 'SOLD', owner_id: tx.user_id, owner: tx.user_name }).in('id', cardIds);
-  } else if (status === 'REJECTED' && tx && tx.items) {
-    const cardIds = tx.items.map(function (i) { return i.card_id; });
-    await sb.from('cards').update({ status: 'AVAILABLE' }).in('id', cardIds);
-  }
-  showToast('Order ' + status.toLowerCase());
-  renderAdmin();
-}
-
-async function updateCardStatus(id, status) {
-  const { error } = await sb.from('cards').update({ status: status }).eq('id', id);
-  if (error) showToast('Could not update card', 'error'); else showToast('Card updated');
-}
-
-async function startAuction() {
-  const cardId = document.getElementById('new-auction-card').value;
-  const price = Number(document.getElementById('new-auction-price').value);
-  if (!cardId || !price) return;
-  const cardRes = await sb.from('cards').select('*').eq('id', cardId).maybeSingle();
-  const card = cardRes.data;
-  const { error } = await sb.from('auctions').insert({
-    card_id: cardId, seller_id: currentUser.id, starting_price: price, current_bid: price,
-    status: 'ACTIVE', card_name: card && card.name, card_img: card && card.img_url, serial: card && card.serial,
-  });
-  if (error) { showToast('Could not start auction', 'error'); return; }
-  await sb.from('cards').update({ status: 'RESERVED' }).eq('id', cardId);
-  showToast('Lot is live');
-  renderAdmin();
-}
-
-async function finalizeAuction(id) {
-  const { data: auction } = await sb.from('auctions').select('*').eq('id', id).maybeSingle();
-  const { error } = await sb.from('auctions').update({ status: 'FINALIZED' }).eq('id', id);
-  if (error) { showToast('Could not finalize', 'error'); return; }
-  if (auction && auction.highest_bidder) {
-    await sb.from('cards').update({ status: 'SOLD', owner_id: auction.highest_bidder, owner: auction.high_bidder }).eq('id', auction.card_id);
-  }
-  showToast('Lot finalized');
-  renderAdmin();
-}
-
-/* ---------- Boot ---------- */
-document.addEventListener('DOMContentLoaded', async function () {
-  await initAuth();
-  await loadStats();
-  await renderMarketplace();
 });
-</script>
 
+</script>
 </body>
 </html>
