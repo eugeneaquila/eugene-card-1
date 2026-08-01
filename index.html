@@ -469,51 +469,819 @@
    Single-file marketplace backed by Supabase (project: eugene-card-2)
    ===================================================================== */
 
-/* ---------- Main view tabs (Registry / Live Lot / Exchange / etc.) ---------- */
+/* ---------- Supabase client ---------- */
+const SUPABASE_URL = 'https://yswwicdycbscurnpbqjb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd3dpY2R5Y2JzY3VybnBicWpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyOTUzNjAsImV4cCI6MjEwMDg3MTM2MH0.FESrSxt3ys6WJXF768q1lXJceQrff6T6WLgCn8prEw8';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let cartItems = [];
+let allCards = [];
+let currentChatId = null;
+let activeTradeTab = 'incoming';
+let activeAdminTab = 'orders';
+
+/* ---------- Small helpers ---------- */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+function showToast(message, type) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = 'toast-enter modal-panel rounded-md px-4 py-3 text-sm shadow-xl max-w-xs';
+  el.style.borderColor = type === 'error' ? 'var(--oxblood)' : 'var(--line)';
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(function () { el.remove(); }, 3500);
+}
+
+function skeletonCards(n) {
+  let out = '';
+  for (let i = 0; i < n; i++) out += '<div class="skeleton rounded-sm aspect-[3/4]"></div>';
+  return out;
+}
+
+function statusColor(status) {
+  const map = {
+    AVAILABLE: 'var(--emerald-bright)',
+    SOLD: '#B9C2D0',
+    OWNED: '#B9C2D0',
+    PENDING: 'var(--brass-bright)',
+    RESERVED: 'var(--oxblood-bright)',
+  };
+  return map[status] || 'var(--text-muted)';
+}
+
+function closeModal() {
+  document.getElementById('modal-root').innerHTML = '';
+}
+
+/* ---------- View tabs ---------- */
 function setView(view) {
-  // Show only the matching [x-view] panel
   document.querySelectorAll('[x-view]').forEach(function (panel) {
     panel.classList.toggle('active', panel.id === 'view-' + view);
   });
-
-  // Sync active styling on every nav button pointing at this view
-  // (desktop nav + mobile nav both use data-view)
   document.querySelectorAll('[data-view]').forEach(function (btn) {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
-
-  // Close the mobile menu after a selection
-  var mobileNav = document.getElementById('mobile-nav');
-  if (mobileNav && !mobileNav.classList.contains('hidden')) {
-    mobileNav.classList.add('hidden');
-  }
-
+  const mobileNav = document.getElementById('mobile-nav');
+  if (mobileNav && !mobileNav.classList.contains('hidden')) mobileNav.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  refreshView(view);
 }
 
-/* ---------- Mobile hamburger toggle ---------- */
 function toggleMobileNav() {
-  var mobileNav = document.getElementById('mobile-nav');
+  const mobileNav = document.getElementById('mobile-nav');
   if (mobileNav) mobileNav.classList.toggle('hidden');
 }
 
-/* ---------- Exchange sub-tabs (Incoming / Outgoing / History) ---------- */
 function setTradeTab(tab) {
+  activeTradeTab = tab;
   document.querySelectorAll('[data-tradetab]').forEach(function (btn) {
     btn.classList.toggle('active', btn.dataset.tradetab === tab);
   });
-  // Hook: call your trades renderer here, e.g. renderTrades(tab),
-  // to populate #trades-content for the selected sub-tab.
+  renderTrades();
 }
 
-/* ---------- Registrar sub-tabs (Pending Orders / Manage Cards / Auction Control) ---------- */
 function setAdminTab(tab) {
+  activeAdminTab = tab;
   document.querySelectorAll('[data-admintab]').forEach(function (btn) {
     btn.classList.toggle('active', btn.dataset.admintab === tab);
   });
-  // Hook: call your admin renderer here, e.g. renderAdmin(tab),
-  // to populate #admin-content for the selected sub-tab.
+  renderAdmin();
 }
+
+function getActiveView() {
+  const active = document.querySelector('[x-view].active');
+  return active ? active.id.replace('view-', '') : 'marketplace';
+}
+
+function refreshView(view) {
+  if (view === 'marketplace') renderMarketplace();
+  else if (view === 'auctions') renderAuctions();
+  else if (view === 'trades') renderTrades();
+  else if (view === 'wishlist') renderWishlist();
+  else if (view === 'vault') renderVault();
+  else if (view === 'messages') renderMessages();
+  else if (view === 'admin') renderAdmin();
+}
+
+function refreshCurrentView() { refreshView(getActiveView()); }
+
+/* ---------- Auth ---------- */
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  await handleSession(session);
+  sb.auth.onAuthStateChange(function (_event, session) { handleSession(session); });
+}
+
+async function handleSession(session) {
+  currentUser = session && session.user ? session.user : null;
+  if (currentUser) {
+    await ensureProfile();
+    await loadProfileAndStats();
+  } else {
+    currentProfile = null;
+  }
+  renderAuthSlot();
+  updateAdminVisibility();
+  updateCartCount();
+  refreshCurrentView();
+}
+
+async function ensureProfile() {
+  const { data } = await sb.from('profiles').select('id').eq('id', currentUser.id).maybeSingle();
+  if (!data) {
+    const handle = (currentUser.email || 'collector').split('@')[0];
+    await sb.from('profiles').insert({ id: currentUser.id, email: currentUser.email, username: handle, name: handle });
+  }
+}
+
+async function loadProfileAndStats() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  currentProfile = data;
+}
+
+function renderAuthSlot() {
+  const slot = document.getElementById('auth-slot');
+  if (!slot) return;
+  if (currentUser) {
+    const initial = ((currentProfile && currentProfile.username) || currentUser.email || '?')[0].toUpperCase();
+    slot.innerHTML =
+      '<div class="flex items-center gap-2">' +
+        '<button onclick="setView(\'vault\')" class="avatar-ring w-8 h-8 flex items-center justify-center rounded-full shrink-0" aria-label="Your vault">' +
+          '<span class="bg-ink-2 w-full h-full rounded-full flex items-center justify-center text-xs font-mono" style="background:var(--ink-2)">' + initial + '</span>' +
+        '</button>' +
+        '<button onclick="signOut()" class="btn-ghost rounded-md px-3 py-2 text-xs hidden sm:inline-flex">Sign Out</button>' +
+      '</div>';
+  } else {
+    slot.innerHTML = '<button onclick="openAuthModal(\'signin\')" class="btn-brass rounded-md px-4 py-2 text-sm">Sign In</button>';
+  }
+}
+
+function updateAdminVisibility() {
+  const isAdmin = currentProfile && currentProfile.role === 'admin';
+  const a = document.getElementById('admin-tab-btn');
+  const b = document.getElementById('admin-tab-btn-mobile');
+  if (a) a.classList.toggle('hidden', !isAdmin);
+  if (b) b.classList.toggle('hidden', !isAdmin);
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  showToast('Signed out');
+  setView('marketplace');
+}
+
+function openAuthModal(mode) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML =
+    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
+      '<div class="modal-panel rounded-sm w-full max-w-sm p-6 relative">' +
+        '<button onclick="closeModal()" class="absolute top-4 right-4" style="color:var(--text-muted)">✕</button>' +
+        '<h3 class="font-display text-xl text-parchment mb-4">' + (mode === 'signin' ? 'Sign In' : 'Create Account') + '</h3>' +
+        '<form class="space-y-3" onsubmit="submitAuthForm(event, \'' + mode + '\')">' +
+          '<input required type="email" id="auth-email" placeholder="Email" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
+          '<input required type="password" id="auth-password" placeholder="Password" minlength="6" class="input-field rounded-md px-3 py-2 text-sm w-full">' +
+          '<button type="submit" class="btn-brass rounded-md px-4 py-2 text-sm w-full">' + (mode === 'signin' ? 'Sign In' : 'Sign Up') + '</button>' +
+        '</form>' +
+        '<p class="text-xs mt-3" style="color:var(--text-muted)">' +
+          (mode === 'signin'
+            ? 'No account? <button class="text-brass underline" onclick="openAuthModal(\'signup\')">Create one</button>'
+            : 'Already registered? <button class="text-brass underline" onclick="openAuthModal(\'signin\')">Sign in</button>') +
+        '</p>' +
+      '</div>' +
+    '</div>';
+}
+
+async function submitAuthForm(e, mode) {
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  try {
+    if (mode === 'signin') {
+      const { error } = await sb.auth.signInWithPassword({ email: email, password: password });
+      if (error) throw error;
+      showToast('Welcome back');
+    } else {
+      const { error } = await sb.auth.signUp({ email: email, password: password });
+      if (error) throw error;
+      showToast('Account created — check your email if confirmation is required');
+    }
+    closeModal();
+  } catch (err) {
+    showToast((err && err.message) || 'Authentication failed', 'error');
+  }
+}
+
+/* ---------- Registry stats (ledger strip) ---------- */
+async function loadStats() {
+  const { data, error } = await sb.from('cards').select('status');
+  if (error) { console.error(error); return; }
+  const { count: liveAuctions } = await sb.from('auctions').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE');
+
+  const total = data.length;
+  const available = data.filter(function (c) { return c.status === 'AVAILABLE'; }).length;
+  const owned = data.filter(function (c) { return c.status === 'SOLD' || c.status === 'OWNED'; }).length;
+
+  const totalEl = document.getElementById('stat-total');
+  const availEl = document.getElementById('stat-available');
+  const ownedEl = document.getElementById('stat-owned');
+  const aucEl = document.getElementById('stat-auction');
+  if (totalEl) totalEl.textContent = total;
+  if (availEl) availEl.textContent = available;
+  if (ownedEl) ownedEl.textContent = owned;
+  if (aucEl) aucEl.textContent = liveAuctions || 0;
+}
+
+/* ---------- Marketplace ---------- */
+function cardEntryHTML(c) {
+  const img = c.img_url || c.image_url || '';
+  return (
+    '<div class="card-entry rounded-sm overflow-hidden cursor-pointer" onclick="openCardModal(\'' + c.id + '\')">' +
+      '<div class="aspect-[3/4] flex items-center justify-center overflow-hidden" style="background:var(--ink-3)">' +
+        (img
+          ? '<img src="' + img + '" alt="' + escapeHtml(c.name) + '" class="w-full h-full object-cover" loading="lazy">'
+          : '<span class="font-mono text-xs" style="color:var(--text-muted)">No Image</span>') +
+      '</div>' +
+      '<div class="p-3">' +
+        '<p class="text-sm text-parchment truncate">' + escapeHtml(c.name) + '</p>' +
+        '<p class="card-serial text-[0.65rem] mt-0.5" style="color:var(--text-muted)">' + escapeHtml(c.serial || '') + '</p>' +
+        '<div class="flex items-center justify-between mt-2">' +
+          '<span class="font-mono text-sm" style="color:var(--brass-bright)">' + (c.price ? '$' + Number(c.price).toLocaleString() : '—') + '</span>' +
+          '<span class="status-stamp" style="color:' + statusColor(c.status) + '">' + (c.status || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function populateTierFilter(data) {
+  const select = document.getElementById('filter-tier');
+  if (!select) return;
+  const current = select.value;
+  const tiers = Array.from(new Set(data.map(function (c) { return c.tier; }).filter(Boolean))).sort();
+  select.innerHTML = '<option value="">All tiers</option>' + tiers.map(function (t) {
+    return '<option value="' + t + '">' + t + '</option>';
+  }).join('');
+  select.value = current;
+}
+
+async function renderMarketplace() {
+  const grid = document.getElementById('marketplace-grid');
+  if (!grid) return;
+  grid.innerHTML = skeletonCards(8);
+
+  const { data, error } = await sb.from('cards').select('*');
+  if (error) {
+    grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--oxblood-bright)">Could not reach the registry. ' + escapeHtml(error.message) + '</p>';
+    console.error(error);
+    return;
+  }
+
+  allCards = data;
+  populateTierFilter(data);
+
+  const search = (document.getElementById('search-input').value || '').toLowerCase();
+  const statusFilter = document.getElementById('filter-status').value;
+  const tierFilter = document.getElementById('filter-tier').value;
+  const sortOrder = document.getElementById('sort-order').value;
+
+  let filtered = data.filter(function (c) {
+    const matchesSearch = !search || (c.name && c.name.toLowerCase().includes(search)) || (c.serial && c.serial.toLowerCase().includes(search));
+    const matchesStatus = !statusFilter || c.status === statusFilter;
+    const matchesTier = !tierFilter || c.tier === tierFilter;
+    return matchesSearch && matchesStatus && matchesTier;
+  });
+
+  filtered.sort(function (a, b) {
+    if (sortOrder === 'price-asc') return (a.price || 0) - (b.price || 0);
+    if (sortOrder === 'price-desc') return (b.price || 0) - (a.price || 0);
+    return (a.serial || '').localeCompare(b.serial || '');
+  });
+
+  grid.innerHTML = filtered.length
+    ? filtered.map(cardEntryHTML).join('')
+    : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards match your search.</p>';
+}
+
+async function openCardModal(id) {
+  let card = allCards.find(function (c) { return c.id === id; });
+  if (!card) {
+    const res = await sb.from('cards').select('*').eq('id', id).maybeSingle();
+    card = res.data;
+  }
+  if (!card) return;
+  const root = document.getElementById('modal-root');
+  root.innerHTML =
+    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
+      '<div class="modal-panel rounded-sm w-full max-w-lg overflow-hidden relative">' +
+        '<button onclick="closeModal()" class="absolute top-3 right-3 z-10" style="color:var(--text-muted)">✕</button>' +
+        '<div class="aspect-[16/9] flex items-center justify-center overflow-hidden" style="background:var(--ink-3)">' +
+          (card.img_url ? '<img src="' + card.img_url + '" class="w-full h-full object-cover">' : '') +
+        '</div>' +
+        '<div class="p-6">' +
+          '<p class="font-mono text-[0.65rem] tracking-[0.14em] uppercase" style="color:var(--brass)">' + escapeHtml(card.tier || card.edition || '') + '</p>' +
+          '<h3 class="font-display text-2xl text-parchment mt-1">' + escapeHtml(card.name) + '</h3>' +
+          '<p class="card-serial text-xs mt-1" style="color:var(--text-muted)">' + escapeHtml(card.serial || '') + '</p>' +
+          '<p class="text-sm mt-3" style="color:var(--text-muted)">' + escapeHtml(card.description || '') + '</p>' +
+          '<div class="flex items-center justify-between mt-5">' +
+            '<span class="font-mono text-xl" style="color:var(--brass-bright)">' + (card.price ? '$' + Number(card.price).toLocaleString() : '—') + '</span>' +
+            '<span class="status-stamp" style="color:' + statusColor(card.status) + '">' + card.status + '</span>' +
+          '</div>' +
+          '<div class="flex gap-2 mt-5">' +
+            '<button onclick="toggleWishlist(\'' + card.id + '\')" class="btn-ghost rounded-md px-4 py-2 text-sm flex-1">♥ Wishlist</button>' +
+            '<button ' + (card.status !== 'AVAILABLE' ? 'disabled' : '') + ' onclick="addToCart(\'' + card.id + '\')" class="btn-brass rounded-md px-4 py-2 text-sm flex-1">Add to Cart</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+/* ---------- Wishlist ---------- */
+async function toggleWishlist(cardId) {
+  if (!currentUser) { openAuthModal('signin'); return; }
+  const { data: existing } = await sb.from('wishlists').select('*').eq('user_id', currentUser.id).eq('card_id', cardId).maybeSingle();
+  if (existing) {
+    await sb.from('wishlists').delete().eq('user_id', currentUser.id).eq('card_id', cardId);
+    showToast('Removed from wishlist');
+  } else {
+    await sb.from('wishlists').insert({ user_id: currentUser.id, card_id: cardId });
+    showToast('Added to wishlist');
+  }
+  if (getActiveView() === 'wishlist') renderWishlist();
+}
+
+async function renderWishlist() {
+  const grid = document.getElementById('wishlist-grid');
+  if (!grid) return;
+  if (!currentUser) {
+    grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--text-muted)">Sign in to build a wishlist.</p>';
+    return;
+  }
+  grid.innerHTML = skeletonCards(4);
+  const { data, error } = await sb.from('wishlists').select('card_id, cards(*)').eq('user_id', currentUser.id);
+  if (error) { grid.innerHTML = '<p class="col-span-full text-sm" style="color:var(--oxblood-bright)">Could not load wishlist.</p>'; return; }
+  const cards = data.map(function (w) { return w.cards; }).filter(Boolean);
+  grid.innerHTML = cards.length ? cards.map(cardEntryHTML).join('') : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards on your wishlist yet.</p>';
+}
+
+/* ---------- Cart / checkout ---------- */
+function addToCart(cardId) {
+  if (!currentUser) { openAuthModal('signin'); return; }
+  if (cartItems.indexOf(cardId) === -1) cartItems.push(cardId);
+  updateCartCount();
+  showToast('Added to cart');
+  closeModal();
+}
+
+function updateCartCount() {
+  const el = document.getElementById('cart-count');
+  if (!el) return;
+  if (cartItems.length) {
+    el.textContent = cartItems.length;
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+  } else {
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  }
+}
+
+function removeFromCart(id) {
+  cartItems = cartItems.filter(function (x) { return x !== id; });
+  updateCartCount();
+  openCartModal();
+}
+
+function openCartModal() {
+  const root = document.getElementById('modal-root');
+  const cards = allCards.filter(function (c) { return cartItems.indexOf(c.id) !== -1; });
+  const total = cards.reduce(function (sum, c) { return sum + Number(c.price || 0); }, 0);
+  root.innerHTML =
+    '<div class="fixed inset-0 modal-backdrop z-[90] flex items-center justify-center p-4" onclick="if(event.target===this) closeModal()">' +
+      '<div class="modal-panel rounded-sm w-full max-w-md p-6 relative">' +
+        '<button onclick="closeModal()" class="absolute top-3 right-3" style="color:var(--text-muted)">✕</button>' +
+        '<h3 class="font-display text-xl text-parchment mb-4">Your Cart</h3>' +
+        (cards.length
+          ? '<div class="space-y-2 max-h-64 overflow-y-auto">' +
+              cards.map(function (c) {
+                return (
+                  '<div class="flex items-center justify-between text-sm">' +
+                    '<span>' + escapeHtml(c.name) + '</span>' +
+                    '<div class="flex items-center gap-2">' +
+                      '<span class="font-mono" style="color:var(--brass-bright)">$' + Number(c.price || 0).toLocaleString() + '</span>' +
+                      '<button onclick="removeFromCart(\'' + c.id + '\')" style="color:var(--text-muted)">✕</button>' +
+                    '</div>' +
+                  '</div>'
+                );
+              }).join('') +
+            '</div>' +
+            '<div class="rule my-4"></div>' +
+            '<div class="flex items-center justify-between font-mono text-sm mb-4"><span>Total</span><span style="color:var(--brass-bright)">$' + total.toLocaleString() + '</span></div>' +
+            '<button onclick="checkout()" class="btn-brass rounded-md px-4 py-2 text-sm w-full">Submit Order</button>'
+          : '<p class="text-sm" style="color:var(--text-muted)">Your cart is empty.</p>') +
+      '</div>' +
+    '</div>';
+}
+
+async function checkout() {
+  if (!currentUser) { openAuthModal('signin'); return; }
+  const cards = allCards.filter(function (c) { return cartItems.indexOf(c.id) !== -1; });
+  if (!cards.length) return;
+  const subtotal = cards.reduce(function (s, c) { return s + Number(c.price || 0); }, 0);
+  const { error } = await sb.from('transactions').insert({
+    id: crypto.randomUUID(),
+    user_id: currentUser.id,
+    user_name: (currentProfile && currentProfile.username) || currentUser.email,
+    amount: subtotal,
+    subtotal: subtotal,
+    total_amount: subtotal,
+    type: 'purchase',
+    status: 'PENDING',
+    items: cards.map(function (c) { return { card_id: c.id, name: c.name, price: c.price }; }),
+  });
+  if (error) { showToast('Could not submit order', 'error'); console.error(error); return; }
+  await sb.from('cards').update({ status: 'PENDING' }).in('id', cartItems);
+  cartItems = [];
+  updateCartCount();
+  closeModal();
+  showToast('Order submitted — awaiting registrar review');
+  renderMarketplace();
+}
+
+/* ---------- Vault ---------- */
+async function renderVault() {
+  const el = document.getElementById('vault-content');
+  if (!el) return;
+  if (!currentUser) {
+    el.innerHTML =
+      '<div class="text-center py-16">' +
+        '<p class="text-sm mb-4" style="color:var(--text-muted)">Sign in to see your vault.</p>' +
+        '<button onclick="openAuthModal(\'signin\')" class="btn-brass rounded-md px-4 py-2 text-sm">Sign In</button>' +
+      '</div>';
+    return;
+  }
+  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
+
+  const [profileRes, statsRes, ownedRes] = await Promise.all([
+    sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle(),
+    sb.from('vault_stats').select('*').eq('user_id', currentUser.id).maybeSingle(),
+    sb.from('cards').select('*').eq('owner_id', currentUser.id),
+  ]);
+  const profile = profileRes.data;
+  const stats = statsRes.data;
+  const owned = ownedRes.data || [];
+
+  el.innerHTML =
+    '<div class="flex items-center gap-4 mb-8">' +
+      '<span class="avatar-ring w-16 h-16 flex items-center justify-center rounded-full shrink-0">' +
+        '<span class="bg-ink-2 w-full h-full rounded-full flex items-center justify-center text-xl font-display" style="background:var(--ink-2)">' +
+          (((profile && profile.username) || currentUser.email || '?')[0].toUpperCase()) +
+        '</span>' +
+      '</span>' +
+      '<div>' +
+        '<h2 class="font-display text-2xl text-parchment">' + escapeHtml((profile && (profile.name || profile.username)) || currentUser.email) + '</h2>' +
+        '<p class="text-xs font-mono" style="color:var(--text-muted)">Level ' + ((profile && profile.collector_level) || 1) + ' · ' + ((profile && profile.reputation_score) || 0) + ' Reputation</p>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ledger-strip rounded-sm overflow-hidden mb-8">' +
+      '<div class="ledger-cell" style="--cell-accent:var(--brass)"><span class="ledger-num text-parchment">' + owned.length + '</span><span class="ledger-label">Cards Owned</span></div>' +
+      '<div class="ledger-cell" style="--cell-accent:var(--emerald-bright)"><span class="ledger-num" style="color:var(--emerald-bright)">' + ((stats && stats.trades_completed) || 0) + '</span><span class="ledger-label">Trades Done</span></div>' +
+      '<div class="ledger-cell" style="--cell-accent:#7C8CA6"><span class="ledger-num" style="color:#B9C2D0">' + ((stats && stats.auctions_won) || 0) + '</span><span class="ledger-label">Auctions Won</span></div>' +
+      '<div class="ledger-cell" style="--cell-accent:var(--oxblood-bright)"><span class="ledger-num" style="color:#D98E86">$' + Number((stats && stats.portfolio_value) || 0).toLocaleString() + '</span><span class="ledger-label">Portfolio Value</span></div>' +
+    '</div>' +
+    '<h3 class="font-display text-lg text-parchment mb-3">Your Cards</h3>' +
+    '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">' +
+      (owned.length ? owned.map(cardEntryHTML).join('') : '<p class="col-span-full text-sm" style="color:var(--text-muted)">No cards in your vault yet.</p>') +
+    '</div>';
+}
+
+/* ---------- Auctions ---------- */
+async function renderAuctions() {
+  const content = document.getElementById('auction-content');
+  const history = document.getElementById('auction-history');
+  if (!content) return;
+  content.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
+
+  const { data: active } = await sb.from('auctions').select('*').eq('status', 'ACTIVE').order('start_time', { ascending: false }).limit(1).maybeSingle();
+
+  if (active) {
+    content.innerHTML =
+      '<div class="card-entry rounded-sm p-6 grid sm:grid-cols-2 gap-6">' +
+        '<div class="aspect-[3/4] overflow-hidden rounded-sm" style="background:var(--ink-3)">' +
+          (active.card_img ? '<img src="' + active.card_img + '" class="w-full h-full object-cover">' : '') +
+        '</div>' +
+        '<div>' +
+          '<p class="font-mono text-[0.65rem] tracking-[0.14em] uppercase mb-2" style="color:var(--brass)">Live Lot</p>' +
+          '<h3 class="font-display text-2xl text-parchment">' + escapeHtml(active.card_name || '') + '</h3>' +
+          '<p class="card-serial text-xs mt-1" style="color:var(--text-muted)">' + escapeHtml(active.serial || '') + '</p>' +
+          '<div class="rule my-4"></div>' +
+          '<p class="text-xs font-mono" style="color:var(--text-muted)">Current Bid</p>' +
+          '<p class="font-mono text-3xl" style="color:var(--brass-bright)">$' + Number(active.current_bid || active.starting_price || 0).toLocaleString() + '</p>' +
+          '<p class="text-xs mt-1" style="color:var(--text-muted)">High bidder: ' + escapeHtml(active.high_bidder || '—') + '</p>' +
+          '<div class="flex gap-2 mt-5">' +
+            '<input type="number" id="bid-input" placeholder="Your bid" class="input-field rounded-md px-3 py-2 text-sm flex-1" min="' + (Number(active.current_bid || active.starting_price || 0) + 1) + '">' +
+            '<button onclick="placeBid(\'' + active.id + '\')" class="btn-brass rounded-md px-4 py-2 text-sm">Bid</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  } else {
+    content.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">No lot is currently live.</p>';
+  }
+
+  const { data: past } = await sb.from('auctions').select('*').neq('status', 'ACTIVE').order('start_time', { ascending: false }).limit(10);
+  if (history) {
+    history.innerHTML = (past && past.length)
+      ? past.map(function (a) {
+          return (
+            '<div class="flex items-center justify-between card-entry rounded-sm px-4 py-3 text-sm">' +
+              '<span>' + escapeHtml(a.card_name || '') + '</span>' +
+              '<span class="font-mono" style="color:var(--brass-bright)">$' + Number(a.current_bid || 0).toLocaleString() + '</span>' +
+              '<span class="status-stamp" style="color:var(--text-muted)">' + a.status + '</span>' +
+            '</div>'
+          );
+        }).join('')
+      : '<p class="text-sm" style="color:var(--text-muted)">No past lots yet.</p>';
+  }
+}
+
+async function placeBid(auctionId) {
+  if (!currentUser) { openAuthModal('signin'); return; }
+  const input = document.getElementById('bid-input');
+  const amount = Number(input.value);
+  if (!amount) return;
+  const { data: auction } = await sb.from('auctions').select('*').eq('id', auctionId).maybeSingle();
+  if (!auction || amount <= Number(auction.current_bid || auction.starting_price || 0)) {
+    showToast('Bid must be higher than the current bid', 'error');
+    return;
+  }
+  const bidHistory = Array.isArray(auction.bid_history) ? auction.bid_history : [];
+  bidHistory.push({ user_id: currentUser.id, name: (currentProfile && currentProfile.username) || currentUser.email, amount: amount, at: new Date().toISOString() });
+  const { error } = await sb.from('auctions').update({
+    current_bid: amount,
+    highest_bidder: currentUser.id,
+    high_bidder: (currentProfile && currentProfile.username) || currentUser.email,
+    bid_history: bidHistory,
+  }).eq('id', auctionId);
+  if (error) { showToast('Could not place bid', 'error'); return; }
+  showToast('Bid placed');
+  renderAuctions();
+}
+
+/* ---------- Trades / Exchange ---------- */
+async function renderTrades() {
+  const el = document.getElementById('trades-content');
+  if (!el) return;
+  if (!currentUser) { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Sign in to see your trades.</p>'; return; }
+  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
+
+  let query = sb.from('trade_requests').select('*');
+  if (activeTradeTab === 'incoming') query = query.eq('target_owner_id', currentUser.id).eq('status', 'PENDING');
+  else if (activeTradeTab === 'outgoing') query = query.eq('proposer_id', currentUser.id).eq('status', 'PENDING');
+  else query = query.or('proposer_id.eq.' + currentUser.id + ',target_owner_id.eq.' + currentUser.id).neq('status', 'PENDING');
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load trades.</p>'; console.error(error); return; }
+  if (!data.length) { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Nothing here yet.</p>'; return; }
+
+  el.innerHTML = data.map(function (t) {
+    return (
+      '<div class="card-entry rounded-sm p-4 flex items-center justify-between gap-4">' +
+        '<div>' +
+          '<p class="text-sm text-parchment">' + escapeHtml(t.card_name || '') + '</p>' +
+          '<p class="text-xs" style="color:var(--text-muted)">From ' + escapeHtml(t.proposer_name || '') + (t.plus_amount ? ' + $' + Number(t.plus_amount).toLocaleString() : '') + '</p>' +
+        '</div>' +
+        '<div class="flex items-center gap-2">' +
+          '<span class="status-stamp" style="color:var(--text-muted)">' + t.status + '</span>' +
+          (activeTradeTab === 'incoming'
+            ? '<button onclick="respondTrade(\'' + t.id + '\',\'ACCEPTED\')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Accept</button>' +
+              '<button onclick="respondTrade(\'' + t.id + '\',\'REJECTED\')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Decline</button>'
+            : '') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+async function respondTrade(id, status) {
+  const { error } = await sb.from('trade_requests').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast('Could not update trade', 'error'); return; }
+  showToast(status === 'ACCEPTED' ? 'Trade accepted' : 'Trade declined');
+  renderTrades();
+}
+
+/* ---------- Messages / Chat ---------- */
+async function renderMessages() {
+  const list = document.getElementById('chat-threads-list');
+  if (!list) return;
+  if (!currentUser) { list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">Sign in to view messages.</p>'; return; }
+  const { data, error } = await sb.from('chats').select('*').or('participant_a.eq.' + currentUser.id + ',participant_b.eq.' + currentUser.id).order('updated_at', { ascending: false });
+  if (error) { list.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Could not load threads.</p>'; return; }
+  if (!data.length) { list.innerHTML = '<p class="text-xs px-1" style="color:var(--text-muted)">No conversations yet.</p>'; return; }
+  list.innerHTML = data.map(function (c) {
+    const otherName = c.participant_a === currentUser.id ? (c.participant_b_display || 'Collector') : (c.participant_a_display || 'Collector');
+    return (
+      '<button onclick="openChat(\'' + c.id + '\')" class="w-full text-left px-2 py-2 rounded-md hover:bg-white/5">' +
+        '<p class="text-sm text-parchment truncate">' + escapeHtml(otherName) + '</p>' +
+        '<p class="text-xs truncate" style="color:var(--text-muted)">' + escapeHtml(c.last_message || '') + '</p>' +
+      '</button>'
+    );
+  }).join('');
+}
+
+async function openChat(chatId) {
+  currentChatId = chatId;
+  const header = document.getElementById('chat-active-header');
+  const body = document.getElementById('chat-messages-body');
+  header.innerHTML = '<span class="text-sm text-parchment">Conversation</span>';
+  body.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Loading…</p>';
+  const { data, error } = await sb.from('chat_messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
+  if (error) { body.innerHTML = '<p class="text-xs" style="color:var(--text-muted)">Could not load messages.</p>'; return; }
+  body.innerHTML = data.map(function (m) {
+    const mine = m.sender_id === (currentUser && currentUser.id);
+    return (
+      '<div class="flex ' + (mine ? 'justify-end' : 'justify-start') + '">' +
+        '<div class="max-w-[75%] rounded-md px-3 py-2 text-sm ' + (mine ? 'btn-brass' : 'modal-panel') + '">' + escapeHtml(m.text || '') + '</div>' +
+      '</div>'
+    );
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendChatMessage(e) {
+  e.preventDefault();
+  const input = document.getElementById('chat-input-text');
+  const text = input.value.trim();
+  if (!text || !currentChatId || !currentUser) return;
+  const { error } = await sb.from('chat_messages').insert({
+    chat_id: currentChatId, sender_id: currentUser.id, sender: (currentProfile && currentProfile.username) || currentUser.email, text: text,
+  });
+  if (error) { showToast('Could not send message', 'error'); return; }
+  input.value = '';
+  await sb.from('chats').update({ last_message: text, last_sender: currentUser.id, updated_at: new Date().toISOString() }).eq('id', currentChatId);
+  openChat(currentChatId);
+}
+
+/* ---------- Notifications ---------- */
+async function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    panel.classList.remove('hidden');
+    await renderNotifications();
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+async function renderNotifications() {
+  const panel = document.getElementById('notif-panel');
+  const dot = document.getElementById('notif-dot');
+  if (!panel) return;
+  if (!currentUser) { panel.innerHTML = '<p class="text-xs p-3" style="color:var(--text-muted)">Sign in to see notifications.</p>'; if (dot) dot.classList.add('hidden'); return; }
+  const { data, error } = await sb.from('notifications').select('*').eq('recipient_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+  if (error) { panel.innerHTML = '<p class="text-xs p-3" style="color:var(--text-muted)">Could not load notifications.</p>'; return; }
+  if (dot) dot.classList.toggle('hidden', !data.some(function (n) { return !n.read; }));
+  panel.innerHTML = data.length
+    ? data.map(function (n) {
+        return (
+          '<div class="p-2.5 rounded-md ' + (n.read ? '' : 'bg-white/5') + ' text-sm">' +
+            '<p class="text-parchment">' + escapeHtml(n.title || '') + '</p>' +
+            '<p class="text-xs mt-0.5" style="color:var(--text-muted)">' + escapeHtml(n.message || '') + '</p>' +
+          '</div>'
+        );
+      }).join('')
+    : '<p class="text-xs p-3" style="color:var(--text-muted)">No notifications.</p>';
+}
+
+/* ---------- Admin / Registrar ---------- */
+async function renderAdmin() {
+  const el = document.getElementById('admin-content');
+  if (!el) return;
+  if (!currentProfile || currentProfile.role !== 'admin') { el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Registrar access only.</p>'; return; }
+  el.innerHTML = '<p class="text-sm" style="color:var(--text-muted)">Loading…</p>';
+
+  if (activeAdminTab === 'orders') {
+    const { data, error } = await sb.from('transactions').select('*').eq('status', 'PENDING').order('created_at', { ascending: false });
+    if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load orders.</p>'; return; }
+    el.innerHTML = data.length ? data.map(function (t) {
+      return (
+        '<div class="card-entry rounded-sm p-4 flex items-center justify-between gap-4 mb-2">' +
+          '<div>' +
+            '<p class="text-sm text-parchment">' + escapeHtml(t.user_name || '') + '</p>' +
+            '<p class="text-xs" style="color:var(--text-muted)">$' + Number(t.total_amount || t.amount || 0).toLocaleString() + ' · ' + t.type + '</p>' +
+          '</div>' +
+          '<div class="flex gap-2">' +
+            '<button onclick="reviewOrder(\'' + t.id + '\',\'APPROVED\')" class="btn-brass rounded-md px-3 py-1.5 text-xs">Approve</button>' +
+            '<button onclick="reviewOrder(\'' + t.id + '\',\'REJECTED\')" class="btn-ghost rounded-md px-3 py-1.5 text-xs">Reject</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('') : '<p class="text-sm" style="color:var(--text-muted)">No pending orders.</p>';
+  } else if (activeAdminTab === 'cards') {
+    const { data, error } = await sb.from('cards').select('*').order('serial');
+    if (error) { el.innerHTML = '<p class="text-sm" style="color:var(--oxblood-bright)">Could not load cards.</p>'; return; }
+    el.innerHTML =
+      '<div class="overflow-x-auto"><table class="w-full text-sm">' +
+        '<thead><tr class="text-left" style="color:var(--text-muted)"><th class="py-2 pr-4">Serial</th><th class="py-2 pr-4">Name</th><th class="py-2 pr-4">Status</th><th class="py-2 pr-4">Price</th></tr></thead>' +
+        '<tbody>' +
+          data.map(function (c) {
+            const opts = ['AVAILABLE', 'PENDING', 'SOLD', 'OWNED', 'RESERVED'].map(function (s) {
+              return '<option value="' + s + '" ' + (c.status === s ? 'selected' : '') + '>' + s + '</option>';
+            }).join('');
+            return (
+              '<tr class="border-t" style="border-color:var(--line)">' +
+                '<td class="py-2 pr-4 font-mono text-xs">' + escapeHtml(c.serial || '') + '</td>' +
+                '<td class="py-2 pr-4">' + escapeHtml(c.name) + '</td>' +
+                '<td class="py-2 pr-4"><select onchange="updateCardStatus(\'' + c.id + '\', this.value)" class="input-field rounded-md px-2 py-1 text-xs">' + opts + '</select></td>' +
+                '<td class="py-2 pr-4 font-mono">$' + Number(c.price || 0).toLocaleString() + '</td>' +
+              '</tr>'
+            );
+          }).join('') +
+        '</tbody>' +
+      '</table></div>';
+  } else if (activeAdminTab === 'auction') {
+    const activeRes = await sb.from('auctions').select('*').eq('status', 'ACTIVE').maybeSingle();
+    const active = activeRes.data;
+    if (active) {
+      el.innerHTML =
+        '<div class="card-entry rounded-sm p-4 mb-4">' +
+          '<p class="text-sm text-parchment">' + escapeHtml(active.card_name || '') + ' — current bid $' + Number(active.current_bid || 0).toLocaleString() + '</p>' +
+          '<button onclick="finalizeAuction(\'' + active.id + '\')" class="btn-brass rounded-md px-3 py-1.5 text-xs mt-2">Finalize Lot</button>' +
+        '</div>';
+    } else {
+      const cardsRes = await sb.from('cards').select('id,name,serial,img_url').eq('status', 'AVAILABLE');
+      const cardsAvailable = cardsRes.data || [];
+      el.innerHTML =
+        '<div class="flex gap-2 mb-4">' +
+          '<select id="new-auction-card" class="input-field rounded-md px-3 py-2 text-sm flex-1">' +
+            cardsAvailable.map(function (c) { return '<option value="' + c.id + '">' + escapeHtml(c.name) + ' (' + escapeHtml(c.serial || '') + ')</option>'; }).join('') +
+          '</select>' +
+          '<input type="number" id="new-auction-price" placeholder="Starting price" class="input-field rounded-md px-3 py-2 text-sm w-40">' +
+          '<button onclick="startAuction()" class="btn-brass rounded-md px-4 py-2 text-sm">Start Lot</button>' +
+        '</div>';
+    }
+  }
+}
+
+async function reviewOrder(id, status) {
+  const { data: tx } = await sb.from('transactions').select('*').eq('id', id).maybeSingle();
+  const { error } = await sb.from('transactions').update({ status: status, reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) { showToast('Could not update order', 'error'); return; }
+  if (status === 'APPROVED' && tx && tx.items) {
+    const cardIds = tx.items.map(function (i) { return i.card_id; });
+    await sb.from('cards').update({ status: 'SOLD', owner_id: tx.user_id, owner: tx.user_name }).in('id', cardIds);
+  }
+  showToast('Order ' + status.toLowerCase());
+  renderAdmin();
+}
+
+async function updateCardStatus(id, status) {
+  const { error } = await sb.from('cards').update({ status: status }).eq('id', id);
+  if (error) showToast('Could not update card', 'error'); else showToast('Card updated');
+}
+
+async function startAuction() {
+  const cardId = document.getElementById('new-auction-card').value;
+  const price = Number(document.getElementById('new-auction-price').value);
+  if (!cardId || !price) return;
+  const cardRes = await sb.from('cards').select('*').eq('id', cardId).maybeSingle();
+  const card = cardRes.data;
+  const { error } = await sb.from('auctions').insert({
+    card_id: cardId, seller_id: currentUser.id, starting_price: price, current_bid: price,
+    status: 'ACTIVE', card_name: card && card.name, card_img: card && card.img_url, serial: card && card.serial,
+  });
+  if (error) { showToast('Could not start auction', 'error'); return; }
+  await sb.from('cards').update({ status: 'RESERVED' }).eq('id', cardId);
+  showToast('Lot is live');
+  renderAdmin();
+}
+
+async function finalizeAuction(id) {
+  const { data: auction } = await sb.from('auctions').select('*').eq('id', id).maybeSingle();
+  const { error } = await sb.from('auctions').update({ status: 'FINALIZED' }).eq('id', id);
+  if (error) { showToast('Could not finalize', 'error'); return; }
+  if (auction && auction.highest_bidder) {
+    await sb.from('cards').update({ status: 'SOLD', owner_id: auction.highest_bidder, owner: auction.high_bidder }).eq('id', auction.card_id);
+  }
+  showToast('Lot finalized');
+  renderAdmin();
+}
+
+/* ---------- Boot ---------- */
+document.addEventListener('DOMContentLoaded', async function () {
+  await initAuth();
+  await loadStats();
+  await renderMarketplace();
+});
 </script>
+
 </body>
 </html>
