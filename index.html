@@ -468,6 +468,52 @@
    EUGENE CARD — REGISTRY & EXCHANGE
    Single-file marketplace backed by Supabase (project: eugene-card-2)
    ===================================================================== */
+
+/* ---------- Main view tabs (Registry / Live Lot / Exchange / etc.) ---------- */
+function setView(view) {
+  // Show only the matching [x-view] panel
+  document.querySelectorAll('[x-view]').forEach(function (panel) {
+    panel.classList.toggle('active', panel.id === 'view-' + view);
+  });
+
+  // Sync active styling on every nav button pointing at this view
+  // (desktop nav + mobile nav both use data-view)
+  document.querySelectorAll('[data-view]').forEach(function (btn) {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+
+  // Close the mobile menu after a selection
+  var mobileNav = document.getElementById('mobile-nav');
+  if (mobileNav && !mobileNav.classList.contains('hidden')) {
+    mobileNav.classList.add('hidden');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- Mobile hamburger toggle ---------- */
+function toggleMobileNav() {
+  var mobileNav = document.getElementById('mobile-nav');
+  if (mobileNav) mobileNav.classList.toggle('hidden');
+}
+
+/* ---------- Exchange sub-tabs (Incoming / Outgoing / History) ---------- */
+function setTradeTab(tab) {
+  document.querySelectorAll('[data-tradetab]').forEach(function (btn) {
+    btn.classList.toggle('active', btn.dataset.tradetab === tab);
+  });
+  // Hook: call your trades renderer here, e.g. renderTrades(tab),
+  // to populate #trades-content for the selected sub-tab.
+}
+
+/* ---------- Registrar sub-tabs (Pending Orders / Manage Cards / Auction Control) ---------- */
+function setAdminTab(tab) {
+  document.querySelectorAll('[data-admintab]').forEach(function (btn) {
+    btn.classList.toggle('active', btn.dataset.admintab === tab);
+  });
+  // Hook: call your admin renderer here, e.g. renderAdmin(tab),
+  // to populate #admin-content for the selected sub-tab.
+}
 </script>
 </body>
 </html>
