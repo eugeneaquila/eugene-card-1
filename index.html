@@ -725,6 +725,76 @@
     </div>
   </div>
 
+  <!-- SELL-BACK QRIS UPLOAD MODAL -->
+  <div id="sellback-qris-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+      <button onclick="closeSellbackQrisModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-qrcode text-amber-400 mr-1"></i> Upload Your QRIS to Receive Payout</h3>
+      <p class="text-[11px] text-slate-400">Selling back <strong id="sellback-modal-serial" class="text-amber-300"></strong> for <strong id="sellback-modal-price" class="text-emerald-400"></strong></p>
+      <input type="hidden" id="sellback-card-id-target">
+
+      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+        <label class="block font-bold text-slate-300">Upload Your DANA / GoPay / OVO / QRIS Code Screenshot</label>
+        <input type="file" id="sellback-qris-file-input" accept="image/*" onchange="handleSellbackQrisUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
+        <input type="hidden" id="sellback-qris-img-data" value="">
+        <div id="sellback-qris-preview-container" class="hidden text-center pt-2">
+          <img id="sellback-qris-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+        </div>
+      </div>
+
+      <p class="text-[10px] text-slate-500">Admin will scan your code to send the payout, then confirm here with a receipt once it's sent.</p>
+      <button onclick="submitSellBackRequest()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Submit Sell-Back Request</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: SEND PAYOUT RECEIPT MODAL -->
+  <div id="send-receipt-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+      <button onclick="closeSendReceiptModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-receipt text-amber-400 mr-1"></i> Send Payout Receipt</h3>
+      <p class="text-[11px] text-slate-400">Confirm <strong id="receipt-modal-seller" class="text-amber-300"></strong> was paid for <strong id="receipt-modal-serial" class="text-emerald-400"></strong></p>
+      <input type="hidden" id="receipt-payout-id-target">
+
+      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+        <label class="block font-bold text-slate-300">Upload Payment Confirmation / Receipt Screenshot</label>
+        <input type="file" id="receipt-file-input" accept="image/*" onchange="handleReceiptUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
+        <input type="hidden" id="receipt-img-data" value="">
+        <div id="receipt-preview-container" class="hidden text-center pt-2">
+          <img id="receipt-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+        </div>
+      </div>
+
+      <button onclick="submitPayoutReceipt()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Confirm &amp; Send Receipt</button>
+    </div>
+  </div>
+
+  <!-- AUCTION WINNER PAYMENT MODAL -->
+  <div id="auction-winner-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+      <button onclick="closeAuctionWinnerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-trophy text-amber-400 mr-1"></i> You Won the Auction!</h3>
+      <p class="text-[11px] text-slate-400">Complete payment for <strong id="winner-modal-serial" class="text-amber-300"></strong></p>
+
+      <img id="winner-qris-img-element" src="" class="w-48 h-48 mx-auto bg-white p-2 rounded-2xl shadow-inner border border-slate-800">
+
+      <div>
+        <p class="text-[10px] text-slate-500 font-bold uppercase">Winning Bid Amount</p>
+        <p id="winner-amount-display" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
+      </div>
+
+      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+        <label class="block font-bold text-slate-300">Upload QRIS Transfer Receipt Screenshot</label>
+        <input type="file" id="winner-proof-file-input" accept="image/*" onchange="handleWinnerProofUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
+        <input type="hidden" id="winner-proof-img-data" value="">
+        <div id="winner-proof-preview-container" class="hidden text-center pt-2">
+          <img id="winner-proof-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+        </div>
+      </div>
+
+      <button onclick="submitAuctionWinPayment()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Submit Payment for Admin Approval</button>
+    </div>
+  </div>
+
   <!-- NON-BLOCKING FLOATING IMPORT PROGRESS WIDGET -->
   <div id="loading-modal" class="fixed bottom-6 right-6 z-[9999] hidden pointer-events-auto">
     <div class="bg-slate-900/95 border border-indigo-500/40 rounded-2xl max-w-xs w-80 p-4 space-y-3 shadow-2xl backdrop-blur-xl relative">
@@ -1089,6 +1159,7 @@
     let activeListings = [];
     let activeAuction = null;
     let tradeRequestsList = [];
+    let payoutRequestsList = [];
     let viewedCollectorFilter = null;
     let globalCollectorProfiles = {};
 
