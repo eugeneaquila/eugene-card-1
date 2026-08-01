@@ -329,7 +329,7 @@
                 <label class="block text-xs font-bold text-slate-300" data-i18n="bidAmountLabel">Your Bid Amount (IDR) - QRIS</label>
                 <div class="flex gap-2">
                   <input type="number" id="bid-input-amount" placeholder="e.g. 775000" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                  <button onclick="placeAuctionBid()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl" data-i18n="placeBidBtn">Place Bid</button>
+                  <button id="place-bid-btn" onclick="placeAuctionBid()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="placeBidBtn">Place Bid</button>
                 </div>
               </div>
             </div>
@@ -708,6 +708,23 @@
     </div>
   </div>
 
+  <!-- GENERIC CONFIRMATION MODAL -->
+  <div id="generic-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9995] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl text-center">
+      <div class="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center mx-auto">
+        <i id="generic-confirm-icon" class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i>
+      </div>
+      <div>
+        <h3 id="generic-confirm-title" class="text-base font-extrabold text-white">Are you sure?</h3>
+        <p id="generic-confirm-message" class="text-xs text-slate-400 mt-1.5 leading-relaxed"></p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeConfirmModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">Cancel</button>
+        <button id="generic-confirm-btn" onclick="handleConfirmModalAccept()" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <!-- NON-BLOCKING FLOATING IMPORT PROGRESS WIDGET -->
   <div id="loading-modal" class="fixed bottom-6 right-6 z-[9999] hidden pointer-events-auto">
     <div class="bg-slate-900/95 border border-indigo-500/40 rounded-2xl max-w-xs w-80 p-4 space-y-3 shadow-2xl backdrop-blur-xl relative">
@@ -1077,6 +1094,7 @@
 
     let currentChatTargetUser = null;
     let currentChatContextId = null;
+    let pendingConfirmAction = null;
     let chatUnsubscribe = null;
     let chatAttachedImage = null;
     let inboxUnsubscribe = null;
@@ -2395,6 +2413,11 @@
       const imgEl = document.getElementById('auction-card-img');
       const ownerEl = document.getElementById('auction-card-owner-info');
       const actionContainer = document.getElementById('auction-header-action-container');
+      const bidEl = document.getElementById('auction-current-bid');
+      const bidderEl = document.getElementById('auction-high-bidder');
+      const bidInput = document.getElementById('bid-input-amount');
+      const bidBtn = document.getElementById('place-bid-btn');
+      const historyEl = document.getElementById('auction-bid-history');
 
       if (!titleEl) return;
 
@@ -2404,6 +2427,11 @@
         if (imgEl) imgEl.src = "https://placehold.co/1080x1350/1e1b4b/fbbf24?text=No+Auction";
         if (ownerEl) ownerEl.innerHTML = `<span data-i18n="ownerLabel">${i18nDict[currentLanguage].ownerLabel}</span>: <strong class="text-white">None</strong>`;
         if (actionContainer) actionContainer.innerHTML = '';
+        if (bidEl) bidEl.innerText = '—';
+        if (bidderEl) bidderEl.innerText = currentLanguage === 'ID' ? 'Belum ada' : 'None';
+        if (bidInput) { bidInput.value = ''; bidInput.disabled = true; bidInput.placeholder = currentLanguage === 'ID' ? 'Tidak ada lelang aktif' : 'No active auction'; }
+        if (bidBtn) bidBtn.disabled = true;
+        if (historyEl) historyEl.innerHTML = `<p class="text-center text-slate-500 py-6">${currentLanguage === 'ID' ? 'Belum ada riwayat tawaran.' : 'No bid history yet.'}</p>`;
         return;
       }
 
@@ -2411,6 +2439,29 @@
       serialEl.innerText = activeAuction.serial || "*01";
       if (imgEl) imgEl.src = activeAuction.imgUrl || "https://placehold.co/1080x1350/1e1b4b/fbbf24?text=Card";
       if (ownerEl) ownerEl.innerHTML = `<span data-i18n="ownerLabel">${i18nDict[currentLanguage].ownerLabel}</span>: <strong class="text-white">${activeAuction.owner || 'Admin'}</strong>`;
+
+      const currentBidValue = Number(activeAuction.currentBid || activeAuction.startingPrice || 0);
+      if (bidEl) bidEl.innerText = formatIDR(currentBidValue);
+      if (bidderEl) bidderEl.innerText = (activeAuction.highBidder && activeAuction.highBidder !== 'None') ? activeAuction.highBidder : (currentLanguage === 'ID' ? 'Belum ada tawaran' : 'No bids yet');
+
+      const isOwnAuction = currentUser && (currentUser.name === activeAuction.owner || currentUser.username === activeAuction.owner);
+      if (bidInput) {
+        bidInput.disabled = !!isOwnAuction;
+        bidInput.placeholder = isOwnAuction ? (currentLanguage === 'ID' ? 'Tidak bisa menawar milik sendiri' : "Can't bid on your own card") : `e.g. ${currentBidValue + 25000}`;
+      }
+      if (bidBtn) bidBtn.disabled = !!isOwnAuction;
+
+      const history = Array.isArray(activeAuction.bidHistory) ? [...activeAuction.bidHistory].reverse() : [];
+      if (historyEl) {
+        historyEl.innerHTML = history.length === 0
+          ? `<p class="text-center text-slate-500 py-6">${currentLanguage === 'ID' ? 'Belum ada riwayat tawaran.' : 'No bid history yet.'}</p>`
+          : history.map(b => `
+              <div class="flex justify-between items-center bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
+                <span class="font-bold text-white">${b.bidder}</span>
+                <span class="font-mono text-emerald-400 font-black">${formatIDR(b.amount)}</span>
+              </div>
+            `).join('');
+      }
 
       const canCancel = currentUser && (currentUser.isAdmin || currentUser.name === activeAuction.owner || currentUser.username === activeAuction.owner);
       if (actionContainer) {
@@ -3081,7 +3132,19 @@
       const myIdent = currentUser.username || currentUser.name;
       if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
 
-      if (!confirm(`Sell back ${card.serial} to Admin via QRIS payout at floor price (${formatIDR(card.price)})?`)) return;
+      showConfirmModal({
+        title: currentLanguage === 'ID' ? 'Jual Kembali ke Admin?' : 'Sell Back to Admin?',
+        message: `${currentLanguage === 'ID' ? 'Jual kembali' : 'Sell back'} ${card.serial} (${card.name}) ${currentLanguage === 'ID' ? 'ke Admin via payout QRIS pada harga dasar' : 'to Admin via QRIS payout at floor price'} ${formatIDR(card.price)}. ${currentLanguage === 'ID' ? 'Tindakan ini tidak dapat dibatalkan.' : 'This action cannot be undone.'}`,
+        confirmText: currentLanguage === 'ID' ? 'Ya, Jual Kembali' : 'Yes, Sell Back',
+        confirmClass: 'bg-amber-500 hover:bg-amber-400 text-slate-950',
+        icon: 'fa-rotate-left text-amber-400',
+        onConfirm: () => performSellBackToAdmin(cardId)
+      });
+    }
+
+    async function performSellBackToAdmin(cardId) {
+      const card = inventory.find(c => c.id === cardId);
+      if (!card) return;
 
       try {
         await db.collection("cards").doc(cardId).update({ owner: null, status: 'AVAILABLE' });
@@ -3475,6 +3538,32 @@
       document.getElementById('counter-offer-modal').classList.add('hidden');
     }
 
+    function showConfirmModal({ title, message, confirmText, confirmClass, icon, onConfirm }) {
+      document.getElementById('generic-confirm-title').innerText = title || 'Are you sure?';
+      document.getElementById('generic-confirm-message').innerText = message || '';
+
+      const iconEl = document.getElementById('generic-confirm-icon');
+      iconEl.className = `fa-solid ${icon || 'fa-triangle-exclamation text-amber-400'} text-xl`;
+
+      const btn = document.getElementById('generic-confirm-btn');
+      btn.innerText = confirmText || 'Confirm';
+      btn.className = `flex-1 py-2.5 font-extrabold text-xs rounded-xl transition-all ${confirmClass || 'bg-amber-500 hover:bg-amber-400 text-slate-950'}`;
+
+      pendingConfirmAction = typeof onConfirm === 'function' ? onConfirm : null;
+      document.getElementById('generic-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('generic-confirm-modal').classList.add('hidden');
+      pendingConfirmAction = null;
+    }
+
+    function handleConfirmModalAccept() {
+      const action = pendingConfirmAction;
+      closeConfirmModal();
+      if (action) action();
+    }
+
     async function submitCounterOffer() {
       const reqId = document.getElementById('counter-req-id-target').value;
       const counterNotes = document.getElementById('counter-notes-input').value.trim();
@@ -3601,6 +3690,47 @@
         renderAuctionView();
       } catch (e) {
         showToast('Error canceling auction: ' + e.message);
+      }
+    }
+
+    async function placeAuctionBid() {
+      if (!activeAuction) return showToast('No active auction to bid on.');
+      if (!currentUser) { showToast('Please log in to place a bid.'); return openAuthModal(); }
+
+      const myIdent = currentUser.username || currentUser.name;
+      if (currentUser.name === activeAuction.owner || currentUser.username === activeAuction.owner) {
+        return showToast('You cannot bid on your own auction listing.');
+      }
+
+      const input = document.getElementById('bid-input-amount');
+      const bidValue = parseFloat(input.value);
+      const currentHigh = Number(activeAuction.currentBid || activeAuction.startingPrice || 0);
+
+      if (!bidValue || isNaN(bidValue) || bidValue <= 0) return showToast('Enter a valid bid amount.');
+      if (bidValue <= currentHigh) return showToast(`Your bid must be higher than the current bid of ${formatIDR(currentHigh)}.`);
+
+      const bidEntry = { bidder: myIdent, amount: bidValue, timestamp: new Date().toISOString() };
+
+      try {
+        await db.collection("system").doc("activeAuction").update({
+          currentBid: bidValue,
+          highBidder: myIdent,
+          bidHistory: firebase.firestore.FieldValue.arrayUnion(bidEntry)
+        });
+
+        activeAuction = {
+          ...activeAuction,
+          currentBid: bidValue,
+          highBidder: myIdent,
+          bidHistory: [...(activeAuction.bidHistory || []), bidEntry]
+        };
+
+        input.value = '';
+        renderAuctionView();
+        showToast(`Bid of ${formatIDR(bidValue)} placed successfully!`);
+        addNotification('Bid Placed', `You bid ${formatIDR(bidValue)} on ${activeAuction.serial || 'the featured card'}.`, 'fa-gavel text-emerald-400');
+      } catch (e) {
+        showToast('Error placing bid: ' + e.message);
       }
     }
 
