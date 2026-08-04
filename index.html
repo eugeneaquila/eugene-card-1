@@ -1315,13 +1315,15 @@
           <p class="text-[11px] text-slate-300 leading-relaxed">Send exact payment directly via your <strong>Wise App</strong> or web account using local currency conversion.</p>
           
           <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5 font-mono text-[11px]">
-            <div class="flex justify-between items-center"><span class="text-slate-500">Wise Email:</span><span id="wise-account-email" class="text-white font-bold select-all">eugene.aquila06@gmail.com</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">Wise Email:</span><span id="wise-account-email" class="text-white font-bold select-all">eugenecard.market@gmail.com</span></div>
             <div class="flex justify-between items-center"><span class="text-slate-500">Wise Tag:</span><span id="wise-account-tag" class="text-amber-400 font-bold select-all">@eugenecard</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">Recipient Name:</span><span class="text-white">Eugene Card House</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">Bank Account (IDR):</span><span id="wise-bank-account" class="text-emerald-400 font-bold select-all">BCA 1234567890</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">Recipient Name:</span><span class="text-white">Eugene Card</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">Bank / E-Wallet:</span><span id="wise-bank-account" class="text-emerald-400 font-bold select-all">GoPay</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500">GoPay Number:</span><span id="wise-account-phone" class="text-emerald-400 font-bold select-all">+6285163702260</span></div>
           </div>
           
           <p class="text-[10px] text-slate-400 italic">Tip: Select currency <strong>IDR (Indonesian Rupiah)</strong> on Wise so the recipient gets the exact amount.</p>
+          <p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1.5 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i> Wise's own transfer/conversion fee is set by Wise (not Eugene Card) and is shown in your Wise app before you confirm — it's separate from, and in addition to, the 2% platform tax below.</p>
         </div>
       </div>
 
@@ -1370,9 +1372,10 @@
     const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
 
     // Wise Payment Gateway Seller Details
-    const WISE_SELLER_EMAIL = "eugene.aquila06@gmail.com";
+    const WISE_SELLER_EMAIL = "eugenecard.market@gmail.com";
     const WISE_SELLER_TAG = "@eugenecard";
-    const WISE_BANK_ACCOUNT = "BCA 1234567890 (a.n. Eugene Card)";
+    const WISE_SELLER_PHONE = "+6285163702260";
+    const WISE_BANK_ACCOUNT = "GoPay +6285163702260 (a.n. Eugene Card)";
 
     let activePaymentMethod = 'QRIS';
 
