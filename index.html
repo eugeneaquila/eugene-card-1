@@ -440,6 +440,10 @@
 
       <!-- Language Toggle, Cart, Notifications & Auth Header -->
       <div class="flex items-center gap-2 shrink-0">
+        <button onclick="openOnboardingModal()" title="How Eugene Card Works" class="hidden sm:flex p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 items-center justify-center transition-all">
+          <i class="fa-solid fa-circle-question text-sm text-amber-400"></i>
+        </button>
+
         <button onclick="toggleLanguage()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-mono font-bold text-xs rounded-xl border border-slate-800 transition-all flex items-center gap-1" title="Switch Language / Ganti Bahasa">
           <i class="fa-solid fa-globe text-[11px]"></i>
           <span id="current-lang-label">EN</span>
@@ -1489,8 +1493,8 @@
 
   <!-- CARD DETAIL MODAL -->
   <div id="card-detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
-      <button onclick="closeCardDetailModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button onclick="closeCardDetailModal()" class="sticky top-0 float-right -mt-1 -mr-1 z-10 w-8 h-8 rounded-xl bg-slate-800/90 backdrop-blur text-slate-400 text-xs flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
@@ -1540,6 +1544,56 @@
         <i id="market-profile-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform"></i>
       </button>
       <div id="card-market-profile-panel" class="hidden space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING / "HOW IT WORKS" MODAL -->
+  <div id="onboarding-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9996] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/25 rounded-3xl max-w-sm w-full p-6 space-y-5 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button onclick="closeOnboardingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl mx-auto bg-slate-950 border border-amber-500/40 p-2 shadow-lg flex items-center justify-center">
+          <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
+        </div>
+        <h3 class="text-lg font-black text-white">Welcome to Eugene Card</h3>
+        <p class="text-xs text-slate-400">Four steps from new visitor to collector.</p>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
+          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">1</span>
+          <div>
+            <p class="text-xs font-extrabold text-white">Collect your first card</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Browse the catalog and add a limited-edition serial card to your cart.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
+          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">2</span>
+          <div>
+            <p class="text-xs font-extrabold text-white">Build your vault</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Owned cards live in your Vault / Binder, tracked with your collector level.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
+          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">3</span>
+          <div>
+            <p class="text-xs font-extrabold text-white">Trade with collectors</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">List cards in the Trading Room, propose direct trades, or bid in Auctions.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-slate-950 border border-slate-800 rounded-2xl p-3">
+          <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">4</span>
+          <div>
+            <p class="text-xs font-extrabold text-white">Complete collections</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Track your completion % and unlock rewards as your binder fills up.</p>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="closeOnboardingModal()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-all">Get Started</button>
     </div>
   </div>
 
@@ -3835,6 +3889,24 @@
       volumeEl.innerText = formatIDR(volume);
     }
 
+    // ===== FIRST-TIME ONBOARDING =====
+    function openOnboardingModal() {
+      const modal = document.getElementById('onboarding-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeOnboardingModal() {
+      const modal = document.getElementById('onboarding-modal');
+      if (modal) modal.classList.add('hidden');
+      localStorage.setItem('eugene_onboarded', '1');
+    }
+
+    function showOnboardingIfFirstVisit() {
+      if (!localStorage.getItem('eugene_onboarded')) {
+        openOnboardingModal();
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       localStorage.removeItem('eugene_cards_override');
       deleteCookie('eugene_cards_override');
@@ -3849,6 +3921,7 @@
       renderAuthHeader();
       startAuctionTimer();
       setupCardTiltEffect();
+      showOnboardingIfFirstVisit();
 
       auth.onAuthStateChanged((user) => {
         if (user) {
@@ -4573,11 +4646,27 @@
     // computed from tier (Premium vs Standard) and how low the serial number is,
     // since lower serials in a limited series are conventionally scarcer.
     function computeRarityIndex(card) {
+      return getRarityBreakdown(card).score;
+    }
+
+    // Same scoring logic as computeRarityIndex, but also returns the human-readable
+    // reasons behind the number so the UI can show a real checklist, not just a figure.
+    function getRarityBreakdown(card) {
       const isPremium = card.type === 'PREMIUM';
-      const serialNum = parseInt((card.sn || '1').replace(/\D/g, ''), 10) || 1;
+      const serialNum = parseInt((card.sn || card.serial || '1').replace(/\D/g, ''), 10) || 1;
       const base = isPremium ? 92 : 68;
       const serialBonus = Math.max(0, 8 - Math.floor((serialNum - 1) / 3));
-      return Math.min(100, base + serialBonus);
+      const score = Math.min(100, base + serialBonus);
+
+      const reasons = [];
+      reasons.push(`Serial ${card.serial || ('*' + String(serialNum).padStart(2, '0'))}`);
+      reasons.push(isPremium ? 'Premium Edition' : 'Standard Edition');
+      reasons.push(`Only ${inventory.length || 50} copies in this series`);
+      if (serialNum <= 5) reasons.push('Early release (first 5 minted)');
+      else if (serialBonus > 0) reasons.push('Low serial number');
+      if (card.owner) reasons.push('Actively held by a collector');
+
+      return { score, reasons };
     }
 
     function timeAgoLabel(dateVal) {
@@ -4593,6 +4682,46 @@
       if (months < 12) return currentLanguage === 'ID' ? `${months} bulan lalu` : `${months} month${months > 1 ? 's' : ''} ago`;
       const years = Math.floor(months / 12);
       return currentLanguage === 'ID' ? `${years} tahun lalu` : `${years} year${years > 1 ? 's' : ''} ago`;
+    }
+
+    function buildPriceHistorySparkline(card, history) {
+      // Build a simple point series: original price -> each trade price -> current price.
+      const points = [];
+      const originalPrice = card.baseFloorPrice || card.price || 0;
+      points.push(originalPrice);
+      history.forEach(tx => {
+        const item = tx.items.find(i => i.id === card.id) || {};
+        if (item.price) points.push(item.price);
+      });
+      if (points[points.length - 1] !== card.price) points.push(card.price || 0);
+
+      if (points.length < 2) return `<p class="text-[11px] text-slate-500 italic px-1">Not enough sales yet to chart a price trend.</p>`;
+
+      const w = 280, h = 60, pad = 6;
+      const min = Math.min(...points), max = Math.max(...points);
+      const range = (max - min) || 1;
+      const stepX = (w - pad * 2) / (points.length - 1);
+      const coords = points.map((p, i) => {
+        const x = pad + i * stepX;
+        const y = h - pad - ((p - min) / range) * (h - pad * 2);
+        return [x, y];
+      });
+      const pathD = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c[0].toFixed(1)} ${c[1].toFixed(1)}`).join(' ');
+      const areaD = `${pathD} L ${coords[coords.length - 1][0].toFixed(1)} ${h - pad} L ${coords[0][0].toFixed(1)} ${h - pad} Z`;
+      const isUp = points[points.length - 1] >= points[0];
+      const lineColor = isUp ? '#34d399' : '#fb7185';
+
+      return `
+        <svg viewBox="0 0 ${w} ${h}" class="w-full h-16">
+          <path d="${areaD}" fill="${lineColor}" fill-opacity="0.12" stroke="none"></path>
+          <path d="${pathD}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          ${coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.5" fill="${lineColor}"></circle>`).join('')}
+        </svg>
+        <div class="flex justify-between text-[9px] text-slate-500 font-mono px-0.5 -mt-1">
+          <span>${formatIDR(min)}</span>
+          <span>${formatIDR(max)}</span>
+        </div>
+      `;
     }
 
     function renderCardMarketProfile(cardId) {
@@ -4617,17 +4746,41 @@
         ? `${formatIDR((lastTx.items.find(i => i.id === cardId) || {}).price || lastTx.total_amount || 0)} <span class="text-slate-500 font-normal">· ${timeAgoLabel(lastTx.created_at)}</span>`
         : `<span class="text-slate-500">${dict.mpNoSaleYet}</span>`;
 
-      const rarity = computeRarityIndex(card);
+      const rarity = getRarityBreakdown(card);
+
+      // Ownership chain: House -> buyer 1 -> buyer 2 -> ... -> current owner
+      const chain = ['House'];
+      history.forEach(tx => { if (tx.user_name && chain[chain.length - 1] !== tx.user_name) chain.push(tx.user_name); });
+      if (card.owner && chain[chain.length - 1] !== card.owner) chain.push(card.owner);
 
       const statsHtml = `
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div class="mp-stat"><span class="mp-label">${dict.mpCurrentValue}</span><strong class="mp-value text-emerald-400 text-sm">${formatIDR(currentValue)}</strong></div>
           <div class="mp-stat"><span class="mp-label">${dict.mpOriginalPrice}</span><strong class="mp-value text-white text-sm">${formatIDR(originalPrice)}</strong></div>
           <div class="mp-stat"><span class="mp-label">${dict.mpGrowth}</span><strong class="mp-value ${growthColor} text-sm">${growthSign}${growthPct.toFixed(1)}%</strong></div>
-          <div class="mp-stat"><span class="mp-label">${dict.mpRarityIndex}</span><strong class="mp-value text-amber-400 text-sm">${rarity}/100</strong></div>
+          <div class="mp-stat"><span class="mp-label">${dict.mpRarityIndex}</span><strong class="mp-value text-amber-400 text-sm">${rarity.score}/100</strong></div>
           <div class="mp-stat"><span class="mp-label">${dict.mpOwners}</span><strong class="mp-value text-white text-sm">${uniqueOwners.size} <span class="text-[9px] font-normal text-slate-500">${dict.mpCollectors}</span></strong></div>
           <div class="mp-stat"><span class="mp-label">${dict.mpTradeVolume}</span><strong class="mp-value text-white text-sm">${history.length} <span class="text-[9px] font-normal text-slate-500">${dict.mpTransactions}</span></strong></div>
           <div class="mp-stat col-span-2"><span class="mp-label">${dict.mpLastSale}</span><strong class="mp-value text-sm">${lastSaleLine}</strong></div>
+        </div>
+      `;
+
+      const rarityHtml = `
+        <div class="bg-slate-950 p-3 rounded-2xl border border-amber-500/20">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider">Rarity Score</h4>
+            <span class="text-sm font-black font-mono text-amber-400">${rarity.score}<span class="text-[10px] text-slate-500">/100</span></span>
+          </div>
+          <ul class="space-y-1">
+            ${rarity.reasons.map(r => `<li class="flex items-center gap-1.5 text-[11px] text-slate-300"><i class="fa-solid fa-check text-emerald-400 text-[9px]"></i> ${r}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      const priceChartHtml = `
+        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+          <h4 class="text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-2">Price History</h4>
+          ${buildPriceHistorySparkline(card, history)}
         </div>
       `;
 
@@ -4655,12 +4808,27 @@
         `;
       }
 
+      const ownershipChainHtml = chain.length > 1 ? `
+        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800">
+          <h4 class="text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-2">Ownership Chain</h4>
+          <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+            ${chain.map((name, i) => `
+              <span class="px-2 py-1 rounded-lg ${i === chain.length - 1 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold' : 'bg-slate-900 text-slate-300 border border-slate-800'}">${name}</span>
+              ${i < chain.length - 1 ? '<i class="fa-solid fa-arrow-right text-slate-600 text-[9px]"></i>' : ''}
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
       panel.innerHTML = `
         ${statsHtml}
+        ${priceChartHtml}
+        ${rarityHtml}
         <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800">
           <h4 class="text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1.5">${dict.mpHistoryTitle}</h4>
           ${historyHtml}
         </div>
+        ${ownershipChainHtml}
       `;
     }
 
