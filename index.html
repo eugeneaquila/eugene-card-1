@@ -14,6 +14,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 
+  <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -218,6 +221,65 @@
     .serial-engraved {
       text-shadow: 0 1px 0 rgba(255,255,255,.18), 0 -1px 1px rgba(0,0,0,.7);
       letter-spacing: 0.03em;
+    }
+
+    /* ===== PREMIUM "OWN THIS" CARD UPGRADE ===== */
+    /* Continuous ambient glow pulse so premium cards read as premium at rest, not just on hover */
+    @keyframes premiumAmbientGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,.18), 0 0 0px rgba(124,58,237,0); }
+      50% { box-shadow: 0 0 32px rgba(245,158,11,.32), 0 0 18px rgba(124,58,237,.18); }
+    }
+    .card-holo-premium { animation: premiumAmbientGlow 3.2s ease-in-out infinite; }
+
+    /* Diagonal foil sweep — an actual layered element (not just hover ::before) so foil cards
+       always look "alive". Sits above artwork, below text via z-index ordering in markup. */
+    .foil-sweep {
+      position:absolute; inset:0; overflow:hidden; pointer-events:none; border-radius:inherit; z-index:1;
+    }
+    .foil-sweep::before {
+      content:"";
+      position:absolute; top:-60%; left:-60%; width:220%; height:220%;
+      background: linear-gradient(115deg,
+        transparent 42%,
+        rgba(255,255,255,.10) 47%,
+        rgba(251,191,36,.38) 50%,
+        rgba(167,139,250,.22) 52%,
+        rgba(255,255,255,.10) 55%,
+        transparent 60%);
+      animation: foilSweep 5s linear infinite;
+    }
+    @keyframes foilSweep {
+      0% { transform: translate(-15%, -8%) rotate(18deg); }
+      100% { transform: translate(15%, 8%) rotate(18deg); }
+    }
+
+    /* Rarity corner ribbon for premium cards */
+    .rarity-ribbon {
+      position:absolute; top:8px; right:-26px; z-index:3;
+      background: linear-gradient(90deg,#f59e0b,#fbbf24);
+      color:#1c1206; font-size:8px; font-weight:900; letter-spacing:.06em;
+      padding:2px 28px; transform:rotate(40deg);
+      box-shadow:0 2px 8px rgba(0,0,0,.4);
+      pointer-events:none;
+    }
+
+    /* Embossed metallic serial text for premium cards */
+    .serial-embossed-premium {
+      background: linear-gradient(135deg,#fde68a 0%,#f59e0b 35%,#fffbeb 50%,#f59e0b 65%,#fde68a 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 1px 0 rgba(255,255,255,.3)) drop-shadow(0 -1px 1px rgba(0,0,0,.65));
+    }
+
+    /* Reflective glass sheen strip across the artwork frame */
+    .glass-sheen { position:relative; overflow:hidden; }
+    .glass-sheen::after {
+      content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+      background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.10) 45%, transparent 60%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card-holo-premium { animation: none !important; }
+      .foil-sweep::before { animation: none !important; }
     }
 
     /* Rarity star row */
@@ -502,6 +564,53 @@
         </div>
       </div>
 
+      <!-- FEATURED CARD -->
+      <div id="featured-card-section" class="premium-panel rounded-3xl p-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <span class="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 to-purple-500/25 text-amber-300 border border-amber-500/30 tracking-wider">Featured</span>
+            <h3 class="text-sm sm:text-base font-black text-white mt-1 uppercase tracking-wide">This Week's Spotlight Card</h3>
+          </div>
+          <i class="fa-solid fa-star text-amber-400 text-lg"></i>
+        </div>
+        <div id="featured-card-content" class="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-5 items-center"></div>
+      </div>
+
+      <!-- TRENDING CARDS -->
+      <div>
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-fire text-orange-400"></i> Trending Cards</h3>
+        </div>
+        <div id="trending-cards-row" class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"></div>
+      </div>
+
+      <!-- LATEST TRANSACTIONS / SOCIAL PROOF -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Live Marketplace Activity</h3>
+          <span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live</span>
+        </div>
+        <div id="activity-feed-list" class="space-y-2"></div>
+      </div>
+
+      <!-- MARKETPLACE STATS (VISUAL) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 space-y-3">
+          <h3 class="text-xs font-black text-white uppercase tracking-wide">Rarity Distribution</h3>
+          <div id="rarity-distribution-bars" class="space-y-3"></div>
+        </div>
+        <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 space-y-3">
+          <h3 class="text-xs font-black text-white uppercase tracking-wide">Collection Progress</h3>
+          <div id="marketplace-progress-visual" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- FULL CATALOG -->
+      <div class="flex items-center gap-2 pt-2 px-1">
+        <i class="fa-solid fa-layer-group text-amber-400"></i>
+        <h3 class="text-sm font-black text-white uppercase tracking-wide">Full Catalog</h3>
+      </div>
+
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80">
         <div class="relative flex-1">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -638,6 +747,26 @@
           <p class="text-[10px] font-bold text-slate-400 uppercase" data-i18n="activeTradeReqs">Active Trade Requests</p>
           <p id="analytics-trade-reqs" class="text-2xl font-black text-purple-400 font-mono">0</p>
           <p class="text-[10px] text-slate-400" data-i18n="pendingCountered">Pending & countered</p>
+        </div>
+      </div>
+
+      <!-- VISUAL ANALYTICS: CHARTS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
+          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-line text-emerald-400 mr-1.5"></i> Cumulative Trading Volume</h3>
+          <div class="h-56"><canvas id="chart-volume-history"></canvas></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
+          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-column text-indigo-400 mr-1.5"></i> Sales Volume Over Time</h3>
+          <div class="h-56"><canvas id="chart-tx-volume"></canvas></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
+          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-chart-pie text-amber-400 mr-1.5"></i> Rarity Distribution</h3>
+          <div class="h-56"><canvas id="chart-rarity-dist"></canvas></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5">
+          <h3 class="text-xs font-extrabold text-white uppercase tracking-wider mb-3"><i class="fa-solid fa-layer-group text-blue-400 mr-1.5"></i> Floor Price by Tier</h3>
+          <div class="h-56"><canvas id="chart-floor-price"></canvas></div>
         </div>
       </div>
 
@@ -1588,6 +1717,7 @@
     let globalCollectorProfiles = {};
     let activeDetailCardId = null;
     let marketProfilePanelOpen = false;
+    let chartInstances = {};
 
     let currentChatTargetUser = null;
     let currentChatContextId = null;
@@ -2989,6 +3119,7 @@
       updateCartTotals();
       renderAuctionView();
       renderTradeRequests();
+      renderHomepageHighlights();
       if (!document.getElementById('view-analytics').classList.contains('hidden')) {
         renderMarketAnalytics();
       }
@@ -3088,6 +3219,354 @@
           </div>
         `).join('');
       }
+
+      renderAnalyticsCharts();
+    }
+
+    // ===== VISUAL ANALYTICS CHARTS (Chart.js) =====
+    function destroyChart(key) {
+      if (chartInstances[key]) {
+        chartInstances[key].destroy();
+        delete chartInstances[key];
+      }
+    }
+
+    function groupApprovedTxByDay() {
+      const approved = transactionsList
+        .filter(t => t.status === 'APPROVED' && t.created_at)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      const dayMap = {};
+      approved.forEach(t => {
+        const d = new Date(t.created_at);
+        const key = isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        if (!dayMap[key]) dayMap[key] = { total: 0, count: 0 };
+        dayMap[key].total += (t.total_amount || 0);
+        dayMap[key].count += 1;
+      });
+
+      const labels = Object.keys(dayMap);
+      const dailyTotals = labels.map(l => dayMap[l].total);
+      const dailyCounts = labels.map(l => dayMap[l].count);
+      let running = 0;
+      const cumulative = dailyTotals.map(v => (running += v));
+
+      return { labels, dailyTotals, dailyCounts, cumulative };
+    }
+
+    function renderAnalyticsCharts() {
+      if (typeof Chart === 'undefined') return;
+      if (!currentUser || !currentUser.isAdmin) return;
+
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.font.size = 10;
+
+      const { labels, dailyCounts, cumulative } = groupApprovedTxByDay();
+
+      // --- Cumulative trading volume (line) ---
+      const volCanvas = document.getElementById('chart-volume-history');
+      if (volCanvas) {
+        destroyChart('volume');
+        chartInstances.volume = new Chart(volCanvas, {
+          type: 'line',
+          data: {
+            labels: labels.length ? labels : ['No data yet'],
+            datasets: [{
+              label: 'Cumulative Volume (Rp)',
+              data: cumulative.length ? cumulative : [0],
+              borderColor: '#34d399',
+              backgroundColor: 'rgba(52,211,153,.12)',
+              fill: true,
+              tension: 0.35,
+              pointRadius: 2,
+              pointBackgroundColor: '#34d399'
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => formatIDR(ctx.parsed.y) } } },
+            scales: {
+              x: { grid: { color: 'rgba(148,163,184,.08)' } },
+              y: { grid: { color: 'rgba(148,163,184,.08)' }, ticks: { callback: (v) => formatIDR(v) } }
+            }
+          }
+        });
+      }
+
+      // --- Sales volume over time (bar: tx count per day) ---
+      const txCanvas = document.getElementById('chart-tx-volume');
+      if (txCanvas) {
+        destroyChart('txVolume');
+        chartInstances.txVolume = new Chart(txCanvas, {
+          type: 'bar',
+          data: {
+            labels: labels.length ? labels : ['No data yet'],
+            datasets: [{
+              label: 'Sales',
+              data: dailyCounts.length ? dailyCounts : [0],
+              backgroundColor: 'rgba(129,140,248,.65)',
+              borderRadius: 6,
+              maxBarThickness: 28
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false } },
+              y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(148,163,184,.08)' } }
+            }
+          }
+        });
+      }
+
+      // --- Rarity distribution (doughnut) ---
+      const rarityCanvas = document.getElementById('chart-rarity-dist');
+      if (rarityCanvas) {
+        const premiumCount = inventory.filter(c => c.type === 'PREMIUM').length;
+        const standardCount = inventory.filter(c => c.type === 'STANDARD').length;
+        destroyChart('rarity');
+        chartInstances.rarity = new Chart(rarityCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: ['Premium', 'Standard'],
+            datasets: [{
+              data: [premiumCount, standardCount],
+              backgroundColor: ['#fbbf24', '#60a5fa'],
+              borderColor: '#0f172a',
+              borderWidth: 3
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } }
+          }
+        });
+      }
+
+      // --- Floor price by tier (bar) ---
+      const floorCanvas = document.getElementById('chart-floor-price');
+      if (floorCanvas) {
+        const premiumCards = inventory.filter(c => c.type === 'PREMIUM');
+        const standardCards = inventory.filter(c => c.type === 'STANDARD');
+        const premiumFloor = premiumCards.length ? Math.min(...premiumCards.map(c => c.price)) : 0;
+        const standardFloor = standardCards.length ? Math.min(...standardCards.map(c => c.price)) : 0;
+        const premiumAvg = premiumCards.length ? premiumCards.reduce((s, c) => s + c.price, 0) / premiumCards.length : 0;
+        const standardAvg = standardCards.length ? standardCards.reduce((s, c) => s + c.price, 0) / standardCards.length : 0;
+        destroyChart('floor');
+        chartInstances.floor = new Chart(floorCanvas, {
+          type: 'bar',
+          data: {
+            labels: ['Premium', 'Standard'],
+            datasets: [
+              { label: 'Floor Price', data: [premiumFloor, standardFloor], backgroundColor: 'rgba(251,191,36,.75)', borderRadius: 6, maxBarThickness: 40 },
+              { label: 'Avg Price', data: [premiumAvg, standardAvg], backgroundColor: 'rgba(96,165,250,.75)', borderRadius: 6, maxBarThickness: 40 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatIDR(ctx.parsed.y)}` } } },
+            scales: {
+              x: { grid: { display: false } },
+              y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.08)' }, ticks: { callback: (v) => formatIDR(v) } }
+            }
+          }
+        });
+      }
+    }
+
+    // ===== HOMEPAGE: FEATURED CARD / TRENDING / ACTIVITY FEED / STATS VISUAL =====
+    function timeAgoShort(dateVal) {
+      if (!dateVal) return '';
+      const then = new Date(dateVal).getTime();
+      if (isNaN(then)) return '';
+      const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
+      if (diffSec < 60) return currentLanguage === 'ID' ? 'Baru saja' : 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return currentLanguage === 'ID' ? `${diffMin} menit lalu` : `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return currentLanguage === 'ID' ? `${diffHr} jam lalu` : `${diffHr} hour${diffHr > 1 ? 's' : ''} ago`;
+      return timeAgoLabel(dateVal);
+    }
+
+    function renderFeaturedCard() {
+      const container = document.getElementById('featured-card-content');
+      if (!container) return;
+
+      const available = inventory.filter(c => c.status !== 'SOLD');
+      const pool = available.length ? available : inventory;
+      if (pool.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">No cards available yet.</div>`;
+        return;
+      }
+
+      const featured = [...pool].sort((a, b) => (b.type === 'PREMIUM' ? 1 : 0) - (a.type === 'PREMIUM' ? 1 : 0) || b.price - a.price)[0];
+      const isPremium = featured.type === 'PREMIUM';
+      const rarity = computeRarityIndex(featured);
+
+      container.innerHTML = `
+        <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-2xl p-3 relative mx-auto w-full max-w-[200px]">
+          ${isPremium ? '<div class="foil-sweep"></div><span class="rarity-ribbon">PREMIUM</span>' : ''}
+          <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-xl border border-slate-800 p-1.5 overflow-hidden relative z-[2] glass-sheen">
+            <div class="w-full h-full flex items-center justify-center overflow-hidden rounded-lg bg-slate-900">
+              <img src="${featured.imgUrl}" loading="lazy" class="w-full h-full object-contain">
+            </div>
+          </div>
+          <p class="text-center font-black ${isPremium ? 'text-amber-400 serial-embossed-premium' : 'text-blue-400'} font-mono serial-engraved mt-2 relative z-[2]">${featured.serial}</p>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isPremium ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${featured.type}</span>
+            <h4 class="text-lg font-black text-white mt-1.5">${featured.name}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">Owner: <strong class="text-slate-300">${featured.owner || 'Unowned (House)'}</strong></p>
+          </div>
+          <div class="flex items-center gap-6">
+            <div>
+              <p class="text-[9px] text-slate-500 font-bold uppercase">Price</p>
+              <p class="text-xl font-black font-mono text-emerald-400">${formatIDR(featured.price)}</p>
+            </div>
+            <div>
+              <p class="text-[9px] text-slate-500 font-bold uppercase">Rarity Index</p>
+              <p class="text-xl font-black font-mono text-amber-400">${rarity}<span class="text-xs text-slate-500">/100</span></p>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="openCardDetailModal('${featured.id}')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">View Details</button>
+            ${featured.status !== 'SOLD' ? `<button onclick="addToCart('${featured.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition-all">Add to Cart</button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTrendingCards() {
+      const row = document.getElementById('trending-cards-row');
+      if (!row) return;
+
+      // "Trending" = cards with the most real activity (sales + trade proposals), falling
+      // back to highest price so the row is never empty on a fresh marketplace.
+      const activityCount = {};
+      transactionsList.forEach(t => (t.items || []).forEach(i => { if (i.id) activityCount[i.id] = (activityCount[i.id] || 0) + 1; }));
+      tradeRequestsList.forEach(r => { if (r.cardId) activityCount[r.cardId] = (activityCount[r.cardId] || 0) + 1; });
+
+      const ranked = [...inventory].sort((a, b) => {
+        const diff = (activityCount[b.id] || 0) - (activityCount[a.id] || 0);
+        return diff !== 0 ? diff : b.price - a.price;
+      }).slice(0, 8);
+
+      if (ranked.length === 0) {
+        row.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs w-full">No cards yet.</div>`;
+        return;
+      }
+
+      row.innerHTML = ranked.map(card => {
+        const isPremium = card.type === 'PREMIUM';
+        const hits = activityCount[card.id] || 0;
+        return `
+          <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-xl p-2 relative shrink-0 w-32 cursor-pointer" onclick="openCardDetailModal('${card.id}')">
+            ${isPremium ? '<div class="foil-sweep"></div>' : ''}
+            ${hits > 0 ? `<span class="absolute top-1.5 left-1.5 z-[3] text-[8px] font-black px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white flex items-center gap-1"><i class="fa-solid fa-fire"></i> Hot</span>` : ''}
+            <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-lg border border-slate-800 overflow-hidden relative z-[2]">
+              <img src="${card.imgUrl}" loading="lazy" class="w-full h-full object-contain">
+            </div>
+            <p class="text-center font-black ${isPremium ? 'text-amber-400' : 'text-blue-400'} font-mono text-[10px] mt-1.5 relative z-[2]">${card.serial}</p>
+            <p class="text-center font-mono text-emerald-400 text-[10px] font-extrabold relative z-[2]">${formatIDR(card.price)}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderActivityFeed() {
+      const list = document.getElementById('activity-feed-list');
+      if (!list) return;
+
+      const soldEvents = transactionsList
+        .filter(t => t.status === 'APPROVED' && t.created_at)
+        .map(t => ({
+          type: 'sold',
+          time: t.created_at,
+          html: `<i class="fa-solid fa-fire text-orange-400 w-4"></i> <span><strong class="text-white">${(t.items && t.items[0] && t.items[0].serial) || 'A card'}</strong> sold to <strong class="text-white">${t.user_name || 'a collector'}</strong></span>`
+        }));
+
+      const tradeEvents = tradeRequestsList
+        .filter(r => r.created_at)
+        .map(r => ({
+          type: 'trade',
+          time: r.created_at,
+          html: `<i class="fa-solid fa-gem text-cyan-400 w-4"></i> <span><strong class="text-white">${r.proposer || 'A collector'}</strong> proposed a trade for <strong class="text-white">${r.serial || 'a card'}</strong></span>`
+        }));
+
+      const wishlistTop = [...inventory].sort((a, b) => (a.price < b.price ? 1 : -1))[0];
+
+      const combined = [...soldEvents, ...tradeEvents]
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 6);
+
+      if (combined.length === 0) {
+        list.innerHTML = `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info w-4"></i> No marketplace activity yet — be the first to collect a card!
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = combined.map(ev => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">${ev.html}</div>
+          <span class="text-[10px] text-slate-500 font-mono shrink-0">${timeAgoShort(ev.time)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderMarketplaceStatsVisual() {
+      const rarityBars = document.getElementById('rarity-distribution-bars');
+      const progressVisual = document.getElementById('marketplace-progress-visual');
+      if (!rarityBars || !progressVisual) return;
+
+      const total = inventory.length || 1;
+      const premiumCount = inventory.filter(c => c.type === 'PREMIUM').length;
+      const standardCount = inventory.filter(c => c.type === 'STANDARD').length;
+      const soldCount = inventory.filter(c => c.status === 'SOLD').length;
+
+      const premiumPct = Math.round((premiumCount / total) * 100);
+      const standardPct = Math.round((standardCount / total) * 100);
+      const soldPct = Math.round((soldCount / total) * 100);
+
+      rarityBars.innerHTML = `
+        <div>
+          <div class="flex justify-between text-[10px] font-bold mb-1"><span class="text-amber-400">Premium</span><span class="text-slate-400">${premiumCount} cards (${premiumPct}%)</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${premiumPct}%; background: linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[10px] font-bold mb-1"><span class="text-blue-400">Standard</span><span class="text-slate-400">${standardCount} cards (${standardPct}%)</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${standardPct}%; background: linear-gradient(90deg,#3b82f6,#60a5fa);"></div></div>
+        </div>
+      `;
+
+      progressVisual.innerHTML = `
+        <div>
+          <div class="flex justify-between text-[10px] font-bold mb-1"><span class="text-emerald-400">Cards Collected</span><span class="text-slate-400">${soldCount} / ${inventory.length} (${soldPct}%)</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${soldPct}%; background: linear-gradient(90deg,#10b981,#34d399);"></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="stat-card text-center">
+            <p class="text-[9px] text-slate-500 font-bold uppercase">Collectors</p>
+            <p class="text-base font-black font-mono text-white">${document.getElementById('hero-stat-collectors')?.innerText || '0'}</p>
+          </div>
+          <div class="stat-card text-center">
+            <p class="text-[9px] text-slate-500 font-bold uppercase">Trading Volume</p>
+            <p class="text-base font-black font-mono text-emerald-400">${document.getElementById('hero-stat-volume')?.innerText || 'Rp 0'}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHomepageHighlights() {
+      renderFeaturedCard();
+      renderTrendingCards();
+      renderActivityFeed();
+      renderMarketplaceStatsVisual();
     }
 
     function renderAuctionView() {
@@ -3493,22 +3972,23 @@
 
         return `
           <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-2xl p-3 flex flex-col justify-between relative cursor-pointer" onclick="openCardDetailModal('${card.id}')">
-            <div class="flex items-center justify-between mb-2" onclick="event.stopPropagation()">
+            ${isPremium ? '<div class="foil-sweep"></div><span class="rarity-ribbon">PREMIUM</span>' : ''}
+            <div class="flex items-center justify-between mb-2 relative z-[2]" onclick="event.stopPropagation()">
               <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isPremium ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${card.type}</span>
               <button onclick="toggleWishlist('${card.id}')" class="text-xs ${isWishlisted ? 'text-rose-500' : 'text-slate-600 hover:text-rose-400'} transition-colors">
                 <i class="fa-solid fa-heart"></i>
               </button>
             </div>
 
-            <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-xl border border-slate-800 p-1.5 flex flex-col justify-between mb-2 text-center overflow-hidden">
+            <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-xl border border-slate-800 p-1.5 flex flex-col justify-between mb-2 text-center overflow-hidden relative z-[2] glass-sheen">
               <div class="w-full h-full flex items-center justify-center overflow-hidden rounded-lg bg-slate-900">
                 <img src="${card.imgUrl}" loading="lazy" class="w-full h-full object-contain">
               </div>
             </div>
 
-            <p class="text-center font-black ${isPremium ? 'text-amber-400' : 'text-blue-400'} font-mono serial-engraved mb-1">${card.serial}</p>
+            <p class="text-center font-black ${isPremium ? 'text-amber-400 serial-embossed-premium' : 'text-blue-400'} font-mono serial-engraved mb-1 relative z-[2]">${card.serial}</p>
 
-            <div class="space-y-1.5" onclick="event.stopPropagation()">
+            <div class="space-y-1.5 relative z-[2]" onclick="event.stopPropagation()">
               <p class="text-[11px] font-extrabold text-white truncate">${card.name}</p>
               <div class="flex items-center justify-between">
                 <span class="text-xs font-mono text-emerald-400 font-extrabold">${formatIDR(card.price)}</span>
@@ -3566,6 +4046,7 @@
         snapshot.forEach(doc => txList.push({ id: doc.id, ...doc.data() }));
         transactionsList = txList;
         renderTransactionHistoryTable();
+        renderHomepageHighlights();
       } catch (e) {
         console.warn('Error fetching transactions:', e);
       }
@@ -5264,7 +5745,7 @@
         }
       });
 
-      if (tabName === 'catalog') renderCardGrid();
+      if (tabName === 'catalog') { renderCardGrid(); renderHomepageHighlights(); }
       if (tabName === 'trade') renderP2PListings();
       if (tabName === 'auction') renderAuctionView();
       if (tabName === 'trade-req') renderTradeRequests();
