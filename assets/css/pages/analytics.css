@@ -1,6 +1,0 @@
-/* Chart.js canvases (Analytics tab) are sized by their parent's fixed
-   height (see index.html .h-56 wrappers); Chart.js handles internal
-   responsiveness via responsive:true, maintainAspectRatio:false. */
-canvas {
-  max-width: 100%;
-}

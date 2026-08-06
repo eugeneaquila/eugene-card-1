@@ -1,8 +1,0 @@
-/* Tighten the outer page padding on very small phones (< 380px) where
-   Tailwind's `p-4` still leaves cramped card grids. */
-@media (max-width: 380px) {
-  main {
-    padding-left: .75rem;
-    padding-right: .75rem;
-  }
-}
