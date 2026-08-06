@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 
   <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
@@ -372,8 +371,8 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs & External Pages Navigation (desktop/tablet only; mobile uses bottom nav + drawer) -->
-      <nav class="hidden md:flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
+      <!-- Navigation Tabs & External Pages Navigation -->
+      <nav class="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
         <button id="nav-catalog" onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="navCollection">Collection</span>
         </button>
@@ -466,91 +465,6 @@
     </div>
   </header>
 
-  <!-- ================= MOBILE BOTTOM NAVIGATION (below md breakpoint) ================= -->
-  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-[9980] bg-slate-950/95 backdrop-blur-md border-t border-slate-800/80 pb-[env(safe-area-inset-bottom)]">
-    <div class="grid grid-cols-5">
-      <button data-tab="catalog" onclick="switchTab('catalog')" class="mobile-nav-btn flex flex-col items-center justify-center gap-0.5 py-2.5 text-slate-400 active:bg-slate-900/60 transition-colors">
-        <i class="fa-solid fa-layer-group text-base"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navCollection">Collection</span>
-      </button>
-      <button data-tab="trade" onclick="switchTab('trade')" class="mobile-nav-btn flex flex-col items-center justify-center gap-0.5 py-2.5 text-slate-400 active:bg-slate-900/60 transition-colors">
-        <i class="fa-solid fa-right-left text-base"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navTrade">Trade</span>
-      </button>
-      <button data-tab="inbox" onclick="switchTab('inbox')" class="mobile-nav-btn flex flex-col items-center justify-center gap-0.5 py-2.5 text-slate-400 active:bg-slate-900/60 transition-colors">
-        <i class="fa-solid fa-comments text-base"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navInbox">Inbox</span>
-      </button>
-      <button data-tab="dashboard" onclick="switchTab('dashboard')" class="mobile-nav-btn flex flex-col items-center justify-center gap-0.5 py-2.5 text-slate-400 active:bg-slate-900/60 transition-colors">
-        <i class="fa-solid fa-vault text-base"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navVault">Vault</span>
-      </button>
-      <button id="mobile-more-btn" onclick="toggleMobileMoreDrawer()" class="flex flex-col items-center justify-center gap-0.5 py-2.5 text-slate-400 active:bg-slate-900/60 transition-colors">
-        <i class="fa-solid fa-bars text-base"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navMore">Menu</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- ================= MOBILE "MORE" DRAWER (remaining nav items) ================= -->
-  <div id="mobile-more-overlay" class="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9985] hidden" onclick="toggleMobileMoreDrawer()"></div>
-  <div id="mobile-more-drawer" class="md:hidden fixed left-0 right-0 bottom-0 z-[9990] bg-slate-900 border-t border-slate-800 rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] transform translate-y-full transition-transform duration-300 max-h-[75vh] overflow-y-auto">
-    <div class="flex items-center justify-between mb-3">
-      <h4 class="text-xs font-extrabold text-white uppercase tracking-wider" data-i18n="navMore">Menu</h4>
-      <button onclick="toggleMobileMoreDrawer()" class="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="grid grid-cols-3 gap-2">
-      <button data-tab="auction" onclick="switchTab('auction'); toggleMobileMoreDrawer()" class="mobile-more-item flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-        <i class="fa-solid fa-gavel text-emerald-400"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navAuction">Auction</span>
-      </button>
-      <button data-tab="trade-req" onclick="switchTab('trade-req'); toggleMobileMoreDrawer()" class="mobile-more-item flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-        <i class="fa-solid fa-handshake text-purple-400"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navRequests">Trade Requests</span>
-      </button>
-      <button data-tab="holders" onclick="switchTab('holders'); toggleMobileMoreDrawer()" class="mobile-more-item flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-        <i class="fa-solid fa-users text-teal-400"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navHolders">Holders</span>
-      </button>
-      <button data-tab="history" onclick="switchTab('history'); toggleMobileMoreDrawer()" class="mobile-more-item flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-        <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navHistory">History</span>
-      </button>
-      <button data-tab="wishlist" onclick="switchTab('wishlist'); toggleMobileMoreDrawer()" class="mobile-more-item flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
-        <i class="fa-solid fa-heart text-rose-400"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navWishlist">Wishlist</span>
-      </button>
-      <button data-tab="analytics" onclick="switchTab('analytics'); toggleMobileMoreDrawer()" class="mobile-more-item analytics-nav-btn hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-amber-500/30 text-amber-300">
-        <i class="fa-solid fa-chart-line"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navAnalytics">Analytics</span>
-      </button>
-      <button data-tab="revenue" onclick="switchTab('revenue'); toggleMobileMoreDrawer()" class="mobile-more-item analytics-nav-btn hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-emerald-500/30 text-emerald-300">
-        <i class="fa-solid fa-sack-dollar"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navRevenueTab">Revenue</span>
-      </button>
-      <a href="analytics.html" class="mobile-more-item admin-only-nav hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-amber-500/20 text-amber-300">
-        <i class="fa-solid fa-chart-pie"></i>
-        <span class="text-[10px] font-semibold">Analytics Hub</span>
-      </a>
-      <a href="revenue.html" class="mobile-more-item admin-only-nav hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-emerald-500/20 text-emerald-300">
-        <i class="fa-solid fa-sack-dollar"></i>
-        <span class="text-[10px] font-semibold">Revenue Hub</span>
-      </a>
-      <a href="admin-command-center.html" class="mobile-more-item admin-only-nav hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-violet-500/30 text-violet-300">
-        <i class="fa-solid fa-gauge-high"></i>
-        <span class="text-[10px] font-semibold">Command Center</span>
-      </a>
-      <button data-tab="inventory" onclick="switchTab('inventory'); toggleMobileMoreDrawer()" class="mobile-more-item admin-only-nav hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-rose-500/20 text-rose-400">
-        <i class="fa-solid fa-boxes-stacked"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navInventory">Inventory</span>
-      </button>
-      <button data-tab="admin" onclick="switchTab('admin'); toggleMobileMoreDrawer()" class="mobile-more-item admin-only-nav hidden flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-950 border border-rose-500/20 text-rose-400">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span class="text-[10px] font-semibold" data-i18n="navAdmin">Admin Hub</span>
-      </button>
-    </div>
-  </div>
-
   <!-- DIRECT CHAT DRAWER OVERLAY -->
   <div id="chat-drawer-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9990] hidden" onclick="closeChatDrawer()"></div>
   <div id="chat-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 z-[9995] transform translate-x-full transition-transform duration-300 flex flex-col justify-between p-4">
@@ -614,7 +528,7 @@
   </div>
 
   <!-- Main Body -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 pb-24 md:p-6 md:pb-6 lg:p-8 space-y-8">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-8">
 
     <!-- CATALOG VIEW -->
     <section id="view-catalog" class="space-y-6">
@@ -1807,24 +1721,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
-    const storage = firebase.storage();
-
-    // ---------------------------------------------------------------------
-    // uploadDataUrlToStorage(dataUrl, folder)
-    // Uploads a base64 data: URL (from FileReader.readAsDataURL) to Firebase
-    // Storage and returns its https download URL. If the input is already a
-    // regular URL (or empty), it's returned unchanged — nothing is uploaded.
-    // Keeping large binary blobs out of Firestore documents avoids hitting
-    // Firestore's 1MB document limit and keeps reads/writes fast.
-    // ---------------------------------------------------------------------
-    async function uploadDataUrlToStorage(dataUrl, folder) {
-      if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
-
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const fileRef = storage.ref().child(`${folder}/${fileName}`);
-      const snapshot = await fileRef.putString(dataUrl, 'data_url');
-      return await snapshot.ref.getDownloadURL();
-    }
     const analytics = firebase.analytics();
 
     const TRADE_FEE_PERCENT = 0.02;
@@ -1896,7 +1792,6 @@
 
     let visibleCardCount = 10;
     const CARDS_PER_BATCH = 10;
-    let lastFilteredCards = []; // cache of the catalog's current filtered result, so infinite-scroll can append just the new slice instead of re-rendering the whole grid
     let scrollObserver = null;
 
     // Comprehensive i18n Dictionary
@@ -1917,7 +1812,6 @@
         navWishlist: "Wishlist",
         navInventory: "Inventory",
         navAdmin: "Admin Hub",
-        navMore: "Menu",
         notifHeader: "Cookie & Activity Logs",
         clearAll: "Clear All",
         noNotifications: "No recent notifications.",
@@ -2151,7 +2045,6 @@
         navWishlist: "Keinginan",
         navInventory: "Inventaris",
         navAdmin: "Admin Hub",
-        navMore: "Menu",
         notifHeader: "Cookie & Catatan Aktivitas",
         clearAll: "Hapus Semua",
         noNotifications: "Tidak ada notifikasi terbaru.",
@@ -2790,16 +2683,11 @@
       if ((!text && !chatAttachedImage) || !currentChatContextId || !currentUser) return;
 
       try {
-        let imgUrl = null;
-        if (chatAttachedImage) {
-          imgUrl = await uploadDataUrlToStorage(chatAttachedImage, `chat-attachments/${currentChatContextId}`);
-        }
-
         const batch = db.batch();
 
         const chatDocRef = db.collection("chats").doc(currentChatContextId);
         batch.set(chatDocRef, {
-          lastMessage: text || (imgUrl ? '[Screenshot / Image]' : ''),
+          lastMessage: text || (chatAttachedImage ? '[Screenshot / Image]' : ''),
           lastSender: currentUser.username || currentUser.name,
           participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => p.toLowerCase()),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2811,7 +2699,7 @@
           text: text,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-        if (imgUrl) payload.imgUrl = imgUrl;
+        if (chatAttachedImage) payload.imgUrl = chatAttachedImage;
 
         batch.set(msgDocRef, payload);
 
@@ -4243,22 +4131,9 @@
       const newTiktok = document.getElementById('profile-edit-tiktok-input').value.trim();
       const newWeb = document.getElementById('profile-edit-web-input').value.trim();
 
-      let uploadedAvatar = newAvatar;
-      try {
-        if (newAvatar && newAvatar.startsWith('data:')) {
-          showLoadingModal('Uploading Avatar...', 'Sending image to Firebase Storage...', true);
-          uploadedAvatar = await uploadDataUrlToStorage(newAvatar, `avatars/${currentUser.email}`);
-        }
-      } catch (e) {
-        hideLoadingModal();
-        return showToast('Avatar upload error: ' + e.message);
-      } finally {
-        hideLoadingModal();
-      }
-
       currentUser.name = newName;
       currentUser.username = newUsername;
-      currentUser.avatarUrl = uploadedAvatar;
+      currentUser.avatarUrl = newAvatar;
       currentUser.bio = newBio;
       currentUser.socialIg = newIg;
       currentUser.socialTwitter = newTwitter;
@@ -4268,7 +4143,7 @@
       // admin status. Admin status is fixed to the authenticated email for the session.
       currentUser.isAdmin = isUserAdmin(currentUser.email);
 
-      const profilePayload = { name: newName, username: newUsername, avatarUrl: uploadedAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb };
+      const profilePayload = { name: newName, username: newUsername, avatarUrl: newAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb };
       localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${currentUser.email}`, profilePayload, 30);
 
@@ -4321,12 +4196,30 @@
       }, true);
     }
 
-    function buildCardHTML(card) {
-      const isPremium = card.type === 'PREMIUM';
-      const isSold = card.status === 'SOLD';
-      const isWishlisted = wishlist.has(card.id);
+    function renderCardGrid() {
+      const grid = document.getElementById('card-grid');
+      if (!grid) return;
 
-      return `
+      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
+      const filtered = inventory.filter(card => {
+        const matchesFilter = currentFilter === 'ALL' ? true : card.type === currentFilter;
+        const matchesSearch = (card.serial || '').toLowerCase().includes(searchVal) || (card.name || '').toLowerCase().includes(searchVal);
+        return matchesFilter && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">No cards match your filter criteria.</div>`;
+        return;
+      }
+
+      const visibleCards = filtered.slice(0, visibleCardCount);
+
+      grid.innerHTML = visibleCards.map(card => {
+        const isPremium = card.type === 'PREMIUM';
+        const isSold = card.status === 'SOLD';
+        const isWishlisted = wishlist.has(card.id);
+
+        return `
           <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-2xl p-3 flex flex-col justify-between relative cursor-pointer" onclick="openCardDetailModal('${card.id}')">
             ${isPremium ? '<div class="foil-sweep"></div><span class="rarity-ribbon">PREMIUM</span>' : ''}
             <div class="flex items-center justify-between mb-2 relative z-[2]" onclick="event.stopPropagation()">
@@ -4359,75 +4252,11 @@
             </div>
           </div>
         `;
-    }
+      }).join('');
 
-    // Full re-render: filters/search changed, tab switched in, or the
-    // underlying inventory changed. Rebuilds the whole grid from scratch —
-    // this is the expensive path, so infinite scroll (loadMoreCards below)
-    // deliberately avoids calling this.
-    function renderCardGrid() {
-      const grid = document.getElementById('card-grid');
-      if (!grid) return;
-
-      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
-      const filtered = inventory.filter(card => {
-        const matchesFilter = currentFilter === 'ALL' ? true : card.type === currentFilter;
-        const matchesSearch = (card.serial || '').toLowerCase().includes(searchVal) || (card.name || '').toLowerCase().includes(searchVal);
-        return matchesFilter && matchesSearch;
-      });
-
-      lastFilteredCards = filtered;
-
-      if (filtered.length === 0) {
-        if (scrollObserver) scrollObserver.disconnect();
-        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">No cards match your filter criteria.</div>`;
-        return;
-      }
-
-      const visibleCards = filtered.slice(0, visibleCardCount);
-      grid.innerHTML = visibleCards.map(buildCardHTML).join('');
-
-      renderScrollSentinel(grid, filtered.length);
-    }
-
-    // Incremental append: only used by the infinite-scroll sentinel below.
-    // Builds a DocumentFragment for just the newly-revealed cards and
-    // inserts it before the sentinel, instead of re-parsing every card
-    // already on screen (which caused visible layout shift + input lag on
-    // mobile once the grid grew past ~50 cards).
-    function loadMoreCards() {
-      const grid = document.getElementById('card-grid');
-      if (!grid || lastFilteredCards.length === 0) return;
-
-      const previousCount = visibleCardCount;
-      visibleCardCount = Math.min(visibleCardCount + CARDS_PER_BATCH, lastFilteredCards.length);
-      const newCards = lastFilteredCards.slice(previousCount, visibleCardCount);
-      if (newCards.length === 0) return;
-
-      const temp = document.createElement('div');
-      temp.innerHTML = newCards.map(buildCardHTML).join('');
-      const fragment = document.createDocumentFragment();
-      while (temp.firstChild) fragment.appendChild(temp.firstChild);
-
-      const oldSentinel = document.getElementById('scroll-sentinel');
-      if (oldSentinel) {
-        grid.insertBefore(fragment, oldSentinel);
-      } else {
-        grid.appendChild(fragment);
-      }
-
-      renderScrollSentinel(grid, lastFilteredCards.length);
-    }
-
-    function renderScrollSentinel(grid, totalFilteredLength) {
-      const oldSentinel = document.getElementById('scroll-sentinel');
-      if (oldSentinel) oldSentinel.remove();
-
-      if (visibleCardCount < totalFilteredLength) {
-        grid.insertAdjacentHTML('beforeend', `<div id="scroll-sentinel" class="col-span-full h-10 flex items-center justify-center text-xs text-slate-500 font-mono">Loading more cards...</div>`);
-        setupScrollSentinel(totalFilteredLength);
-      } else if (scrollObserver) {
-        scrollObserver.disconnect();
+      if (visibleCardCount < filtered.length) {
+        grid.innerHTML += `<div id="scroll-sentinel" class="col-span-full h-10 flex items-center justify-center text-xs text-slate-500 font-mono">Loading more cards...</div>`;
+        setupScrollSentinel(filtered.length);
       }
     }
 
@@ -4438,8 +4267,11 @@
       if (!sentinel) return;
 
       scrollObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && visibleCardCount < totalFilteredLength) {
-          loadMoreCards();
+        if (entries[0].isIntersecting) {
+          if (visibleCardCount < totalFilteredLength) {
+            visibleCardCount += CARDS_PER_BATCH;
+            renderCardGrid();
+          }
         }
       }, { rootMargin: '100px' });
 
@@ -4705,20 +4537,7 @@
       const ownerSelectVal = document.getElementById('edit-card-owner-select').value;
       const updatedOwner = ownerSelectVal === '' ? null : ownerSelectVal;
       const finalStatus = updatedOwner ? 'SOLD' : updatedStatus;
-      const rawImgUrl = document.getElementById('edit-card-img').value;
-
-      let updatedImgUrl = rawImgUrl;
-      try {
-        if (rawImgUrl && rawImgUrl.startsWith('data:')) {
-          showLoadingModal('Uploading Card Image...', 'Sending image to Firebase Storage...', true);
-          updatedImgUrl = await uploadDataUrlToStorage(rawImgUrl, `card-images/${cardId}`);
-        }
-      } catch (e) {
-        hideLoadingModal();
-        return showToast('Card image upload error: ' + e.message);
-      } finally {
-        hideLoadingModal();
-      }
+      const updatedImgUrl = document.getElementById('edit-card-img').value;
 
       const updatedObj = {
         id: cardId,
@@ -5066,24 +4885,13 @@
       const activeUserIdent = currentUser.username || currentUser.name;
       const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      let payoutQrisUrl;
-      try {
-        showLoadingModal('Uploading Payout QRIS...', 'Sending image to Firebase Storage...', true);
-        payoutQrisUrl = await uploadDataUrlToStorage(payoutQrisData, `payout-qris/${orderRef}`);
-      } catch (e) {
-        hideLoadingModal();
-        return showToast('Payout QRIS upload error: ' + e.message);
-      } finally {
-        hideLoadingModal();
-      }
-
       const sellbackOrder = {
         id: orderRef,
         type: 'SELLBACK',
         user_name: activeUserIdent,
         items: [{ id: card.id, serial: card.serial, name: card.name, price: card.price }],
         total_amount: card.price,
-        payoutQrisUrl: payoutQrisUrl,
+        payoutQrisUrl: payoutQrisData,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
@@ -6080,55 +5888,30 @@
     async function approveTransaction(txId) {
       if (!currentUser?.isAdmin) return showToast('Admin access required.');
 
-      let approvedTx = null;
-
       try {
-        await db.runTransaction(async (transaction) => {
-          const txRef = db.collection("transactions").doc(txId);
-          const txSnap = await transaction.get(txRef);
-          if (!txSnap.exists) throw new Error('Transaction doc not found.');
-          const tx = txSnap.data();
-          if (tx.status !== 'PENDING') {
-            throw new Error(`This order is already ${String(tx.status).toLowerCase()}.`);
-          }
+        const doc = await db.collection("transactions").doc(txId).get();
+        if (!doc.exists) return showToast('Transaction doc not found.');
+        const tx = doc.data();
 
-          const items = Array.isArray(tx.items) ? tx.items : [];
-          const cardRefs = items.map(item => db.collection("cards").doc(item.id));
+        const batch = db.batch();
+        const txRef = db.collection("transactions").doc(txId);
+        batch.update(txRef, { status: 'APPROVED' });
 
-          // All reads must happen before any writes in a Firestore transaction.
-          const cardSnaps = [];
-          for (const ref of cardRefs) {
-            cardSnaps.push(await transaction.get(ref));
-          }
-
-          // For BUY orders, re-check each card right now — closes the window
-          // where two PENDING orders exist for the same card and an admin
-          // approves both, one after another.
-          if (tx.type !== 'SELLBACK') {
-            for (let i = 0; i < cardSnaps.length; i++) {
-              if (cardSnaps[i].exists && cardSnaps[i].data().status === 'SOLD') {
-                throw new Error(`${items[i].serial} was already sold via a different order — reject this one instead.`);
-              }
-            }
-          }
-
-          transaction.update(txRef, { status: 'APPROVED' });
-
-          cardSnaps.forEach((snap, i) => {
-            if (!snap.exists) return;
-            const cardRef = cardRefs[i];
+        if (Array.isArray(tx.items)) {
+          tx.items.forEach(item => {
+            const cardRef = db.collection("cards").doc(item.id);
             if (tx.type === 'SELLBACK') {
-              transaction.update(cardRef, { owner: null, status: 'AVAILABLE' });
+              batch.update(cardRef, { owner: null, status: 'AVAILABLE' });
             } else {
-              transaction.update(cardRef, { owner: tx.user_name, status: 'SOLD' });
+              batch.update(cardRef, { owner: tx.user_name, status: 'SOLD' });
             }
           });
+        }
 
-          approvedTx = tx;
-        });
+        await batch.commit();
 
         showToast(`Transaction ${txId} approved! Ownership updated.`);
-        addNotification('Transaction Approved', `Approved ${txId} for ${approvedTx?.user_name || 'buyer'}.`, 'fa-circle-check text-emerald-400');
+        addNotification('Transaction Approved', `Approved ${txId} for ${tx.user_name}.`, 'fa-circle-check text-emerald-400');
 
         await loadAppState();
       } catch (e) {
@@ -6140,17 +5923,7 @@
       if (!currentUser?.isAdmin) return showToast('Admin access required.');
 
       try {
-        const txRef = db.collection("transactions").doc(txId);
-
-        await db.runTransaction(async (transaction) => {
-          const txSnap = await transaction.get(txRef);
-          if (!txSnap.exists) throw new Error('Transaction doc not found.');
-          if (txSnap.data().status !== 'PENDING') {
-            throw new Error(`This order is already ${String(txSnap.data().status).toLowerCase()}.`);
-          }
-          transaction.update(txRef, { status: 'REJECTED' });
-        });
-
+        await db.collection("transactions").doc(txId).update({ status: 'REJECTED' });
         showToast(`Transaction ${txId} rejected.`);
         addNotification('Transaction Rejected', `Rejected transaction ${txId}.`, 'fa-xmark text-rose-400');
         await loadAppState();
@@ -6276,17 +6049,6 @@
       const orderRef = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       const activeUserIdent = currentUser.username || currentUser.name;
 
-      let proofUrl;
-      try {
-        showLoadingModal('Uploading Receipt...', 'Sending screenshot to Firebase Storage...', true);
-        proofUrl = await uploadDataUrlToStorage(proofImgData, `payment-proofs/${orderRef}`);
-      } catch (e) {
-        hideLoadingModal();
-        return showToast('Receipt upload error: ' + e.message);
-      } finally {
-        hideLoadingModal();
-      }
-
       const orderData = {
         id: orderRef,
         type: 'BUY',
@@ -6296,31 +6058,13 @@
         subtotal: subtotal,
         tax: subtotal * 0.02,
         total_amount: total,
-        qrisProofUrl: proofUrl,
+        qrisProofUrl: proofImgData,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
 
       try {
-        // Atomic check-then-write: re-read every cart item's LIVE card doc
-        // inside a Firestore transaction before creating the order, so two
-        // buyers checking out the same card at once can't both submit a
-        // PENDING order for a card that's already been sold.
-        await db.runTransaction(async (transaction) => {
-          for (const item of cart) {
-            const cardRef = db.collection('cards').doc(item.id);
-            const cardSnap = await transaction.get(cardRef);
-            if (!cardSnap.exists) {
-              throw new Error(`${item.serial} no longer exists in the catalog.`);
-            }
-            if (cardSnap.data().status === 'SOLD') {
-              throw new Error(`${item.serial} was already purchased by another collector. Please remove it from your cart.`);
-            }
-          }
-
-          const orderDocRef = db.collection('transactions').doc(orderRef);
-          transaction.set(orderDocRef, orderData);
-        });
+        await db.collection("transactions").doc(orderRef).set(orderData);
 
         cart = [];
         saveCartToStorage();
@@ -6355,26 +6099,6 @@
         }
       });
 
-      // Sync active state on the mobile bottom nav (5 primary tabs)
-      document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
-        if (btn.dataset.tab === tabName) {
-          btn.classList.remove('text-slate-400');
-          btn.classList.add('text-amber-400');
-        } else {
-          btn.classList.remove('text-amber-400');
-          btn.classList.add('text-slate-400');
-        }
-      });
-
-      // Sync active state on the mobile "more" drawer items
-      document.querySelectorAll('.mobile-more-item').forEach(item => {
-        if (item.dataset.tab === tabName) {
-          item.classList.add('border-amber-500/50');
-        } else {
-          item.classList.remove('border-amber-500/50');
-        }
-      });
-
       if (tabName === 'catalog') { renderCardGrid(); renderHomepageHighlights(); }
       if (tabName === 'trade') renderP2PListings();
       if (tabName === 'auction') renderAuctionView();
@@ -6388,22 +6112,6 @@
       if (tabName === 'wishlist') renderWishlistPage();
       if (tabName === 'inventory') renderInventoryTable();
       if (tabName === 'admin') loadPendingTransactions();
-    }
-
-    function toggleMobileMoreDrawer() {
-      const drawer = document.getElementById('mobile-more-drawer');
-      const overlay = document.getElementById('mobile-more-overlay');
-      const isOpen = !drawer.classList.contains('translate-y-full');
-
-      if (isOpen) {
-        drawer.classList.add('translate-y-full');
-        overlay.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-      } else {
-        drawer.classList.remove('translate-y-full');
-        overlay.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-      }
     }
 
     function formatIDR(num) {
