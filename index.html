@@ -12,6 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 
   <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
@@ -1806,6 +1807,24 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+    const storage = firebase.storage();
+
+    // ---------------------------------------------------------------------
+    // uploadDataUrlToStorage(dataUrl, folder)
+    // Uploads a base64 data: URL (from FileReader.readAsDataURL) to Firebase
+    // Storage and returns its https download URL. If the input is already a
+    // regular URL (or empty), it's returned unchanged — nothing is uploaded.
+    // Keeping large binary blobs out of Firestore documents avoids hitting
+    // Firestore's 1MB document limit and keeps reads/writes fast.
+    // ---------------------------------------------------------------------
+    async function uploadDataUrlToStorage(dataUrl, folder) {
+      if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const fileRef = storage.ref().child(`${folder}/${fileName}`);
+      const snapshot = await fileRef.putString(dataUrl, 'data_url');
+      return await snapshot.ref.getDownloadURL();
+    }
     const analytics = firebase.analytics();
 
     const TRADE_FEE_PERCENT = 0.02;
@@ -2770,11 +2789,16 @@
       if ((!text && !chatAttachedImage) || !currentChatContextId || !currentUser) return;
 
       try {
+        let imgUrl = null;
+        if (chatAttachedImage) {
+          imgUrl = await uploadDataUrlToStorage(chatAttachedImage, `chat-attachments/${currentChatContextId}`);
+        }
+
         const batch = db.batch();
 
         const chatDocRef = db.collection("chats").doc(currentChatContextId);
         batch.set(chatDocRef, {
-          lastMessage: text || (chatAttachedImage ? '[Screenshot / Image]' : ''),
+          lastMessage: text || (imgUrl ? '[Screenshot / Image]' : ''),
           lastSender: currentUser.username || currentUser.name,
           participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => p.toLowerCase()),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2786,7 +2810,7 @@
           text: text,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-        if (chatAttachedImage) payload.imgUrl = chatAttachedImage;
+        if (imgUrl) payload.imgUrl = imgUrl;
 
         batch.set(msgDocRef, payload);
 
@@ -4218,9 +4242,22 @@
       const newTiktok = document.getElementById('profile-edit-tiktok-input').value.trim();
       const newWeb = document.getElementById('profile-edit-web-input').value.trim();
 
+      let uploadedAvatar = newAvatar;
+      try {
+        if (newAvatar && newAvatar.startsWith('data:')) {
+          showLoadingModal('Uploading Avatar...', 'Sending image to Firebase Storage...', true);
+          uploadedAvatar = await uploadDataUrlToStorage(newAvatar, `avatars/${currentUser.email}`);
+        }
+      } catch (e) {
+        hideLoadingModal();
+        return showToast('Avatar upload error: ' + e.message);
+      } finally {
+        hideLoadingModal();
+      }
+
       currentUser.name = newName;
       currentUser.username = newUsername;
-      currentUser.avatarUrl = newAvatar;
+      currentUser.avatarUrl = uploadedAvatar;
       currentUser.bio = newBio;
       currentUser.socialIg = newIg;
       currentUser.socialTwitter = newTwitter;
@@ -4230,7 +4267,7 @@
       // admin status. Admin status is fixed to the authenticated email for the session.
       currentUser.isAdmin = isUserAdmin(currentUser.email);
 
-      const profilePayload = { name: newName, username: newUsername, avatarUrl: newAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb };
+      const profilePayload = { name: newName, username: newUsername, avatarUrl: uploadedAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb };
       localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${currentUser.email}`, profilePayload, 30);
 
@@ -4624,7 +4661,20 @@
       const ownerSelectVal = document.getElementById('edit-card-owner-select').value;
       const updatedOwner = ownerSelectVal === '' ? null : ownerSelectVal;
       const finalStatus = updatedOwner ? 'SOLD' : updatedStatus;
-      const updatedImgUrl = document.getElementById('edit-card-img').value;
+      const rawImgUrl = document.getElementById('edit-card-img').value;
+
+      let updatedImgUrl = rawImgUrl;
+      try {
+        if (rawImgUrl && rawImgUrl.startsWith('data:')) {
+          showLoadingModal('Uploading Card Image...', 'Sending image to Firebase Storage...', true);
+          updatedImgUrl = await uploadDataUrlToStorage(rawImgUrl, `card-images/${cardId}`);
+        }
+      } catch (e) {
+        hideLoadingModal();
+        return showToast('Card image upload error: ' + e.message);
+      } finally {
+        hideLoadingModal();
+      }
 
       const updatedObj = {
         id: cardId,
@@ -4972,13 +5022,24 @@
       const activeUserIdent = currentUser.username || currentUser.name;
       const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      let payoutQrisUrl;
+      try {
+        showLoadingModal('Uploading Payout QRIS...', 'Sending image to Firebase Storage...', true);
+        payoutQrisUrl = await uploadDataUrlToStorage(payoutQrisData, `payout-qris/${orderRef}`);
+      } catch (e) {
+        hideLoadingModal();
+        return showToast('Payout QRIS upload error: ' + e.message);
+      } finally {
+        hideLoadingModal();
+      }
+
       const sellbackOrder = {
         id: orderRef,
         type: 'SELLBACK',
         user_name: activeUserIdent,
         items: [{ id: card.id, serial: card.serial, name: card.name, price: card.price }],
         total_amount: card.price,
-        payoutQrisUrl: payoutQrisData,
+        payoutQrisUrl: payoutQrisUrl,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
@@ -5975,30 +6036,55 @@
     async function approveTransaction(txId) {
       if (!currentUser?.isAdmin) return showToast('Admin access required.');
 
+      let approvedTx = null;
+
       try {
-        const doc = await db.collection("transactions").doc(txId).get();
-        if (!doc.exists) return showToast('Transaction doc not found.');
-        const tx = doc.data();
+        await db.runTransaction(async (transaction) => {
+          const txRef = db.collection("transactions").doc(txId);
+          const txSnap = await transaction.get(txRef);
+          if (!txSnap.exists) throw new Error('Transaction doc not found.');
+          const tx = txSnap.data();
+          if (tx.status !== 'PENDING') {
+            throw new Error(`This order is already ${String(tx.status).toLowerCase()}.`);
+          }
 
-        const batch = db.batch();
-        const txRef = db.collection("transactions").doc(txId);
-        batch.update(txRef, { status: 'APPROVED' });
+          const items = Array.isArray(tx.items) ? tx.items : [];
+          const cardRefs = items.map(item => db.collection("cards").doc(item.id));
 
-        if (Array.isArray(tx.items)) {
-          tx.items.forEach(item => {
-            const cardRef = db.collection("cards").doc(item.id);
+          // All reads must happen before any writes in a Firestore transaction.
+          const cardSnaps = [];
+          for (const ref of cardRefs) {
+            cardSnaps.push(await transaction.get(ref));
+          }
+
+          // For BUY orders, re-check each card right now — closes the window
+          // where two PENDING orders exist for the same card and an admin
+          // approves both, one after another.
+          if (tx.type !== 'SELLBACK') {
+            for (let i = 0; i < cardSnaps.length; i++) {
+              if (cardSnaps[i].exists && cardSnaps[i].data().status === 'SOLD') {
+                throw new Error(`${items[i].serial} was already sold via a different order — reject this one instead.`);
+              }
+            }
+          }
+
+          transaction.update(txRef, { status: 'APPROVED' });
+
+          cardSnaps.forEach((snap, i) => {
+            if (!snap.exists) return;
+            const cardRef = cardRefs[i];
             if (tx.type === 'SELLBACK') {
-              batch.update(cardRef, { owner: null, status: 'AVAILABLE' });
+              transaction.update(cardRef, { owner: null, status: 'AVAILABLE' });
             } else {
-              batch.update(cardRef, { owner: tx.user_name, status: 'SOLD' });
+              transaction.update(cardRef, { owner: tx.user_name, status: 'SOLD' });
             }
           });
-        }
 
-        await batch.commit();
+          approvedTx = tx;
+        });
 
         showToast(`Transaction ${txId} approved! Ownership updated.`);
-        addNotification('Transaction Approved', `Approved ${txId} for ${tx.user_name}.`, 'fa-circle-check text-emerald-400');
+        addNotification('Transaction Approved', `Approved ${txId} for ${approvedTx?.user_name || 'buyer'}.`, 'fa-circle-check text-emerald-400');
 
         await loadAppState();
       } catch (e) {
@@ -6010,7 +6096,17 @@
       if (!currentUser?.isAdmin) return showToast('Admin access required.');
 
       try {
-        await db.collection("transactions").doc(txId).update({ status: 'REJECTED' });
+        const txRef = db.collection("transactions").doc(txId);
+
+        await db.runTransaction(async (transaction) => {
+          const txSnap = await transaction.get(txRef);
+          if (!txSnap.exists) throw new Error('Transaction doc not found.');
+          if (txSnap.data().status !== 'PENDING') {
+            throw new Error(`This order is already ${String(txSnap.data().status).toLowerCase()}.`);
+          }
+          transaction.update(txRef, { status: 'REJECTED' });
+        });
+
         showToast(`Transaction ${txId} rejected.`);
         addNotification('Transaction Rejected', `Rejected transaction ${txId}.`, 'fa-xmark text-rose-400');
         await loadAppState();
@@ -6136,6 +6232,17 @@
       const orderRef = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       const activeUserIdent = currentUser.username || currentUser.name;
 
+      let proofUrl;
+      try {
+        showLoadingModal('Uploading Receipt...', 'Sending screenshot to Firebase Storage...', true);
+        proofUrl = await uploadDataUrlToStorage(proofImgData, `payment-proofs/${orderRef}`);
+      } catch (e) {
+        hideLoadingModal();
+        return showToast('Receipt upload error: ' + e.message);
+      } finally {
+        hideLoadingModal();
+      }
+
       const orderData = {
         id: orderRef,
         type: 'BUY',
@@ -6145,13 +6252,31 @@
         subtotal: subtotal,
         tax: subtotal * 0.02,
         total_amount: total,
-        qrisProofUrl: proofImgData,
+        qrisProofUrl: proofUrl,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
 
       try {
-        await db.collection("transactions").doc(orderRef).set(orderData);
+        // Atomic check-then-write: re-read every cart item's LIVE card doc
+        // inside a Firestore transaction before creating the order, so two
+        // buyers checking out the same card at once can't both submit a
+        // PENDING order for a card that's already been sold.
+        await db.runTransaction(async (transaction) => {
+          for (const item of cart) {
+            const cardRef = db.collection('cards').doc(item.id);
+            const cardSnap = await transaction.get(cardRef);
+            if (!cardSnap.exists) {
+              throw new Error(`${item.serial} no longer exists in the catalog.`);
+            }
+            if (cardSnap.data().status === 'SOLD') {
+              throw new Error(`${item.serial} was already purchased by another collector. Please remove it from your cart.`);
+            }
+          }
+
+          const orderDocRef = db.collection('transactions').doc(orderRef);
+          transaction.set(orderDocRef, orderData);
+        });
 
         cart = [];
         saveCartToStorage();
