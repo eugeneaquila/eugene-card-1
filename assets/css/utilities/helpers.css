@@ -1,12 +1,22 @@
-.ec-hidden{
- display:none!important;
+.ec-hidden {
+  display: none !important;
 }
 
-.ec-flex{
- display:flex;
+/* Hide scrollbar visually while keeping the element scrollable — used on
+   horizontally-scrolling rows where a visible bar would look noisy. */
+.ec-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.ec-center{
- align-items:center;
- justify-content:center;
+.ec-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Consistent text truncation helper for card titles / usernames */
+.ec-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

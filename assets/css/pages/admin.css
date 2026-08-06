@@ -1,2 +1,2 @@
-/* Admin page styles */
-.ec-admin{}
+/* Admin Hub / Inventory tables reuse ../components/table.css; no
+   page-specific overrides are currently needed. */

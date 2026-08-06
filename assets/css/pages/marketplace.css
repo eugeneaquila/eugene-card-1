@@ -1,2 +1,3 @@
-/* Marketplace page styles */
-.ec-marketplace{}
+/* Catalog / Trade / Auction rooms share the amber accent + slate-900 card
+   surfaces defined globally; no page-specific overrides are currently
+   needed beyond the component styles in ../components/. */

@@ -1,13 +1,128 @@
-.ec-card{
- background:var(--ec-surface);
- border:1px solid var(--ec-border);
- border-radius:var(--ec-radius-md);
- box-shadow:var(--ec-shadow);
- overflow:hidden;
- transition:var(--ec-transition);
+/* ===== Collectible Card Shells =====
+   Used on every card tile (catalog, vault, trending, featured, auction,
+   trade listings). Two variants: PREMIUM (amber foil) and STANDARD (blue). */
+
+.card-holo-premium,
+.card-holo-standard {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(160deg, rgba(30, 27, 75, .55), rgba(2, 6, 23, .9));
+  border: 1px solid var(--ec-border);
+  transition: transform var(--ec-transition), border-color var(--ec-transition), box-shadow var(--ec-transition);
+  will-change: transform;
+  --holo-x: 50%;
+  --holo-y: 50%;
 }
 
-.ec-card:hover{
- transform:translateY(-3px);
- background:var(--ec-surface-hover);
+.card-holo-premium {
+  border-color: rgba(251, 191, 36, .35);
+  box-shadow: 0 10px 30px rgba(251, 191, 36, .08);
+}
+
+.card-holo-standard {
+  border-color: rgba(96, 165, 250, .25);
+  box-shadow: 0 10px 30px rgba(96, 165, 250, .06);
+}
+
+.card-holo-premium:hover,
+.card-holo-standard:hover {
+  border-color: rgba(251, 191, 36, .55);
+}
+
+.card-holo-standard:hover {
+  border-color: rgba(96, 165, 250, .5);
+}
+
+/* Holographic sheen that tracks the pointer via --holo-x/--holo-y,
+   set from JS in setupCardTiltEffect(). Premium-only, foil style. */
+.foil-sweep {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--holo-x) var(--holo-y),
+    rgba(251, 191, 36, .35),
+    rgba(168, 85, 247, .22) 35%,
+    transparent 65%
+  );
+  mix-blend-mode: screen;
+  transition: opacity .3s ease;
+}
+
+.card-holo-premium:hover .foil-sweep {
+  opacity: 1;
+}
+
+/* Small "PREMIUM" corner ribbon */
+.rarity-ribbon {
+  position: absolute;
+  top: 10px;
+  right: -28px;
+  z-index: 3;
+  transform: rotate(35deg);
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  color: #0f172a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  padding: 2px 32px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .35);
+  pointer-events: none;
+}
+
+/* Subtle glass highlight on the card-art frame */
+.glass-sheen {
+  position: relative;
+}
+
+.glass-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .06), transparent 45%);
+  border-radius: inherit;
+}
+
+/* Serial number treatments */
+.serial-engraved {
+  letter-spacing: .04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .6);
+}
+
+.serial-embossed-premium {
+  text-shadow: 0 0 12px rgba(251, 191, 36, .45), 0 1px 0 rgba(0, 0, 0, .6);
+}
+
+/* Featured / analytics-style translucent panel wrapper */
+.premium-panel {
+  background: linear-gradient(160deg, rgba(30, 27, 75, .5), rgba(15, 23, 42, .85));
+  border: 1px solid rgba(251, 191, 36, .2);
+  box-shadow: var(--ec-shadow);
+}
+
+/* Generic small stat tile (rarity/collection panels) */
+.stat-card {
+  background: rgba(2, 6, 23, .6);
+  border: 1px solid var(--ec-border);
+  border-radius: var(--ec-radius-sm);
+  padding: .5rem .25rem;
+}
+
+/* Respect reduced-motion preference: disable the JS-driven tilt transform
+   and foil animation entirely (setupCardTiltEffect already skips binding
+   the listeners, this is the CSS-side guarantee for anything left behind). */
+@media (prefers-reduced-motion: reduce) {
+  .card-holo-premium,
+  .card-holo-standard {
+    transition: none;
+  }
+  .foil-sweep {
+    display: none;
+  }
 }

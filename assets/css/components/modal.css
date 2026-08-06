@@ -1,8 +1,26 @@
-.ec-modal{
- position:fixed;
- inset:0;
- display:grid;
- place-items:center;
- background:rgba(0,0,0,.6);
- z-index:999;
+/* ===== Modal open/close polish =====
+   The modals in index.html toggle the `hidden` utility class directly from
+   JS (openXModal/closeXModal), so there is no transition on show/hide.
+   This adds a lightweight fade+scale without touching any JS: it only
+   activates once `hidden` is removed, using an animation instead of a
+   transition so no extra "entering" class is required. */
+[id$="-modal"]:not(.hidden) > div {
+  animation: ec-modal-in .18s ease-out;
+}
+
+@keyframes ec-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [id$="-modal"]:not(.hidden) > div {
+    animation: none;
+  }
 }

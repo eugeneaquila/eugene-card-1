@@ -1,19 +1,27 @@
+/* Eugene Card — Design Tokens
+   Mirrors the amber/slate dark palette actually painted by Tailwind utility
+   classes across index.html, so hand-written CSS in this package stays in
+   sync with the page instead of drifting into an unused parallel palette. */
 :root {
-  --ec-bg: #020617;
-  --ec-surface: rgba(15,23,42,.78);
-  --ec-surface-hover: rgba(30,41,59,.9);
-  --ec-border: rgba(148,163,184,.18);
+  --ec-bg: #020617;              /* slate-950 */
+  --ec-surface: #0f172a;         /* slate-900 */
+  --ec-surface-alt: #1e1b4b;     /* indigo-950 */
+  --ec-border: rgba(148, 163, 184, .18);
+  --ec-border-strong: rgba(148, 163, 184, .32);
 
-  --ec-primary: #38bdf8;
-  --ec-secondary: #a855f7;
-  --ec-success: #22c55e;
-  --ec-warning: #f59e0b;
-  --ec-danger: #ef4444;
+  --ec-amber: #fbbf24;           /* amber-400 */
+  --ec-amber-strong: #f59e0b;    /* amber-500 */
+  --ec-blue: #60a5fa;            /* blue-400 */
+  --ec-indigo: #818cf8;          /* indigo-400 */
+  --ec-emerald: #34d399;         /* emerald-400 */
+  --ec-rose: #fb7185;            /* rose-400 */
+  --ec-purple: #a78bfa;          /* purple-400 */
+  --ec-cyan: #22d3ee;            /* cyan-400 */
 
   --ec-radius-sm: 10px;
   --ec-radius-md: 16px;
   --ec-radius-lg: 24px;
 
-  --ec-shadow: 0 12px 35px rgba(0,0,0,.3);
-  --ec-transition: .25s ease;
+  --ec-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+  --ec-transition: .25s cubic-bezier(.4, 0, .2, 1);
 }

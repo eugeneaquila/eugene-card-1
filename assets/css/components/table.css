@@ -1,10 +1,16 @@
-.ec-table{
- width:100%;
- border-collapse:collapse;
+/* ===== Data table polish =====
+   Applies to the Transaction History, Holders, and Inventory tables. */
+table tbody tr {
+  transition: background-color var(--ec-transition);
 }
 
-.ec-table th,
-.ec-table td{
- padding:.75rem;
- border-bottom:1px solid var(--ec-border);
+table thead th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Keep sticky table headers readable above scrolled rows */
+table thead.sticky {
+  box-shadow: 0 1px 0 var(--ec-border-strong);
 }

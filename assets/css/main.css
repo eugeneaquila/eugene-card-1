@@ -1,4 +1,11 @@
-/* Eugene Card Refactored CSS Entry */
+/* Eugene Card CSS Entry.
+   Tailwind (loaded via CDN in index.html) supplies almost all layout,
+   spacing, and color utility classes on the page. The files imported here
+   cover exactly what Tailwind can't: the custom holo-card system, the
+   collector-level ring/progress bars, badges, and a handful of global
+   polish rules (focus rings, scrollbars, modal transitions). Every
+   selector below is actually referenced in index.html — see each file's
+   header comment for where. */
 @import './core/variables.css';
 @import './core/reset.css';
 

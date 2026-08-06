@@ -2250,12 +2250,12 @@
       resultsContainer.innerHTML = Array.from(foundUsersMap.entries()).map(([userName, isAdmin]) => {
         const avatarUrl = getCollectorAvatar(userName);
         return `
-          <div onclick="openDirectChat('${userName}', 'Direct Collector Chat'); document.getElementById('user-chat-search-results').classList.add('hidden');" class="p-3 bg-slate-950 hover:bg-slate-800 border ${isAdmin ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800'} rounded-xl flex items-center justify-between cursor-pointer transition-all">
+          <div onclick="openDirectChat('${escapeJsAttr(userName)}', 'Direct Collector Chat'); document.getElementById('user-chat-search-results').classList.add('hidden');" class="p-3 bg-slate-950 hover:bg-slate-800 border ${isAdmin ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800'} rounded-xl flex items-center justify-between cursor-pointer transition-all">
             <div class="flex items-center gap-2.5">
-              <img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-700 bg-slate-900">
+              <img src="${escapeAttr(avatarUrl)}" class="w-8 h-8 rounded-full object-cover border border-slate-700 bg-slate-900">
               <div>
                 <div class="flex items-center gap-1.5">
-                  <p class="font-extrabold text-white text-xs">${userName}</p>
+                  <p class="font-extrabold text-white text-xs">${escapeHtml(userName)}</p>
                   ${isAdmin ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved text-[8px] mr-0.5"></i> ADMIN</span>` : ''}
                 </div>
                 <p class="text-[10px] text-slate-400">${isAdmin ? 'Official Platform Support' : 'Registered Collector'}</p>
@@ -2290,7 +2290,7 @@
       const targetAvatarUrl = getCollectorAvatar(targetUserName);
       const avatarContainer = document.getElementById('chat-target-avatar-container');
       if (avatarContainer) {
-        avatarContainer.innerHTML = `<img src="${targetAvatarUrl}" class="w-full h-full object-cover">`;
+        avatarContainer.innerHTML = `<img src="${escapeAttr(targetAvatarUrl)}" class="w-full h-full object-cover">`;
       }
 
       const adminBadgeEl = document.getElementById('chat-target-admin-badge');
@@ -2362,13 +2362,13 @@
           return `
             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1">
               <div class="flex items-center gap-1.5">
-                <img src="${senderAvatar}" class="w-4 h-4 rounded-full object-cover">
-                <span class="text-[9px] font-bold text-slate-400">${msg.sender}</span>
+                <img src="${escapeAttr(senderAvatar)}" class="w-4 h-4 rounded-full object-cover">
+                <span class="text-[9px] font-bold text-slate-400">${escapeHtml(msg.sender)}</span>
                 ${isSenderAdmin ? `<span class="text-[8px] font-black px-1 py-0 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">ADMIN</span>` : ''}
               </div>
               <div class="max-w-[80%] px-3 py-2 rounded-2xl text-xs ${isMe ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none' : 'bg-slate-950 border border-slate-800 text-white rounded-tl-none'}">
-                ${msg.imgUrl ? `<a href="${msg.imgUrl}" target="_blank"><img src="${msg.imgUrl}" class="max-w-full max-h-48 rounded-lg mb-1 border border-slate-800 hover:opacity-90 transition-opacity"></a>` : ''}
-                ${msg.text ? `<div>${msg.text}</div>` : ''}
+                ${msg.imgUrl ? `<a href="${escapeAttr(msg.imgUrl)}" target="_blank" rel="noopener noreferrer"><img src="${escapeAttr(msg.imgUrl)}" class="max-w-full max-h-48 rounded-lg mb-1 border border-slate-800 hover:opacity-90 transition-opacity"></a>` : ''}
+                ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ''}
               </div>
             </div>
           `;
@@ -2468,16 +2468,16 @@
           return `
             <div class="bg-slate-900 border ${isOtherAdmin ? 'border-rose-500/30' : 'border-slate-800'} p-4 rounded-2xl flex justify-between items-center text-xs hover:border-indigo-500/40 transition-all">
               <div class="flex items-center gap-3">
-                <img src="${otherUserAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950 shrink-0">
+                <img src="${escapeAttr(otherUserAvatar)}" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950 shrink-0">
                 <div>
                   <div class="flex items-center gap-1.5">
-                    <p class="font-extrabold text-white text-sm">${otherUser}</p>
+                    <p class="font-extrabold text-white text-sm">${escapeHtml(otherUser)}</p>
                     ${isOtherAdmin ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved text-[8px] mr-0.5"></i> ADMIN</span>` : ''}
                   </div>
-                  <p class="text-xs text-slate-400 truncate max-w-xs sm:max-w-md mt-0.5">${lastMsg}</p>
+                  <p class="text-xs text-slate-400 truncate max-w-xs sm:max-w-md mt-0.5">${escapeHtml(lastMsg)}</p>
                 </div>
               </div>
-              <button onclick="openDirectChat('${otherUser}', 'Direct Chat')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl transition-all shadow shrink-0 flex items-center gap-1.5">
+              <button onclick="openDirectChat('${escapeJsAttr(otherUser)}', 'Direct Chat')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl transition-all shadow shrink-0 flex items-center gap-1.5">
                 <i class="fa-solid fa-comments"></i> Chat
               </button>
             </div>
@@ -5118,7 +5118,7 @@
                 </div>
               ` : ''}
               <div class="pt-1.5 border-t border-slate-800/60 text-slate-300 italic text-[11px]">
-                "${req.notes || 'No custom terms provided.'}"
+                "${escapeHtml(req.notes) || 'No custom terms provided.'}"
               </div>
             </div>
 
@@ -5374,19 +5374,19 @@
         let linksHtml = '';
         if (currentUser.socialIg) {
           const href = currentUser.socialIg.startsWith('http') ? currentUser.socialIg : `https://instagram.com/${currentUser.socialIg.replace('@','')}`;
-          linksHtml += `<a href="${href}" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-rose-400 text-xs rounded-xl transition-all" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+          linksHtml += `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-rose-400 text-xs rounded-xl transition-all" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
         }
         if (currentUser.socialTwitter) {
           const href = currentUser.socialTwitter.startsWith('http') ? currentUser.socialTwitter : `https://x.com/${currentUser.socialTwitter.replace('@','')}`;
-          linksHtml += `<a href="${href}" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs rounded-xl transition-all" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>`;
+          linksHtml += `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs rounded-xl transition-all" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>`;
         }
         if (currentUser.socialTiktok) {
           const href = currentUser.socialTiktok.startsWith('http') ? currentUser.socialTiktok : `https://tiktok.com/@${currentUser.socialTiktok.replace('@','')}`;
-          linksHtml += `<a href="${href}" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-400 text-xs rounded-xl transition-all" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
+          linksHtml += `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-cyan-400 text-xs rounded-xl transition-all" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
         }
         if (currentUser.socialWeb) {
           const href = currentUser.socialWeb.startsWith('http') ? currentUser.socialWeb : `https://${currentUser.socialWeb}`;
-          linksHtml += `<a href="${href}" target="_blank" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-400 text-xs rounded-xl transition-all" title="Website"><i class="fa-solid fa-globe"></i></a>`;
+          linksHtml += `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-400 text-xs rounded-xl transition-all" title="Website"><i class="fa-solid fa-globe"></i></a>`;
         }
         linksContainer.innerHTML = linksHtml || `<span class="text-[10px] text-slate-600 italic">No social links added</span>`;
       }
@@ -5817,6 +5817,49 @@
 
     function formatIDR(num) {
       return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
+    }
+
+    // ===== HTML / ATTRIBUTE ESCAPING =====
+    // Many render*() functions below build markup with template literals and
+    // interpolate user-editable strings straight into it: chat text, display
+    // names/usernames/bios, social links, and trade notes are all things a
+    // logged-in collector can set via Profile Settings, chat, or a trade
+    // proposal, and they get shown to OTHER collectors (and Admin) via
+    // innerHTML. Without escaping, a value like `" onmouseover="...` in a
+    // social link, or `<img src=x onerror=...>` in a chat message, becomes
+    // stored XSS the next person to view it. Use these two helpers at every
+    // point where such a value is interpolated into innerHTML.
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // For values placed inside an HTML attribute (e.g. href="..."). Also
+    // strips javascript:/data: schemes so a social-link field can't be used
+    // to inject a script-executing URL.
+    function escapeAttr(str) {
+      const safe = escapeHtml(str);
+      if (/^\s*(javascript|data|vbscript):/i.test(String(str || ''))) return '#';
+      return safe;
+    }
+
+    // For a value interpolated into a single-quoted JS string literal that
+    // itself sits inside a double-quoted HTML attribute (the onclick="fn('...')"
+    // pattern used throughout this file for names like collector usernames).
+    // HTML-escaping alone is NOT enough here — the browser HTML-decodes the
+    // attribute before handing it to the JS parser, so an entity-encoded
+    // quote still terminates the string early. Escape the JS string first,
+    // then HTML-escape the attribute.
+    function escapeJsAttr(str) {
+      const jsEscaped = String(str === null || str === undefined ? '' : str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'");
+      return escapeHtml(jsEscaped);
     }
 
     function showToast(msg) {

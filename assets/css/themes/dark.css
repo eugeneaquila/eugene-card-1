@@ -1,4 +1,3 @@
-body{
- background:var(--ec-bg);
- color:#fff;
-}
+/* Eugene Card ships one theme (dark) via the `dark` class already set on
+   <html> and Tailwind's darkMode:'class' config — this file exists for a
+   future light/alt theme swap and intentionally carries no overrides yet. */

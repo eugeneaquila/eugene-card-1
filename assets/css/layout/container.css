@@ -1,4 +1,29 @@
-.ec-container{
- width:min(100% - 2rem,1500px);
- margin:auto;
+/* ===== Base page chrome ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ec-bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Slim global scrollbar to match the dark theme instead of the OS default */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ec-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, .25);
+  border-radius: 999px;
+  border: 2px solid var(--ec-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, .4);
 }

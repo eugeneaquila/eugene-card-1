@@ -1,5 +1,23 @@
-.ec-nav{
- display:flex;
- gap:.5rem;
- align-items:center;
+/* ===== Header nav polish ===== */
+header {
+  box-shadow: 0 1px 0 var(--ec-border);
+}
+
+/* Thin, unobtrusive scrollbar for the horizontally-scrolling tab bar on
+   small screens (nav tabs, trending row) instead of the default chunky one. */
+nav.overflow-x-auto,
+#trending-cards-row {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, .35) transparent;
+}
+
+nav.overflow-x-auto::-webkit-scrollbar,
+#trending-cards-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+nav.overflow-x-auto::-webkit-scrollbar-thumb,
+#trending-cards-row::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, .35);
+  border-radius: 999px;
 }
