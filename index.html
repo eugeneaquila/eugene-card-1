@@ -19,6 +19,12 @@
   <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 
+  <!-- QR Code generator (renders the QRIS payment code locally in-browser as
+       a base64 PNG data URL — see generateQrDataUrl() below — instead of
+       sending the merchant QRIS payload to the external api.qrserver.com
+       service on every checkout). -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -54,6 +60,12 @@
       </g>
     </defs>
   </svg>
+
+  <!-- Offscreen container used by generateQrDataUrl() to render a QR code
+       to a <canvas> via QRCode.js, purely so we can read it back out as a
+       base64 data URL. Never shown — the resulting data URL is what gets
+       assigned to the visible <img> elements. -->
+  <div id="qr-canvas-holder" style="position:absolute; left:-9999px; top:-9999px;"></div>
 
   <!-- Header -->
   <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3">
