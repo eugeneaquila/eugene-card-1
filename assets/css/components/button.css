@@ -1,0 +1,7 @@
+.ec-button{
+ border-radius:var(--ec-radius-sm);
+ padding:.7rem 1rem;
+ font-weight:600;
+ transition:var(--ec-transition);
+ cursor:pointer;
+}

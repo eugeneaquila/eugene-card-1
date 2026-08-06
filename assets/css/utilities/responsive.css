@@ -1,0 +1,5 @@
+@media(max-width:768px){
+ .ec-container{
+  width:calc(100% - 1rem);
+ }
+}

@@ -1,0 +1,10 @@
+.ec-table{
+ width:100%;
+ border-collapse:collapse;
+}
+
+.ec-table th,
+.ec-table td{
+ padding:.75rem;
+ border-bottom:1px solid var(--ec-border);
+}

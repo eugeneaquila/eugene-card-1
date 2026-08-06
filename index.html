@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- Eugene Card HTML/CSS/JS optimized: structure + design system + performance + CSS normalization -->
+
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -37,308 +39,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #030712; color: #f3f4f6; }
-    .card-holo-premium {
-      background: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #451a03 100%);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .card-holo-premium:hover { border-color: rgba(245, 158, 11, 0.9); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(245, 158, 11, 0.25); }
-    .card-holo-standard {
-      background: linear-gradient(135deg, #0f172a 0%, #172554 50%, #1e1b4b 100%);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .card-holo-standard:hover { border-color: rgba(59, 130, 246, 0.8); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2); }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #030712; }
-    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
   
-    /* ===== EUGENE CARD UI/UX 2026 PREMIUM UPGRADE ===== */
-    :root {
-      --ec-glow: rgba(245,158,11,.22);
-      --ec-panel: rgba(15,23,42,.72);
-    }
-
-    body {
-      background:
-        radial-gradient(circle at 10% 0%, rgba(99,102,241,.16), transparent 35%),
-        radial-gradient(circle at 90% 10%, rgba(245,158,11,.12), transparent 30%),
-        #030712;
-      overflow-x:hidden;
-    }
-
-    body::before {
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background-image:
-        linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-      background-size:40px 40px;
-      mask-image:linear-gradient(to bottom,black,transparent);
-      z-index:-1;
-    }
-
-    .premium-panel {
-      background:linear-gradient(145deg,rgba(15,23,42,.85),rgba(2,6,23,.75));
-      backdrop-filter:blur(18px);
-      border:1px solid rgba(148,163,184,.12);
-      box-shadow:0 20px 60px rgba(0,0,0,.35);
-    }
-
-    button, a, input, select {
-      transition:
-        transform .2s ease,
-        border-color .2s ease,
-        background-color .2s ease,
-        box-shadow .2s ease;
-    }
-
-    button:hover:not(:disabled), a:hover {
-      transform:translateY(-1px);
-    }
-
-    .card-holo-premium,
-    .card-holo-standard {
-      position:relative;
-      overflow:hidden;
-    }
-
-    .card-holo-premium::before,
-    .card-holo-standard::before {
-      content:"";
-      position:absolute;
-      inset:-80%;
-      background:linear-gradient(
-        120deg,
-        transparent 35%,
-        rgba(255,255,255,.12),
-        transparent 65%
-      );
-      transform:translateX(-60%) rotate(20deg);
-      transition:.7s;
-      pointer-events:none;
-    }
-
-    .card-holo-premium:hover::before,
-    .card-holo-standard:hover::before {
-      transform:translateX(60%) rotate(20deg);
-    }
-
-    .card-holo-premium:hover,
-    .card-holo-standard:hover {
-      transform:translateY(-8px) scale(1.02);
-    }
-
-    header {
-      box-shadow:0 10px 40px rgba(0,0,0,.35);
-    }
-
-    nav button {
-      position:relative;
-    }
-
-    nav button.bg-slate-800::after {
-      content:"";
-      position:absolute;
-      bottom:-3px;
-      left:20%;
-      right:20%;
-      height:2px;
-      background:#fbbf24;
-      border-radius:999px;
-    }
-
-    .stat-card {
-      background:linear-gradient(135deg,rgba(30,41,59,.75),rgba(2,6,23,.8));
-      border:1px solid rgba(148,163,184,.15);
-      border-radius:1.25rem;
-      padding:1rem;
-    }
-
-    .empty-state {
-      padding:3rem;
-      text-align:center;
-      border-radius:1.5rem;
-      background:rgba(15,23,42,.6);
-      border:1px dashed rgba(148,163,184,.25);
-    }
-
-    @media(max-width:768px){
-      header nav {
-        order:3;
-        width:100%;
-      }
-
-      main {
-        padding-bottom:90px!important;
-      }
-    }
-
-    .mobile-safe-bottom {
-      padding-bottom:env(safe-area-inset-bottom);
-    }
-
-    /* ===== HOLOGRAPHIC / RARITY / 3D TILT UPGRADE ===== */
-    .card-holo-premium, .card-holo-standard {
-      transform-style: preserve-3d;
-      will-change: transform;
-    }
-
-    /* Rarity frame borders - replaces flat 1px border with a layered gradient edge */
-    .card-holo-premium {
-      border-width: 1.5px;
-      border-image: linear-gradient(135deg, #fbbf24, #f59e0b 35%, #7c3aed 70%, #fbbf24) 1;
-    }
-    .card-holo-standard {
-      border-width: 1.5px;
-      border-image: linear-gradient(135deg, #60a5fa, #3b82f6 50%, #1d4ed8) 1;
-    }
-
-    /* Animated rainbow holo sweep sitting above the base ::before shine, premium only.
-       --holo-x / --holo-y are set by setupCardTiltEffect() on pointer move, so the
-       sheen tracks the cursor like a real foil card. */
-    .card-holo-premium::after {
-      content:"";
-      position:absolute;
-      inset:0;
-      background: radial-gradient(circle at var(--holo-x,50%) var(--holo-y,50%),
-        rgba(251,191,36,.35), rgba(124,58,237,.28) 30%, rgba(59,130,246,.22) 55%, transparent 75%);
-      mix-blend-mode: color-dodge;
-      opacity:0;
-      transition: opacity .35s ease;
-      pointer-events:none;
-      border-radius: inherit;
-    }
-    .card-holo-premium:hover::after { opacity:.55; }
-
-    /* Serial number "engraving" effect */
-    .serial-engraved {
-      text-shadow: 0 1px 0 rgba(255,255,255,.18), 0 -1px 1px rgba(0,0,0,.7);
-      letter-spacing: 0.03em;
-    }
-
-    /* ===== PREMIUM "OWN THIS" CARD UPGRADE ===== */
-    /* Continuous ambient glow pulse so premium cards read as premium at rest, not just on hover */
-    @keyframes premiumAmbientGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,.18), 0 0 0px rgba(124,58,237,0); }
-      50% { box-shadow: 0 0 32px rgba(245,158,11,.32), 0 0 18px rgba(124,58,237,.18); }
-    }
-    .card-holo-premium { animation: premiumAmbientGlow 3.2s ease-in-out infinite; }
-
-    /* Diagonal foil sweep — an actual layered element (not just hover ::before) so foil cards
-       always look "alive". Sits above artwork, below text via z-index ordering in markup. */
-    .foil-sweep {
-      position:absolute; inset:0; overflow:hidden; pointer-events:none; border-radius:inherit; z-index:1;
-    }
-    .foil-sweep::before {
-      content:"";
-      position:absolute; top:-60%; left:-60%; width:220%; height:220%;
-      background: linear-gradient(115deg,
-        transparent 42%,
-        rgba(255,255,255,.10) 47%,
-        rgba(251,191,36,.38) 50%,
-        rgba(167,139,250,.22) 52%,
-        rgba(255,255,255,.10) 55%,
-        transparent 60%);
-      animation: foilSweep 5s linear infinite;
-    }
-    @keyframes foilSweep {
-      0% { transform: translate(-15%, -8%) rotate(18deg); }
-      100% { transform: translate(15%, 8%) rotate(18deg); }
-    }
-
-    /* Rarity corner ribbon for premium cards */
-    .rarity-ribbon {
-      position:absolute; top:8px; right:-26px; z-index:3;
-      background: linear-gradient(90deg,#f59e0b,#fbbf24);
-      color:#1c1206; font-size:8px; font-weight:900; letter-spacing:.06em;
-      padding:2px 28px; transform:rotate(40deg);
-      box-shadow:0 2px 8px rgba(0,0,0,.4);
-      pointer-events:none;
-    }
-
-    /* Embossed metallic serial text for premium cards */
-    .serial-embossed-premium {
-      background: linear-gradient(135deg,#fde68a 0%,#f59e0b 35%,#fffbeb 50%,#f59e0b 65%,#fde68a 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      filter: drop-shadow(0 1px 0 rgba(255,255,255,.3)) drop-shadow(0 -1px 1px rgba(0,0,0,.65));
-    }
-
-    /* Reflective glass sheen strip across the artwork frame */
-    .glass-sheen { position:relative; overflow:hidden; }
-    .glass-sheen::after {
-      content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
-      background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.10) 45%, transparent 60%);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .card-holo-premium { animation: none !important; }
-      .foil-sweep::before { animation: none !important; }
-    }
-
-    /* Rarity star row */
-    .rarity-stars i { font-size: 8px; }
-
-    /* Collector level ring */
-    .level-ring {
-      width: 3.25rem; height: 3.25rem;
-      border-radius: 9999px;
-      display:flex; align-items:center; justify-content:center;
-      background: conic-gradient(#fbbf24 calc(var(--pct,0) * 1%), rgba(51,65,85,.6) 0);
-      padding: 3px;
-    }
-    .level-ring-inner {
-      width:100%; height:100%; border-radius:9999px;
-      background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    }
-
-    /* Badge chip */
-    .badge-chip {
-      display:inline-flex; align-items:center; gap:.3rem;
-      font-size: 9px; font-weight: 800;
-      padding: .28rem .55rem;
-      border-radius: 999px;
-      background: rgba(15,23,42,.85);
-      border: 1px solid rgba(148,163,184,.2);
-      color: #cbd5e1;
-      white-space: nowrap;
-    }
-    .badge-chip.badge-gold { color:#fbbf24; border-color: rgba(251,191,36,.35); background: rgba(120,53,15,.25); }
-    .badge-chip.badge-rose { color:#fb7185; border-color: rgba(251,113,133,.35); background: rgba(76,5,25,.25); }
-    .badge-chip.badge-cyan { color:#22d3ee; border-color: rgba(34,211,238,.35); background: rgba(8,51,68,.25); }
-    .badge-chip.badge-locked { color:#475569; border-color: rgba(71,85,105,.3); background: rgba(15,23,42,.5); }
-
-    /* Generic progress bar */
-    .progress-track {
-      width:100%; height:.5rem; border-radius:999px;
-      background: rgba(15,23,42,.9);
-      border: 1px solid rgba(148,163,184,.15);
-      overflow:hidden;
-    }
-    .progress-fill {
-      height:100%; border-radius:999px;
-      background: linear-gradient(90deg, #f59e0b, #fbbf24);
-      transition: width .5s ease;
-    }
-
-    /* Market profile stat row */
-    .mp-stat { background: rgba(2,6,23,.6); border:1px solid rgba(148,163,184,.12); border-radius: .85rem; padding: .55rem .7rem; }
-    .mp-stat span.mp-label { display:block; font-size: 9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
-    .mp-stat strong.mp-value { font-family: 'JetBrains Mono', monospace; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .card-holo-premium, .card-holo-standard, .card-holo-premium::before, .card-holo-standard::before, .card-holo-premium::after {
-        transition: none !important;
-        transform: none !important;
-      }
-    }
-  </style>
+<link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
 
@@ -356,7 +58,7 @@
   <!-- Header -->
   <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-      
+
       <!-- Brand Logo -->
       <div class="flex items-center gap-3 cursor-pointer shrink-0" onclick="switchTab('catalog')">
         <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-indigo-500/30 p-1 flex items-center justify-center shadow-lg shadow-indigo-500/10">
@@ -385,7 +87,7 @@
         <button id="nav-trade-req" onclick="switchTab('trade-req')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-handshake text-purple-400"></i> <span data-i18n="navRequests">Trade Requests</span>
         </button>
-        
+
         <!-- Internal Tab + External Page Links for Analytics -->
         <button id="nav-analytics" onclick="switchTab('analytics')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-950/30 border border-amber-500/30">
           <i class="fa-solid fa-chart-line text-amber-400"></i> <span data-i18n="navAnalytics">Analytics</span>
@@ -521,7 +223,7 @@
         <button onclick="toggleNotificationMenu()" class="text-slate-400 hover:text-white text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
-    
+
     <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-1">
       <div class="p-6 text-center text-xs text-slate-500" data-i18n="noNotifications">No recent notifications.</div>
     </div>
@@ -861,7 +563,7 @@
           <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-clock-rotate-left text-cyan-400 mr-2"></i> <span data-i18n="historyTitle">Transaction History</span></h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="historySubtitle">View completed QRIS & Wise purchases, order statuses, and 2% platform tax records.</p>
         </div>
-        
+
         <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
           <button onclick="setHistoryFilter('ALL')" id="history-filter-ALL" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all" data-i18n="histAll">All Activity</button>
           <button onclick="setHistoryFilter('MINE')" id="history-filter-MINE" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all" data-i18n="histMine">My Purchases</button>
@@ -1045,13 +747,13 @@
           <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-rose-400 mr-2"></i> <span data-i18n="inventoryTitle">Inventory Mgmt</span></h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="inventorySubtitle">Manage, edit, export, or import complete inventory backup state JSON.</p>
         </div>
-        
+
         <!-- BACKUP & IMPORT CONTROLS -->
         <div class="flex items-center gap-2 w-full sm:w-auto">
           <button onclick="exportInventoryBackup()" class="flex-1 sm:flex-initial px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
             <i class="fa-solid fa-download"></i> <span data-i18n="backupJson">Backup JSON</span>
           </button>
-          
+
           <label class="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 shadow-sm">
             <i class="fa-solid fa-upload"></i> <span data-i18n="importBackup">Import Backup</span>
             <input type="file" id="backup-file-input" accept=".json" onchange="importInventoryBackup(event)" class="hidden">
@@ -1091,7 +793,7 @@
       <h3 id="list-modal-title" class="text-base font-extrabold text-white" data-i18n="listCardTradeTitle">List Card for Trade</h3>
       <input type="hidden" id="list-card-id-target">
       <input type="hidden" id="list-modal-mode" value="trade">
-      
+
       <div class="space-y-3 text-xs">
         <div id="list-card-select-container" class="hidden">
           <label class="block font-bold text-slate-400 mb-1" data-i18n="selectVaultCard">Select Card from Your Vault</label>
@@ -1113,12 +815,12 @@
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
       <button onclick="closeProposeTradeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-handshake text-purple-400 mr-2"></i> <span data-i18n="proposeModalTitle">Propose Trade Offer</span></h3>
-      
+
       <div class="space-y-3 text-xs">
         <div class="relative">
           <label class="block font-bold text-slate-400 mb-1" data-i18n="selectCardRequest">Select Card to Request (Search by Serial or Owner)</label>
           <input type="hidden" id="trade-req-card-id" value="">
-          
+
           <button type="button" id="trade-dropdown-trigger" onclick="toggleTradeCardDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-left text-white flex justify-between items-center focus:outline-none focus:border-purple-500">
             <span id="trade-dropdown-label" data-i18n="selectCardPlaceholder">Select a card...</span>
             <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
@@ -1293,7 +995,7 @@
         </div>
         <button onclick="hideLoadingModal()" class="text-slate-500 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      
+
       <p id="loading-modal-subtitle" class="text-[11px] text-slate-400 leading-tight" data-i18n="loadingWaitSub">Please wait while the inventory updates.</p>
 
       <div id="import-progress-container" class="space-y-1.5 hidden">
@@ -1457,7 +1159,7 @@
         <div class="relative">
           <label class="block font-bold text-slate-400 mb-1" data-i18n="assignOwnerLabel">Assign Owner</label>
           <input type="hidden" id="edit-card-owner-select" value="">
-          
+
           <button type="button" id="owner-dropdown-trigger" onclick="toggleOwnerDropdown()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-left text-white flex justify-between items-center focus:outline-none focus:border-amber-500">
             <span id="owner-dropdown-label" data-i18n="unownedHouse">Unowned (House)</span>
             <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
@@ -1642,7 +1344,7 @@
   <div id="checkout-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
       <button onclick="closeCheckoutModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      
+
       <!-- PAYMENT METHOD SELECTION TABS -->
       <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 gap-1 mb-2">
         <button id="pay-tab-qris" onclick="switchCheckoutMethod('QRIS')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5">
@@ -1657,7 +1359,7 @@
       <div id="checkout-qris-container" class="space-y-3">
         <h3 class="text-lg font-black text-white" data-i18n="scanPayQris">Scan & Pay via Official QRIS</h3>
         <p class="text-[10px] text-slate-400"><span data-i18n="merchantLabel">Merchant</span>: <strong class="text-white">Eugene Card, Toko Kartu</strong></p>
-        
+
         <img id="qris-img-element" src="" class="w-48 h-48 mx-auto bg-white p-2 rounded-2xl shadow-inner border border-slate-800">
       </div>
 
@@ -1669,7 +1371,7 @@
             <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-2 py-0.5 rounded border border-cyan-500/30">Low Fees & Fast</span>
           </div>
           <p class="text-[11px] text-slate-300 leading-relaxed">Send exact payment directly via your <strong>Wise App</strong> or web account using local currency conversion.</p>
-          
+
           <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5 font-mono text-[11px]">
             <div class="flex justify-between items-center"><span class="text-slate-500">Wise Email:</span><span id="wise-account-email" class="text-white font-bold select-all">eugenecard.market@gmail.com</span></div>
             <div class="flex justify-between items-center"><span class="text-slate-500">Wise Tag:</span><span id="wise-account-tag" class="text-amber-400 font-bold select-all">@eugenecard</span></div>
@@ -1677,7 +1379,7 @@
             <div class="flex justify-between items-center"><span class="text-slate-500">Bank / E-Wallet:</span><span id="wise-bank-account" class="text-emerald-400 font-bold select-all">GoPay</span></div>
             <div class="flex justify-between items-center"><span class="text-slate-500">GoPay Number:</span><span id="wise-account-phone" class="text-emerald-400 font-bold select-all">+6285163702260</span></div>
           </div>
-          
+
           <p class="text-[10px] text-slate-400 italic">Tip: Select currency <strong>IDR (Indonesian Rupiah)</strong> on Wise so the recipient gets the exact amount.</p>
           <p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1.5 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i> Wise's own transfer/conversion fee is set by Wise (not Eugene Card) and is shown in your Wise app before you confirm — it's separate from, and in addition to, the 2% platform tax below.</p>
         </div>
@@ -2327,7 +2029,7 @@
     function getCollectorProfile(nameOrUsername) {
       if (!nameOrUsername) return null;
       const key = nameOrUsername.toLowerCase().trim();
-      
+
       for (let emailKey in globalCollectorProfiles) {
         const p = globalCollectorProfiles[emailKey];
         if (p.name?.toLowerCase() === key || p.username?.toLowerCase() === key || emailKey.toLowerCase() === key) {
@@ -2367,9 +2069,9 @@
 
     async function switchAccountPersona(personaName) {
       if (!currentUser) return;
-      
+
       const newUsername = personaName.toLowerCase().replace(/\s+/g, '_');
-      
+
       let isTaken = false;
       for (let emailKey in globalCollectorProfiles) {
         if (emailKey !== currentUser.email) {
@@ -2465,7 +2167,7 @@
     function renderNotifications() {
       const badge = document.getElementById('notification-badge');
       const list = document.getElementById('notification-list');
-      
+
       if (badge) badge.innerText = systemNotifications.length;
       if (!list) return;
 
@@ -2513,7 +2215,7 @@
       }
 
       const foundUsersMap = new Map();
-      
+
       ADMIN_EMAILS.forEach(email => {
         const name = email.split('@')[0];
         if (name.toLowerCase().includes(query) || email.toLowerCase().includes(query)) {
@@ -2569,7 +2271,7 @@
 
     function openDirectChat(targetUserName, contextInfo = 'Trade Chat') {
       if (!currentUser) return showToast('Please log in to start a chat.');
-      
+
       const myIdent = (currentUser.username || currentUser.name || '').trim().toLowerCase();
       const targetIdent = targetUserName.trim().toLowerCase();
 
@@ -2616,7 +2318,7 @@
     function handleChatImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       if (file.size > 2 * 1024 * 1024) {
         showToast('Image screenshot must be smaller than 2MB.');
         return;
@@ -2739,7 +2441,7 @@
           const lowerParticipants = participants.map(p => p.toLowerCase());
 
           const isParticipant = lowerParticipants.includes(myUsername) || lowerParticipants.includes((currentUser.name || '').toLowerCase());
-          
+
           if (currentUser.isAdmin || isParticipant) {
             const otherUserRaw = participants.find(p => p.toLowerCase() !== myUsername && p.toLowerCase() !== (currentUser.name || '').toLowerCase()) || participants[0] || 'Collector';
             const uniqueKey = otherUserRaw.toLowerCase();
@@ -2804,14 +2506,14 @@
       for (let i = 1; i <= 50; i++) {
         const isPremium = i <= 25;
         const cardNum = isPremium ? i : i - 25;
-        
+
         const padLen = isPremium ? (cardNum < 10 ? 2 : 3) : (cardNum < 10 ? 3 : 4);
         const paddedNum = String(cardNum).padStart(padLen, '0');
-        
+
         const cardId = `card-${paddedNum}`;
         const serialStr = `*${paddedNum}`;
         const snFormatted = String(cardNum).padStart(4, '0');
-        
+
         const price = isPremium ? 500000 : 100000;
         const tierVal = isPremium ? "500" : "100";
 
@@ -2955,14 +2657,14 @@
       document.getElementById('loading-modal-title').innerText = title;
       document.getElementById('loading-modal-subtitle').innerText = subtitle;
       const progressContainer = document.getElementById('import-progress-container');
-      
+
       if (isProgress) {
         progressContainer.classList.remove('hidden');
         updateImportProgress(0, 100, 'Initializing...');
       } else {
         progressContainer.classList.add('hidden');
       }
-      
+
       document.getElementById('loading-modal').classList.remove('hidden');
     }
 
@@ -2988,7 +2690,7 @@
     }
 
     function saveWishlistToStorage() {
-      try { 
+      try {
         const arr = Array.from(wishlist);
         localStorage.setItem('eugene_wishlist_ids', JSON.stringify(arr));
         setCookie('eugene_wishlist_ids', arr, 30);
@@ -3007,7 +2709,7 @@
     }
 
     function saveCartToStorage() {
-      try { 
+      try {
         localStorage.setItem('eugene_cart_items', JSON.stringify(cart));
         setCookie('eugene_cart_items', cart, 7);
       } catch (e) {}
@@ -3249,7 +2951,6 @@
         `).join('') : `<p class="text-xs text-slate-500">No sales revenue recorded yet.</p>`;
       }
     }
-
 
     function renderMarketAnalytics() {
       if (!currentUser || !currentUser.isAdmin) {
@@ -3913,8 +3614,8 @@
 
       loadSavedWishlist();
       loadNotifications();
-      inventory = initDefaultInventory(); 
-      updateAllViews(); 
+      inventory = initDefaultInventory();
+      updateAllViews();
 
       await loadAppState();
       setupRealtimeSync();
@@ -3972,7 +3673,7 @@
           if (adminSep) adminSep.classList.add('hidden');
         }
 
-        const avatarImgHtml = currentUser.avatarUrl 
+        const avatarImgHtml = currentUser.avatarUrl
           ? `<img src="${currentUser.avatarUrl}" class="w-7 h-7 rounded-full object-cover border border-slate-700">`
           : `<i class="fa-solid fa-user-circle text-lg text-slate-400"></i>`;
 
@@ -4334,7 +4035,7 @@
 
       tbody.innerHTML = filtered.map(tx => {
         let items = Array.isArray(tx.items) ? tx.items : [];
-        const itemsFormatted = items.length > 0 
+        const itemsFormatted = items.length > 0
           ? items.map(i => `<span class="inline-block bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-[10px] font-mono text-amber-400 mr-1 mb-1">${i.serial || 'Card'}</span>`).join('')
           : '<span class="text-slate-500">N/A</span>';
 
@@ -4342,7 +4043,7 @@
         if (tx.status === 'APPROVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
         if (tx.status === 'REJECTED') badgeClass = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
 
-        const proofBtn = tx.qrisProofUrl 
+        const proofBtn = tx.qrisProofUrl
           ? `<a href="${tx.qrisProofUrl}" target="_blank" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Receipt</a>`
           : `<span class="text-slate-600 text-[10px]">No File</span>`;
 
@@ -4500,8 +4201,8 @@
       document.getElementById('inventory-edit-modal').classList.remove('hidden');
     }
 
-    function closeInventoryModal() { 
-      document.getElementById('inventory-edit-modal').classList.add('hidden'); 
+    function closeInventoryModal() {
+      document.getElementById('inventory-edit-modal').classList.add('hidden');
       document.getElementById('owner-dropdown-menu')?.classList.add('hidden');
     }
 
@@ -4528,7 +4229,7 @@
       const updatedType = document.getElementById('edit-card-type').value;
       const updatedPrice = parseFloat(document.getElementById('edit-card-price').value) || card.price;
       const updatedStatus = document.getElementById('edit-card-status').value;
-      
+
       const updatedEdition = document.getElementById('edit-card-edition').value.trim() || "Beta Edition: #0";
       const updatedSn = document.getElementById('edit-card-sn').value.trim() || "0001";
       const updatedTier = document.getElementById('edit-card-tier').value.trim() || (updatedType === 'PREMIUM' ? "500" : "100");
@@ -4577,7 +4278,7 @@
       document.getElementById('detail-card-title').innerText = card.name;
       document.getElementById('detail-card-serial').innerText = card.serial;
       document.getElementById('detail-card-edition-badge').innerText = card.type;
-      
+
       const imgEl = document.getElementById('detail-card-img');
       imgEl.src = card.imgUrl;
 
@@ -5040,7 +4741,7 @@
     function openProposeTradeModal() {
       if (!currentUser) return showToast('Please log in first.');
       const myIdent = currentUser.username || currentUser.name;
-      
+
       const ownedByOthers = inventory.filter(c => c.owner && c.owner !== currentUser.name && c.owner !== currentUser.username);
       if (ownedByOthers.length === 0) {
         return showToast('No cards owned by other collectors available to request right now.');
@@ -6131,5 +5832,51 @@
       }, 3000);
     }
   </script>
+
+<script>
+/* =========================================================
+   Eugene Card JavaScript Optimization Layer
+   Safe performance utilities (non-breaking)
+   ========================================================= */
+
+(() => {
+  "use strict";
+
+  window.EugeneOptimizer = {
+    debounce(fn, delay = 250) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    },
+
+    throttle(fn, limit = 100) {
+      let waiting = false;
+      return (...args) => {
+        if (!waiting) {
+          fn(...args);
+          waiting = true;
+          setTimeout(() => waiting = false, limit);
+        }
+      };
+    },
+
+    idle(callback) {
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(callback);
+      } else {
+        setTimeout(callback, 1);
+      }
+    }
+  };
+
+  // Lazy load images that are not already configured
+  document.querySelectorAll("img:not([loading])")
+    .forEach(img => img.loading = "lazy");
+
+})();
+</script>
+
 </body>
 </html>

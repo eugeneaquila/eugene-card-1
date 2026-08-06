@@ -1,0 +1,23 @@
+/* Eugene Card Refactored CSS Entry */
+@import './core/variables.css';
+@import './core/reset.css';
+
+@import './layout/container.css';
+@import './layout/grid.css';
+
+@import './components/card.css';
+@import './components/button.css';
+@import './components/modal.css';
+@import './components/table.css';
+@import './components/widget.css';
+@import './components/navigation.css';
+
+@import './pages/dashboard.css';
+@import './pages/marketplace.css';
+@import './pages/admin.css';
+@import './pages/analytics.css';
+
+@import './themes/dark.css';
+
+@import './utilities/responsive.css';
+@import './utilities/helpers.css';

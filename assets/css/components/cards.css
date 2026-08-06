@@ -1,0 +1,12 @@
+.ec-card {
+  background:var(--ec-surface);
+  border:1px solid var(--ec-border);
+  border-radius:var(--ec-radius-md);
+  box-shadow:var(--ec-shadow);
+  overflow:hidden;
+  transition:.25s ease;
+}
+
+.ec-card:hover {
+  transform:translateY(-3px);
+}

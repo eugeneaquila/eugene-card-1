@@ -1,0 +1,19 @@
+:root {
+  --ec-bg: #020617;
+  --ec-surface: rgba(15,23,42,.78);
+  --ec-surface-hover: rgba(30,41,59,.9);
+  --ec-border: rgba(148,163,184,.18);
+
+  --ec-primary: #38bdf8;
+  --ec-secondary: #a855f7;
+  --ec-success: #22c55e;
+  --ec-warning: #f59e0b;
+  --ec-danger: #ef4444;
+
+  --ec-radius-sm: 10px;
+  --ec-radius-md: 16px;
+  --ec-radius-lg: 24px;
+
+  --ec-shadow: 0 12px 35px rgba(0,0,0,.3);
+  --ec-transition: .25s ease;
+}

@@ -1,0 +1,9 @@
+.ec-layout {
+  display:grid;
+  gap:1.5rem;
+}
+
+.ec-container {
+  width:min(100% - 2rem, 1500px);
+  margin:auto;
+}

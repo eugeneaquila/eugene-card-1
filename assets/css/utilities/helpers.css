@@ -1,0 +1,12 @@
+.ec-hidden{
+ display:none!important;
+}
+
+.ec-flex{
+ display:flex;
+}
+
+.ec-center{
+ align-items:center;
+ justify-content:center;
+}
