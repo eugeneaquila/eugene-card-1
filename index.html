@@ -1896,6 +1896,7 @@
 
     let visibleCardCount = 10;
     const CARDS_PER_BATCH = 10;
+    let lastFilteredCards = []; // cache of the catalog's current filtered result, so infinite-scroll can append just the new slice instead of re-rendering the whole grid
     let scrollObserver = null;
 
     // Comprehensive i18n Dictionary
@@ -4320,30 +4321,12 @@
       }, true);
     }
 
-    function renderCardGrid() {
-      const grid = document.getElementById('card-grid');
-      if (!grid) return;
+    function buildCardHTML(card) {
+      const isPremium = card.type === 'PREMIUM';
+      const isSold = card.status === 'SOLD';
+      const isWishlisted = wishlist.has(card.id);
 
-      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
-      const filtered = inventory.filter(card => {
-        const matchesFilter = currentFilter === 'ALL' ? true : card.type === currentFilter;
-        const matchesSearch = (card.serial || '').toLowerCase().includes(searchVal) || (card.name || '').toLowerCase().includes(searchVal);
-        return matchesFilter && matchesSearch;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">No cards match your filter criteria.</div>`;
-        return;
-      }
-
-      const visibleCards = filtered.slice(0, visibleCardCount);
-
-      grid.innerHTML = visibleCards.map(card => {
-        const isPremium = card.type === 'PREMIUM';
-        const isSold = card.status === 'SOLD';
-        const isWishlisted = wishlist.has(card.id);
-
-        return `
+      return `
           <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-2xl p-3 flex flex-col justify-between relative cursor-pointer" onclick="openCardDetailModal('${card.id}')">
             ${isPremium ? '<div class="foil-sweep"></div><span class="rarity-ribbon">PREMIUM</span>' : ''}
             <div class="flex items-center justify-between mb-2 relative z-[2]" onclick="event.stopPropagation()">
@@ -4376,11 +4359,75 @@
             </div>
           </div>
         `;
-      }).join('');
+    }
 
-      if (visibleCardCount < filtered.length) {
-        grid.innerHTML += `<div id="scroll-sentinel" class="col-span-full h-10 flex items-center justify-center text-xs text-slate-500 font-mono">Loading more cards...</div>`;
-        setupScrollSentinel(filtered.length);
+    // Full re-render: filters/search changed, tab switched in, or the
+    // underlying inventory changed. Rebuilds the whole grid from scratch —
+    // this is the expensive path, so infinite scroll (loadMoreCards below)
+    // deliberately avoids calling this.
+    function renderCardGrid() {
+      const grid = document.getElementById('card-grid');
+      if (!grid) return;
+
+      const searchVal = (document.getElementById('search-input')?.value || '').toLowerCase();
+      const filtered = inventory.filter(card => {
+        const matchesFilter = currentFilter === 'ALL' ? true : card.type === currentFilter;
+        const matchesSearch = (card.serial || '').toLowerCase().includes(searchVal) || (card.name || '').toLowerCase().includes(searchVal);
+        return matchesFilter && matchesSearch;
+      });
+
+      lastFilteredCards = filtered;
+
+      if (filtered.length === 0) {
+        if (scrollObserver) scrollObserver.disconnect();
+        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">No cards match your filter criteria.</div>`;
+        return;
+      }
+
+      const visibleCards = filtered.slice(0, visibleCardCount);
+      grid.innerHTML = visibleCards.map(buildCardHTML).join('');
+
+      renderScrollSentinel(grid, filtered.length);
+    }
+
+    // Incremental append: only used by the infinite-scroll sentinel below.
+    // Builds a DocumentFragment for just the newly-revealed cards and
+    // inserts it before the sentinel, instead of re-parsing every card
+    // already on screen (which caused visible layout shift + input lag on
+    // mobile once the grid grew past ~50 cards).
+    function loadMoreCards() {
+      const grid = document.getElementById('card-grid');
+      if (!grid || lastFilteredCards.length === 0) return;
+
+      const previousCount = visibleCardCount;
+      visibleCardCount = Math.min(visibleCardCount + CARDS_PER_BATCH, lastFilteredCards.length);
+      const newCards = lastFilteredCards.slice(previousCount, visibleCardCount);
+      if (newCards.length === 0) return;
+
+      const temp = document.createElement('div');
+      temp.innerHTML = newCards.map(buildCardHTML).join('');
+      const fragment = document.createDocumentFragment();
+      while (temp.firstChild) fragment.appendChild(temp.firstChild);
+
+      const oldSentinel = document.getElementById('scroll-sentinel');
+      if (oldSentinel) {
+        grid.insertBefore(fragment, oldSentinel);
+      } else {
+        grid.appendChild(fragment);
+      }
+
+      renderScrollSentinel(grid, lastFilteredCards.length);
+    }
+
+    function renderScrollSentinel(grid, totalFilteredLength) {
+      const oldSentinel = document.getElementById('scroll-sentinel');
+      if (oldSentinel) oldSentinel.remove();
+
+      if (visibleCardCount < totalFilteredLength) {
+        grid.insertAdjacentHTML('beforeend', `<div id="scroll-sentinel" class="col-span-full h-10 flex items-center justify-center text-xs text-slate-500 font-mono">Loading more cards...</div>`);
+        setupScrollSentinel(totalFilteredLength);
+      } else if (scrollObserver) {
+        scrollObserver.disconnect();
       }
     }
 
@@ -4391,11 +4438,8 @@
       if (!sentinel) return;
 
       scrollObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          if (visibleCardCount < totalFilteredLength) {
-            visibleCardCount += CARDS_PER_BATCH;
-            renderCardGrid();
-          }
+        if (entries[0].isIntersecting && visibleCardCount < totalFilteredLength) {
+          loadMoreCards();
         }
       }, { rootMargin: '100px' });
 
