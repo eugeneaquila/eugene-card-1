@@ -576,8 +576,8 @@
       <div id="featured-card-section" class="premium-panel rounded-3xl p-5 sm:p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <span class="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 to-purple-500/25 text-amber-300 border border-amber-500/30 tracking-wider">Featured</span>
-            <h3 class="text-sm sm:text-base font-black text-white mt-1 uppercase tracking-wide">This Week's Spotlight Card</h3>
+            <span class="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 to-purple-500/25 text-amber-300 border border-amber-500/30 tracking-wider" data-i18n="featuredBadge">Featured</span>
+            <h3 class="text-sm sm:text-base font-black text-white mt-1 uppercase tracking-wide" data-i18n="featuredCardSubtitle">This Week's Spotlight Card</h3>
           </div>
           <i class="fa-solid fa-star text-amber-400 text-lg"></i>
         </div>
@@ -587,7 +587,7 @@
       <!-- TRENDING CARDS -->
       <div>
         <div class="flex items-center justify-between mb-3 px-1">
-          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-fire text-orange-400"></i> Trending Cards</h3>
+          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-fire text-orange-400"></i> <span data-i18n="trendingCardsTitle">Trending Cards</span></h3>
         </div>
         <div id="trending-cards-row" class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"></div>
       </div>
@@ -595,8 +595,8 @@
       <!-- LATEST TRANSACTIONS / SOCIAL PROOF -->
       <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> Live Marketplace Activity</h3>
-          <span id="activity-live-badge" class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live</span>
+          <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> <span data-i18n="liveActivityTitle">Live Marketplace Activity</span></h3>
+          <span id="activity-live-badge" class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span data-i18n="liveWord">Live</span></span>
         </div>
         <div id="activity-feed-list" class="space-y-2"></div>
       </div>
@@ -604,11 +604,11 @@
       <!-- MARKETPLACE STATS (VISUAL) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 space-y-3">
-          <h3 class="text-xs font-black text-white uppercase tracking-wide">Rarity Distribution</h3>
+          <h3 class="text-xs font-black text-white uppercase tracking-wide" data-i18n="rarityDistributionTitle">Rarity Distribution</h3>
           <div id="rarity-distribution-bars" class="space-y-3"></div>
         </div>
         <div class="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 space-y-3">
-          <h3 class="text-xs font-black text-white uppercase tracking-wide">Collection Progress</h3>
+          <h3 class="text-xs font-black text-white uppercase tracking-wide" data-i18n="marketCollectionProgressTitle">Collection Progress</h3>
           <div id="marketplace-progress-visual" class="space-y-3"></div>
         </div>
       </div>
@@ -616,7 +616,7 @@
       <!-- FULL CATALOG -->
       <div class="flex items-center gap-2 pt-2 px-1">
         <i class="fa-solid fa-layer-group text-amber-400"></i>
-        <h3 class="text-sm font-black text-white uppercase tracking-wide">Full Catalog</h3>
+        <h3 class="text-sm font-black text-white uppercase tracking-wide" data-i18n="fullCatalogTitle">Full Catalog</h3>
       </div>
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800/80">
@@ -1882,6 +1882,41 @@
         filterAll: "All",
         filterPremium: "Premium",
         filterStandard: "Standard",
+        featuredBadge: "Featured",
+        featuredCardSubtitle: "This Week's Spotlight Card",
+        trendingCardsTitle: "Trending Cards",
+        liveActivityTitle: "Live Marketplace Activity",
+        liveWord: "Live",
+        rarityDistributionTitle: "Rarity Distribution",
+        marketCollectionProgressTitle: "Collection Progress",
+        fullCatalogTitle: "Full Catalog",
+        noCardsAvailableYet: "No cards available yet.",
+        priceWord: "Price",
+        viewDetailsBtn: "View Details",
+        noCardsYetShort: "No cards yet.",
+        hotBadge: "Hot",
+        noActivityYet: "No marketplace activity yet — be the first to collect a card!",
+        nowWord: "now",
+        cardsWord: "cards",
+        noCardsMatchFilter: "No cards match your filter criteria.",
+        unownedShort: "Unowned",
+        loadingMoreCards: "Loading more cards...",
+        serialWord: "Serial",
+        premiumEditionWord: "Premium Edition",
+        standardEditionWord: "Standard Edition",
+        earlyReleaseLabel: "Early release (first 5 minted)",
+        lowSerialLabel: "Low serial number",
+        activelyHeldLabel: "Actively held by a collector",
+        notEnoughSalesLabel: "Not enough sales yet to chart a price trend.",
+        rarityScoreTitle: "Rarity Score",
+        priceHistoryTitle: "Price History",
+        ownershipChainTitle: "Ownership Chain",
+        collectorFallback: "Collector",
+        houseLabel: "House",
+        activitySoldTo: "sold to",
+        activityProposedTradeFor: "proposed a trade for",
+        aCardFallback: "A card",
+        aCollectorFallback: "a collector",
         tradeRoomTitle: "TRADING ROOM",
         tradeRoomSubtitle: "Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade",
         listCardBtn: "List a Card",
@@ -2115,6 +2150,41 @@
         filterAll: "Semua",
         filterPremium: "Premium",
         filterStandard: "Standar",
+        featuredBadge: "Unggulan",
+        featuredCardSubtitle: "Kartu Sorotan Minggu Ini",
+        trendingCardsTitle: "Kartu Sedang Tren",
+        liveActivityTitle: "Aktivitas Pasar Langsung",
+        liveWord: "Langsung",
+        rarityDistributionTitle: "Distribusi Kelangkaan",
+        marketCollectionProgressTitle: "Progres Koleksi",
+        fullCatalogTitle: "Katalog Lengkap",
+        noCardsAvailableYet: "Belum ada kartu yang tersedia.",
+        priceWord: "Harga",
+        viewDetailsBtn: "Lihat Detail",
+        noCardsYetShort: "Belum ada kartu.",
+        hotBadge: "Populer",
+        noActivityYet: "Belum ada aktivitas pasar — jadilah yang pertama mengoleksi kartu!",
+        nowWord: "sekarang",
+        cardsWord: "kartu",
+        noCardsMatchFilter: "Tidak ada kartu yang cocok dengan filter Anda.",
+        unownedShort: "Belum Dimiliki",
+        loadingMoreCards: "Memuat kartu lainnya...",
+        serialWord: "Serial",
+        premiumEditionWord: "Edisi Premium",
+        standardEditionWord: "Edisi Standar",
+        earlyReleaseLabel: "Rilis awal (5 pertama dicetak)",
+        lowSerialLabel: "Nomor seri rendah",
+        activelyHeldLabel: "Sedang dimiliki kolektor aktif",
+        notEnoughSalesLabel: "Belum cukup data penjualan untuk menampilkan tren harga.",
+        rarityScoreTitle: "Skor Kelangkaan",
+        priceHistoryTitle: "Riwayat Harga",
+        ownershipChainTitle: "Rantai Kepemilikan",
+        collectorFallback: "Kolektor",
+        houseLabel: "Rumah",
+        activitySoldTo: "terjual kepada",
+        activityProposedTradeFor: "mengajukan tukar untuk",
+        aCardFallback: "Sebuah kartu",
+        aCollectorFallback: "seorang kolektor",
         tradeRoomTitle: "RUANG PERDAGANGAN",
         tradeRoomSubtitle: "Beli dan jual langsung dengan kolektor lain via QRIS / PayPal • Pajak 2% per transaksi",
         listCardBtn: "Jual/Tukar Kartu",
@@ -3745,14 +3815,36 @@
       return timeAgoLabel(dateVal);
     }
 
+    // Small grammar-aware phrase helpers (Indonesian doesn't pluralize, so these
+    // branch on currentLanguage rather than going through the plain dict lookup —
+    // same pattern as timeAgoShort/timeAgoLabel above).
+    function viewsCountLabel(views) {
+      return currentLanguage === 'ID' ? `${views} kali dilihat` : `${views} view${views === 1 ? '' : 's'}`;
+    }
+    function watchingNowLabel(count) {
+      return currentLanguage === 'ID' ? `${count} sedang menonton` : `${count} watching now`;
+    }
+    function browsingNowLabel(count) {
+      return currentLanguage === 'ID' ? `${count} sedang menjelajah` : `${count} browsing now`;
+    }
+    function copiesInSeriesLabel(n) {
+      return currentLanguage === 'ID' ? `Hanya ${n} kartu dalam seri ini` : `Only ${n} copies in this series`;
+    }
+    function watchingActivityLabel(count, serial) {
+      return currentLanguage === 'ID'
+        ? `<strong class="text-white">${count}</strong> orang sedang melihat <strong class="text-white">${serial}</strong> sekarang`
+        : `<strong class="text-white">${count}</strong> ${count === 1 ? 'person is' : 'people are'} looking at <strong class="text-white">${serial}</strong> right now`;
+    }
+
     function renderFeaturedCard() {
       const container = document.getElementById('featured-card-content');
       if (!container) return;
 
       const available = inventory.filter(c => c.status !== 'SOLD');
       const pool = available.length ? available : inventory;
+      const dict = i18nDict[currentLanguage];
       if (pool.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">No cards available yet.</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 text-xs">${dict.noCardsAvailableYet}</div>`;
         return;
       }
 
@@ -3776,25 +3868,25 @@
           <div>
             <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${isPremium ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${featured.type}</span>
             <h4 class="text-lg font-black text-white mt-1.5">${featured.name}</h4>
-            <p class="text-[11px] text-slate-400 mt-0.5">Owner: <strong class="text-slate-300">${featured.owner || 'Unowned (House)'}</strong></p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${dict.ownerLabel}: <strong class="text-slate-300">${featured.owner || dict.unownedHouse}</strong></p>
           </div>
           <div class="flex items-center gap-6">
             <div>
-              <p class="text-[9px] text-slate-500 font-bold uppercase">Price</p>
+              <p class="text-[9px] text-slate-500 font-bold uppercase">${dict.priceWord}</p>
               <p class="text-xl font-black font-mono text-emerald-400">${formatIDR(featured.price)}</p>
             </div>
             <div>
-              <p class="text-[9px] text-slate-500 font-bold uppercase">Rarity Index</p>
+              <p class="text-[9px] text-slate-500 font-bold uppercase">${dict.mpRarityIndex}</p>
               <p class="text-xl font-black font-mono text-amber-400">${rarity}<span class="text-xs text-slate-500">/100</span></p>
             </div>
           </div>
           <div class="flex items-center gap-4 text-[10px] font-bold text-slate-400">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-slate-500"></i> ${views} view${views === 1 ? '' : 's'}</span>
-            ${watching > 0 ? `<span class="flex items-center gap-1.5 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${watching} watching now</span>` : ''}
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-eye text-slate-500"></i> ${viewsCountLabel(views)}</span>
+            ${watching > 0 ? `<span class="flex items-center gap-1.5 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${watchingNowLabel(watching)}</span>` : ''}
           </div>
           <div class="flex gap-2 pt-1">
-            <button onclick="openCardDetailModal('${featured.id}')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">View Details</button>
-            ${featured.status !== 'SOLD' ? `<button onclick="addToCart('${featured.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition-all">Add to Cart</button>` : ''}
+            <button onclick="openCardDetailModal('${featured.id}')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">${dict.viewDetailsBtn}</button>
+            ${featured.status !== 'SOLD' ? `<button onclick="addToCart('${featured.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition-all">${dict.btnAddToCart}</button>` : ''}
           </div>
         </div>
       `;
