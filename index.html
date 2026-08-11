@@ -13,6 +13,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
+       browser by design (that's how PayPal's own JS SDK works). The Secret Key is
+       NEVER placed in this file — see the note near PAYPAL_CLIENT_ID below for why. -->
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAoYAiZbWF53NkwmMPFG6k-8ryBxtTILmGAUiLyoeAZRSXze-DcPKkOJ3d8rEfgUPAW8KAva3YF3WRnUo&currency=USD&intent=capture"></script>
 
   <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
@@ -635,7 +639,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 class="text-2xl font-black text-white uppercase tracking-wide" data-i18n="tradeRoomTitle">TRADING ROOM</h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="tradeRoomSubtitle">Buy and sell directly with other collectors via QRIS / Wise • 2% tax per trade</p>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="tradeRoomSubtitle">Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade</p>
         </div>
         <button onclick="openListCardForTradeModal()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-2">
           <i class="fa-solid fa-plus"></i> <span data-i18n="listCardBtn">List a Card</span>
@@ -685,7 +689,7 @@
               </div>
 
               <div class="space-y-2">
-                <label class="block text-xs font-bold text-slate-300" data-i18n="bidAmountLabel">Your Bid Amount (IDR) - QRIS / Wise</label>
+                <label class="block text-xs font-bold text-slate-300" data-i18n="bidAmountLabel">Your Bid Amount (IDR) - QRIS / PayPal</label>
                 <div class="flex gap-2">
                   <input type="number" id="bid-input-amount" placeholder="e.g. 775000" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
                   <button id="place-bid-btn" onclick="placeAuctionBid()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed" data-i18n="placeBidBtn">Place Bid</button>
@@ -859,7 +863,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-clock-rotate-left text-cyan-400 mr-2"></i> <span data-i18n="historyTitle">Transaction History</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="historySubtitle">View completed QRIS & Wise purchases, order statuses, and 2% platform tax records.</p>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="historySubtitle">View completed QRIS & PayPal purchases, order statuses, and 2% platform tax records.</p>
         </div>
         
         <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
@@ -1008,7 +1012,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex justify-between items-center">
         <div>
           <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-shield-halved text-rose-400 mr-2"></i> <span data-i18n="adminHubTitle">Admin Hub & Revenue Dashboard</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="adminHubSubtitle">Review customer QRIS & Wise payments and verify order requests.</p>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="adminHubSubtitle">Review customer QRIS & PayPal payments and verify order requests.</p>
         </div>
         <button onclick="refreshAdminHub()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-400 rounded-xl border border-slate-700 flex items-center gap-2">
           <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshHub">Refresh Hub</span>
@@ -1031,7 +1035,7 @@
 
       <!-- PENDING ORDERS -->
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-        <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider" data-i18n="pendingOrdersTitle">Pending QRIS & Wise Orders Requiring Action</h4>
+        <h4 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider" data-i18n="pendingOrdersTitle">Pending QRIS Orders Requiring Action</h4>
         <div id="admin-pending-orders-list" class="space-y-3">
           <p class="text-xs text-slate-500" data-i18n="noPendingOrders">No pending transactions requiring approval.</p>
         </div>
@@ -1138,7 +1142,7 @@
         <div>
           <label class="block font-bold text-slate-400 mb-1" data-i18n="offerTypeLabel">Offer Type</label>
           <select id="trade-req-type-select" onchange="toggleTradeOfferTypeFields()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500">
-            <option value="BUY" data-i18n="optDirectBuy">Direct Buy Offer (QRIS / Wise)</option>
+            <option value="BUY" data-i18n="optDirectBuy">Direct Buy Offer (QRIS / PayPal)</option>
             <option value="TRADE" data-i18n="optCardTrade">Card-for-Card Trade</option>
           </select>
         </div>
@@ -1205,12 +1209,12 @@
   <div id="sellback-qris-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
       <button onclick="closeSellbackQrisModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-qrcode text-amber-400 mr-1"></i> Upload Your QRIS / Wise Tag to Receive Payout</h3>
+      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-qrcode text-amber-400 mr-1"></i> Upload Your QRIS / PayPal Tag to Receive Payout</h3>
       <p class="text-[11px] text-slate-400">Selling back <strong id="sellback-modal-serial" class="text-amber-300"></strong> for <strong id="sellback-modal-price" class="text-emerald-400"></strong></p>
       <input type="hidden" id="sellback-card-id-target">
 
       <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label class="block font-bold text-slate-300">Upload Your DANA / GoPay / Wise / QRIS Code Screenshot</label>
+        <label class="block font-bold text-slate-300">Upload Your DANA / GoPay / PayPal / QRIS Code Screenshot</label>
         <input type="file" id="sellback-qris-file-input" accept="image/*" onchange="handleSellbackQrisUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
         <input type="hidden" id="sellback-qris-img-data" value="">
         <div id="sellback-qris-preview-container" class="hidden text-center pt-2">
@@ -1271,7 +1275,7 @@
       </div>
 
       <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label class="block font-bold text-slate-300">Upload Transfer Receipt Screenshot (QRIS / Wise)</label>
+        <label class="block font-bold text-slate-300">Upload Transfer Receipt Screenshot (QRIS / PayPal)</label>
         <input type="file" id="winner-proof-file-input" accept="image/*" onchange="handleWinnerProofUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
         <input type="hidden" id="winner-proof-img-data" value="">
         <div id="winner-proof-preview-container" class="hidden text-center pt-2">
@@ -1638,7 +1642,7 @@
     </div>
   </div>
 
-  <!-- CHECKOUT MODAL WITH QRIS & WISE PROOF UPLOAD -->
+  <!-- CHECKOUT MODAL — QRIS (MANUAL) & PAYPAL (AUTOMATED) -->
   <div id="checkout-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
       <button onclick="closeCheckoutModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
@@ -1648,8 +1652,8 @@
         <button id="pay-tab-qris" onclick="switchCheckoutMethod('QRIS')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-qrcode"></i> QRIS (Local)
         </button>
-        <button id="pay-tab-wise" onclick="switchCheckoutMethod('WISE')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-globe text-cyan-400"></i> Wise (Global)
+        <button id="pay-tab-paypal" onclick="switchCheckoutMethod('PAYPAL')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-brands fa-paypal text-sky-400"></i> PayPal (Global)
         </button>
       </div>
 
@@ -1661,25 +1665,23 @@
         <img id="qris-img-element" src="" class="w-48 h-48 mx-auto bg-white p-2 rounded-2xl shadow-inner border border-slate-800">
       </div>
 
-      <!-- WISE METHOD VIEW -->
-      <div id="checkout-wise-container" class="hidden space-y-3">
-        <div class="p-3 bg-cyan-950/30 border border-cyan-500/30 rounded-2xl text-left space-y-2">
+      <!-- PAYPAL METHOD VIEW -->
+      <div id="checkout-paypal-container" class="hidden space-y-3">
+        <div class="p-3 bg-sky-950/30 border border-sky-500/30 rounded-2xl text-left space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-cyan-400"><i class="fa-solid fa-paper-plane mr-1"></i> Pay via Wise International</span>
-            <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-2 py-0.5 rounded border border-cyan-500/30">Low Fees & Fast</span>
+            <span class="text-xs font-extrabold text-sky-400"><i class="fa-brands fa-paypal mr-1"></i> Pay via PayPal</span>
+            <span class="text-[9px] bg-sky-500/20 text-sky-300 font-bold px-2 py-0.5 rounded border border-sky-500/30">Instant & Automatic</span>
           </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">Send exact payment directly via your <strong>Wise App</strong> or web account using local currency conversion.</p>
-          
-          <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-1.5 font-mono text-[11px]">
-            <div class="flex justify-between items-center"><span class="text-slate-500">Wise Email:</span><span id="wise-account-email" class="text-white font-bold select-all">eugenecard.market@gmail.com</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">Wise Tag:</span><span id="wise-account-tag" class="text-amber-400 font-bold select-all">@eugenecard</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">Recipient Name:</span><span class="text-white">Eugene Card</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">Bank / E-Wallet:</span><span id="wise-bank-account" class="text-emerald-400 font-bold select-all">GoPay</span></div>
-            <div class="flex justify-between items-center"><span class="text-slate-500">GoPay Number:</span><span id="wise-account-phone" class="text-emerald-400 font-bold select-all">+6285163702260</span></div>
+          <p class="text-[11px] text-slate-300 leading-relaxed">PayPal doesn't settle in Indonesian Rupiah, so your total is converted to USD at today's rate. Your order confirms automatically the moment PayPal approves the payment — no receipt upload needed.</p>
+
+          <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center font-mono text-[11px]">
+            <span class="text-slate-500">Charged via PayPal:</span>
+            <span id="paypal-usd-amount" class="text-emerald-400 font-bold">Calculating…</span>
           </div>
-          
-          <p class="text-[10px] text-slate-400 italic">Tip: Select currency <strong>IDR (Indonesian Rupiah)</strong> on Wise so the recipient gets the exact amount.</p>
-          <p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1.5 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i> Wise's own transfer/conversion fee is set by Wise (not Eugene Card) and is shown in your Wise app before you confirm — it's separate from, and in addition to, the 2% platform tax below.</p>
+          <p id="paypal-rate-note" class="text-[10px] text-slate-500 italic"></p>
+
+          <div id="paypal-button-container" class="pt-1"></div>
+          <p id="paypal-status-msg" class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 py-1.5 leading-relaxed hidden"></p>
         </div>
       </div>
 
@@ -1688,16 +1690,18 @@
         <p id="qris-amount-display" class="text-2xl font-black text-amber-400 font-mono">Rp 0</p>
       </div>
 
-      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label id="receipt-upload-label" class="block font-bold text-slate-300" data-i18n="uploadReceiptLabel">Upload QRIS / Wise Transfer Receipt Screenshot</label>
-        <input type="file" id="qris-proof-file-input" accept="image/*" onchange="handleQrisScreenshotUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-        <input type="hidden" id="qris-proof-img-data" value="">
-        <div id="qris-proof-preview-container" class="hidden text-center pt-2">
-          <img id="qris-proof-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+      <div id="checkout-manual-submit-section" class="space-y-3">
+        <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+          <label id="receipt-upload-label" class="block font-bold text-slate-300" data-i18n="uploadReceiptLabel">Upload QRIS Transfer Receipt Screenshot</label>
+          <input type="file" id="qris-proof-file-input" accept="image/*" onchange="handleQrisScreenshotUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
+          <input type="hidden" id="qris-proof-img-data" value="">
+          <div id="qris-proof-preview-container" class="hidden text-center pt-2">
+            <img id="qris-proof-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+          </div>
         </div>
-      </div>
 
-      <button id="submit-payment-btn" onclick="submitOrderWithProof()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all" data-i18n="submitQrisOrderBtn">Submit Order for Admin Approval</button>
+        <button id="submit-payment-btn" onclick="submitOrderWithProof()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all" data-i18n="submitQrisOrderBtn">Submit Order for Admin Approval</button>
+      </div>
     </div>
   </div>
 
@@ -1746,11 +1750,27 @@
     //  starter file if you don't have one yet.
     const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
 
-    // Wise Payment Gateway Seller Details
-    const WISE_SELLER_EMAIL = "eugenecard.market@gmail.com";
-    const WISE_SELLER_TAG = "@eugenecard";
-    const WISE_SELLER_PHONE = "+6285163702260";
-    const WISE_BANK_ACCOUNT = "GoPay +6285163702260 (a.n. Eugene Card)";
+    // PayPal integration.
+    // SECURITY NOTE: only the Client ID lives here (also passed to the PayPal SDK's
+    // script include in the head). PayPal's Client ID is meant to be public — it identifies the app, not
+    // a credential. The Secret Key is intentionally NOT in this file: this whole app is
+    // client-side, so anything written here is readable by anyone via "View Source" or
+    // devtools. The Secret Key is only needed for server-side order verification/capture
+    // via PayPal's REST API (OAuth client_credentials grant) — there's no backend in this
+    // project to hold it safely yet. The flow below uses PayPal's documented CLIENT-SIDE
+    // capture pattern instead (paypal.Buttons + actions.order.capture()), which needs only
+    // the Client ID.
+    //   KNOWN LIMITATION: because createOrder() runs in the browser, someone with devtools
+    //   open could in theory alter the USD amount before it's sent to PayPal. For a small
+    //   marketplace this is a low-value target, but if you want it fully hardened later,
+    //   the fix is a small serverless function (Firebase Cloud Function or a Supabase Edge
+    //   Function — you already have both) that creates/verifies the order server-side using
+    //   the Secret Key kept in that function's environment secrets, never in this file.
+    const PAYPAL_CLIENT_ID = "BAAoYAiZbWF53NkwmMPFG6k-8ryBxtTILmGAUiLyoeAZRSXze-DcPKkOJ3d8rEfgUPAW8KAva3YF3WRnUo";
+    const PAYPAL_FALLBACK_USD_IDR_RATE = 17800; // used only if the live rate fetch fails
+    let cachedUsdIdrRate = null;
+    let cachedRateFetchedAt = 0;
+    let paypalButtonsRendered = false;
 
     let activePaymentMethod = 'QRIS';
 
@@ -1817,7 +1837,7 @@
         noNotifications: "No recent notifications.",
         limitedEdition: "LIMITED EDITION",
         betaStockTitle: "Beta Edition Card Stock",
-        betaStockSubtitle: "Official QRIS & Wise Primary Market Availability (2% Tax Included)",
+        betaStockSubtitle: "Official QRIS & PayPal Primary Market Availability (2% Tax Included)",
         heroHeadline: "Collect. Trade. Invest.",
         heroSubcopy: "Limited digital trading cards with unique serial numbers. Only 50 cards will ever exist.",
         exploreCollectionBtn: "Explore Collection",
@@ -1863,7 +1883,7 @@
         filterPremium: "Premium",
         filterStandard: "Standard",
         tradeRoomTitle: "TRADING ROOM",
-        tradeRoomSubtitle: "Buy and sell directly with other collectors via QRIS / Wise • 2% tax per trade",
+        tradeRoomSubtitle: "Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade",
         listCardBtn: "List a Card",
         auctionRoomTitle: "AUCTION ROOM",
         auctionRoomSubtitle: "Place competitive bids on rare serial cards before timer expires.",
@@ -1872,7 +1892,7 @@
         ownerLabel: "Owner",
         highestBid: "Current Highest Bid",
         highBidderLabel: "High Bidder",
-        bidAmountLabel: "Your Bid Amount (IDR) - QRIS / Wise",
+        bidAmountLabel: "Your Bid Amount (IDR) - QRIS / PayPal",
         placeBidBtn: "Place Bid",
         liveBidHistory: "Live Bid History",
         tradeReqTitle: "TRADE REQUESTS",
@@ -1914,7 +1934,7 @@
         chatInputPlaceholder: "Type message or attach screenshot...",
         btnSend: "Send",
         historyTitle: "Transaction History",
-        historySubtitle: "View completed QRIS & Wise purchases, order statuses, and 2% platform tax records.",
+        historySubtitle: "View completed QRIS & PayPal purchases, order statuses, and 2% platform tax records.",
         histAll: "All Activity",
         histMine: "My Purchases",
         histApproved: "Approved Only",
@@ -1937,7 +1957,7 @@
         thSerialsHeld: "Serials Held",
         thAction: "Action",
         adminHubTitle: "Admin Hub & Revenue Dashboard",
-        adminHubSubtitle: "Review customer QRIS & Wise payments and verify order requests.",
+        adminHubSubtitle: "Review customer QRIS & PayPal payments and verify order requests.",
         refreshHub: "Refresh Hub",
         personaSwitcherTitle: "Admin Persona Switcher (Test Accounts)",
         personaSwitcherSub: "Switch active account persona to test standard collector views versus admin privileges.",
@@ -1965,7 +1985,7 @@
         selectCardPlaceholder: "Select a card...",
         tradeSearchPlaceholder: "Search serial (*01) or owner...",
         offerTypeLabel: "Offer Type",
-        optDirectBuy: "Direct Buy Offer (QRIS / Wise)",
+        optDirectBuy: "Direct Buy Offer (QRIS / PayPal)",
         optCardTrade: "Card-for-Card Trade",
         selectMyCardOffer: "Select Your Card to Offer in Trade",
         plusAmountLabel: "Plus Cash / Top-up Amount (IDR - Optional)",
@@ -2026,7 +2046,7 @@
         scanPayQris: "Scan & Pay via Official QRIS",
         merchantLabel: "Merchant",
         totalPayAmount: "Total Payment Amount (Inc. 2% Platform Tax)",
-        uploadReceiptLabel: "Upload QRIS / Wise Transfer Receipt Screenshot",
+        uploadReceiptLabel: "Upload QRIS Transfer Receipt Screenshot",
         submitQrisOrderBtn: "Submit Order for Admin Approval"
       },
       ID: {
@@ -2050,7 +2070,7 @@
         noNotifications: "Tidak ada notifikasi terbaru.",
         limitedEdition: "EDISI TERBATAS",
         betaStockTitle: "Stok Kartu Edisi Beta",
-        betaStockSubtitle: "Ketersediaan Pasar Primer QRIS & Wise Resmi (Pajak 2% Termasuk)",
+        betaStockSubtitle: "Ketersediaan Pasar Primer QRIS & PayPal Resmi (Pajak 2% Termasuk)",
         heroHeadline: "Koleksi. Perdagangkan. Investasikan.",
         heroSubcopy: "Kartu koleksi digital terbatas dengan nomor seri unik. Hanya 50 kartu yang akan pernah ada.",
         exploreCollectionBtn: "Jelajahi Koleksi",
@@ -2096,7 +2116,7 @@
         filterPremium: "Premium",
         filterStandard: "Standar",
         tradeRoomTitle: "RUANG PERDAGANGAN",
-        tradeRoomSubtitle: "Beli dan jual langsung dengan kolektor lain via QRIS / Wise • Pajak 2% per transaksi",
+        tradeRoomSubtitle: "Beli dan jual langsung dengan kolektor lain via QRIS / PayPal • Pajak 2% per transaksi",
         listCardBtn: "Jual/Tukar Kartu",
         auctionRoomTitle: "RUANG LELANG",
         auctionRoomSubtitle: "Ajukan penawaran kompetitif pada kartu langka sebelum waktu habis.",
@@ -2105,7 +2125,7 @@
         ownerLabel: "Pemilik",
         highestBid: "Penawaran Tertinggi",
         highBidderLabel: "Penawar Tertinggi",
-        bidAmountLabel: "Jumlah Penawaran (IDR) - QRIS / Wise",
+        bidAmountLabel: "Jumlah Penawaran (IDR) - QRIS / PayPal",
         placeBidBtn: "Ajukan Tawaran",
         liveBidHistory: "Riwayat Tawaran Langsung",
         tradeReqTitle: "PERMINTAAN TUKAR",
@@ -2147,7 +2167,7 @@
         chatInputPlaceholder: "Ketik pesan atau lampirkan tangkapan layar...",
         btnSend: "Kirim",
         historyTitle: "Riwayat Transaksi",
-        historySubtitle: "Lihat pembelian QRIS & Wise selesai, status pesanan, dan catatan pajak platform 2%.",
+        historySubtitle: "Lihat pembelian QRIS & PayPal selesai, status pesanan, dan catatan pajak platform 2%.",
         histAll: "Semua Aktivitas",
         histMine: "Pembelian Saya",
         histApproved: "Disetujui Saja",
@@ -2170,7 +2190,7 @@
         thSerialsHeld: "Serial Dipegang",
         thAction: "Aksi",
         adminHubTitle: "Pusat Admin & Dasbor Pendapatan",
-        adminHubSubtitle: "Tinjau pembayaran QRIS & Wise pelanggan dan verifikasi permintaan pesanan.",
+        adminHubSubtitle: "Tinjau pembayaran QRIS & PayPal pelanggan dan verifikasi permintaan pesanan.",
         refreshHub: "Muat Ulang Pusat",
         personaSwitcherTitle: "Pengalih Persona Admin (Akun Uji)",
         personaSwitcherSub: "Beralih persona akun aktif untuk menguji tampilan kolektor standar vs hak akses admin.",
@@ -2198,7 +2218,7 @@
         selectCardPlaceholder: "Pilih kartu...",
         tradeSearchPlaceholder: "Cari serial (*01) atau pemilik...",
         offerTypeLabel: "Jenis Penawaran",
-        optDirectBuy: "Penawaran Beli Langsung (QRIS / Wise)",
+        optDirectBuy: "Penawaran Beli Langsung (QRIS / PayPal)",
         optCardTrade: "Pertukaran Kartu-dengan-Kartu",
         selectMyCardOffer: "Pilih Kartu Anda untuk Ditawarkan",
         plusAmountLabel: "Jumlah Uang Tambahan (IDR - Opsional)",
@@ -2259,7 +2279,7 @@
         scanPayQris: "Pindai & Bayar via QRIS Resmi",
         merchantLabel: "Pedagang",
         totalPayAmount: "Total Pembayaran (Termasuk Pajak 2%)",
-        uploadReceiptLabel: "Unggah Tangkapan Layar Struk Transfer QRIS / Wise",
+        uploadReceiptLabel: "Unggah Tangkapan Layar Struk Transfer QRIS",
         submitQrisOrderBtn: "Kirim Pesanan untuk Persetujuan Admin"
       }
     };
@@ -2289,20 +2309,164 @@
     function switchCheckoutMethod(method) {
       activePaymentMethod = method;
       const qrisTab = document.getElementById('pay-tab-qris');
-      const wiseTab = document.getElementById('pay-tab-wise');
+      const paypalTab = document.getElementById('pay-tab-paypal');
       const qrisContainer = document.getElementById('checkout-qris-container');
-      const wiseContainer = document.getElementById('checkout-wise-container');
+      const paypalContainer = document.getElementById('checkout-paypal-container');
+      const manualSubmitSection = document.getElementById('checkout-manual-submit-section');
 
-      if (method === 'WISE') {
-        wiseTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 transition-all flex items-center justify-center gap-1.5';
+      if (method === 'PAYPAL') {
+        paypalTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-sky-500 text-slate-950 transition-all flex items-center justify-center gap-1.5';
         qrisTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
         qrisContainer.classList.add('hidden');
-        wiseContainer.classList.remove('hidden');
+        paypalContainer.classList.remove('hidden');
+        manualSubmitSection.classList.add('hidden'); // PayPal auto-confirms; no receipt/admin step
+        renderPaypalButtons();
       } else {
         qrisTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5';
-        wiseTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
-        wiseContainer.classList.add('hidden');
+        paypalTab.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+        paypalContainer.classList.add('hidden');
         qrisContainer.classList.remove('hidden');
+        manualSubmitSection.classList.remove('hidden');
+      }
+    }
+
+    // Live USD/IDR rate for converting the cart total, since PayPal cannot settle in IDR.
+    // Cached in-memory for 5 minutes per session so we're not calling the rate API on
+    // every tab click. Falls back to a fixed approximate rate if the fetch fails for any
+    // reason (offline, CORS, rate-limited, etc.) so checkout never gets stuck.
+    async function getUsdIdrRate() {
+      const fiveMinutes = 5 * 60 * 1000;
+      if (cachedUsdIdrRate && (Date.now() - cachedRateFetchedAt) < fiveMinutes) {
+        return cachedUsdIdrRate;
+      }
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        const data = await res.json();
+        const rate = data && data.rates && data.rates.IDR;
+        if (rate && rate > 0) {
+          cachedUsdIdrRate = rate;
+          cachedRateFetchedAt = Date.now();
+          return rate;
+        }
+        throw new Error('IDR rate missing from response');
+      } catch (e) {
+        console.warn('Live exchange rate fetch failed, using fallback rate:', e.message);
+        return PAYPAL_FALLBACK_USD_IDR_RATE;
+      }
+    }
+
+    async function renderPaypalButtons() {
+      const amountEl = document.getElementById('paypal-usd-amount');
+      const rateNoteEl = document.getElementById('paypal-rate-note');
+      const statusEl = document.getElementById('paypal-status-msg');
+      const buttonContainer = document.getElementById('paypal-button-container');
+
+      if (!currentUser) {
+        amountEl.innerText = '—';
+        statusEl.innerText = 'Please log in before paying with PayPal.';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+      if (cart.length === 0) {
+        amountEl.innerText = '—';
+        return;
+      }
+      if (typeof paypal === 'undefined') {
+        statusEl.innerText = 'PayPal could not load. Check your connection and reopen checkout.';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+
+      statusEl.classList.add('hidden');
+      amountEl.innerText = 'Calculating…';
+
+      const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+      const totalIdr = subtotal * 1.02;
+      const rate = await getUsdIdrRate();
+      const usdAmount = Math.max(0.01, totalIdr / rate).toFixed(2);
+
+      amountEl.innerText = `$${usdAmount} USD`;
+      rateNoteEl.innerText = `Converted from ${formatIDR(totalIdr)} at an approximate rate of 1 USD ≈ Rp ${Math.round(rate).toLocaleString('en-US')}. PayPal may apply its own conversion on top of this.`;
+
+      // Re-render fresh each time this modal/tab opens so the amount always matches the
+      // current cart (PayPal Buttons don't support updating an already-rendered amount).
+      buttonContainer.innerHTML = '';
+      paypal.Buttons({
+        style: { layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal', height: 40 },
+        createOrder: (data, actions) => {
+          return actions.order.create({
+            purchase_units: [{
+              amount: { currency_code: 'USD', value: usdAmount },
+              description: `Eugene Card order — ${cart.length} item(s)`
+            }]
+          });
+        },
+        onApprove: async (data, actions) => {
+          statusEl.innerText = 'Payment approved — confirming your order…';
+          statusEl.classList.remove('hidden');
+          try {
+            const details = await actions.order.capture();
+            await finalizePaypalOrder(details, usdAmount, rate);
+          } catch (e) {
+            statusEl.innerText = 'Payment captured by PayPal, but we could not save your order automatically. Please contact admin with PayPal order ID: ' + (data.orderID || 'unknown') + ' — Error: ' + e.message;
+          }
+        },
+        onError: (err) => {
+          console.error('PayPal error:', err);
+          statusEl.innerText = 'PayPal ran into an error. Please try again or use QRIS instead.';
+          statusEl.classList.remove('hidden');
+        },
+        onCancel: () => {
+          showToast('PayPal payment cancelled.');
+        }
+      }).render('#paypal-button-container');
+    }
+
+    async function finalizePaypalOrder(paypalDetails, usdAmount, rateUsed) {
+      if (!currentUser) return showToast('Please log in.');
+      if (cart.length === 0) return showToast('Your cart is empty.');
+
+      const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+      const total = subtotal * 1.02;
+      const orderRef = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+      const activeUserIdent = currentUser.username || currentUser.name;
+
+      const orderData = {
+        id: orderRef,
+        type: 'BUY',
+        paymentMethod: 'PAYPAL',
+        user_name: activeUserIdent,
+        items: cart.map(i => ({ id: i.id, serial: i.serial, name: i.name, price: i.price })),
+        subtotal: subtotal,
+        tax: subtotal * 0.02,
+        total_amount: total,
+        status: 'APPROVED', // PayPal capture already confirmed the payment — no manual admin step
+        paypalOrderId: paypalDetails.id || null,
+        paypalPayerEmail: (paypalDetails.payer && paypalDetails.payer.email_address) || null,
+        usdAmountCharged: Number(usdAmount),
+        exchangeRateUsed: rateUsed,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        const batch = db.batch();
+        batch.set(db.collection("transactions").doc(orderRef), orderData);
+        cart.forEach(item => {
+          batch.update(db.collection("cards").doc(item.id), { owner: activeUserIdent, status: 'SOLD' });
+        });
+        await batch.commit();
+
+        cart = [];
+        saveCartToStorage();
+        updateCartTotals();
+
+        closeCheckoutModal();
+        showToast(`Order ${orderRef} paid via PayPal! Cards added to your Vault.`);
+        addNotification('Order Paid', `Order ${orderRef} paid via PayPal and confirmed automatically.`, 'fa-circle-check text-sky-400');
+
+        switchTab('history');
+      } catch (e) {
+        showToast('Order save error after payment: ' + e.message);
       }
     }
 
@@ -4346,8 +4510,8 @@
           ? `<a href="${tx.qrisProofUrl}" target="_blank" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Receipt</a>`
           : `<span class="text-slate-600 text-[10px]">No File</span>`;
 
-        const methodBadge = tx.paymentMethod === 'WISE'
-          ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 ml-1">WISE</span>`
+        const methodBadge = tx.paymentMethod === 'PAYPAL'
+          ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 ml-1">PAYPAL</span>`
           : `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 ml-1">QRIS</span>`;
 
         return `
@@ -4880,7 +5044,7 @@
       if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
 
       const payoutQrisData = document.getElementById('sellback-qris-img-data').value;
-      if (!payoutQrisData) return showToast('Please upload your QRIS / Wise payout code screenshot to receive payout.');
+      if (!payoutQrisData) return showToast('Please upload your QRIS / PayPal payout code screenshot to receive payout.');
 
       const activeUserIdent = currentUser.username || currentUser.name;
       const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
