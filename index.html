@@ -1500,24 +1500,35 @@
           <div id="admin-edit-collector-raw-id" class="w-full bg-slate-950/50 border border-slate-800/80 rounded-xl px-3 py-2 text-slate-500 font-mono"></div>
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-400 mb-1">Display Name</label>
-          <input type="text" id="admin-edit-collector-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-rose-500 focus:outline-none">
+        <div class="p-3 bg-rose-500/5 rounded-2xl border border-rose-500/20 space-y-2">
+          <label class="block font-bold text-rose-400 uppercase text-[10px]"><i class="fa-solid fa-link mr-1"></i> Link to a Registered Account (Recommended)</label>
+          <p class="text-[10px] text-slate-500">Fixes the real ownership record, not just the display — the collector's own Vault will also show these cards correctly.</p>
+          <input type="text" id="admin-relink-search-input" oninput="filterRelinkAccountOptions()" placeholder="Search by name or @username..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none">
+          <div id="admin-relink-account-list" class="max-h-40 overflow-y-auto space-y-0.5"></div>
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-400 mb-1">Upload Custom Avatar Picture</label>
-          <input type="file" id="admin-edit-collector-avatar-file-input" accept="image/*" onchange="handleAdminEditCollectorAvatarUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-xl p-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-rose-500 file:text-slate-950 hover:file:bg-rose-400">
-        </div>
+        <div class="border-t border-slate-800 pt-3 space-y-3">
+          <p class="text-[10px] text-slate-500 uppercase font-bold">Or Manually Override Display Only (no real account, e.g. house-held cards)</p>
 
-        <div>
-          <label class="block font-bold text-slate-400 mb-1">Or Avatar Image URL</label>
-          <input type="text" id="admin-edit-collector-avatar-input" oninput="document.getElementById('admin-edit-collector-avatar-preview').src = this.value" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none" placeholder="https://example.com/avatar.png">
-        </div>
+          <div>
+            <label class="block font-bold text-slate-400 mb-1">Display Name</label>
+            <input type="text" id="admin-edit-collector-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-rose-500 focus:outline-none">
+          </div>
 
-        <button onclick="saveAdminCollectorProfile()" class="w-full py-3 bg-rose-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-rose-400 shadow-lg transition-all">
-          Save Collector Profile
-        </button>
+          <div>
+            <label class="block font-bold text-slate-400 mb-1">Upload Custom Avatar Picture</label>
+            <input type="file" id="admin-edit-collector-avatar-file-input" accept="image/*" onchange="handleAdminEditCollectorAvatarUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-xl p-2 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-rose-500 file:text-slate-950 hover:file:bg-rose-400">
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-400 mb-1">Or Avatar Image URL</label>
+            <input type="text" id="admin-edit-collector-avatar-input" oninput="document.getElementById('admin-edit-collector-avatar-preview').src = this.value" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-rose-500 focus:outline-none" placeholder="https://example.com/avatar.png">
+          </div>
+
+          <button onclick="saveAdminCollectorProfile()" class="w-full py-3 bg-slate-800 text-white font-extrabold text-xs rounded-xl hover:bg-slate-700 shadow-lg transition-all">
+            Save Display Override
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -6378,7 +6389,73 @@
       document.getElementById('admin-edit-collector-avatar-input').value = (profile && profile.avatarUrl) || '';
       document.getElementById('admin-edit-collector-avatar-preview').src = getCollectorAvatar(ownerName);
 
+      document.getElementById('admin-relink-search-input').value = '';
+      filterRelinkAccountOptions();
+
       document.getElementById('admin-edit-collector-modal').classList.remove('hidden');
+    }
+
+    function filterRelinkAccountOptions() {
+      const query = (document.getElementById('admin-relink-search-input')?.value || '').toLowerCase().trim();
+      const listContainer = document.getElementById('admin-relink-account-list');
+      if (!listContainer) return;
+
+      const options = Object.entries(globalCollectorProfiles).map(([key, p]) => ({
+        key,
+        displayName: p.name || p.username || key,
+        username: p.username || '',
+        avatarUrl: p.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${key}`
+      })).filter(o =>
+        !query ||
+        o.displayName.toLowerCase().includes(query) ||
+        o.username.toLowerCase().includes(query) ||
+        o.key.toLowerCase().includes(query)
+      );
+
+      if (options.length === 0) {
+        listContainer.innerHTML = `<div class="p-3 text-center text-slate-500 text-[11px]">No matching registered accounts</div>`;
+        return;
+      }
+
+      listContainer.innerHTML = options.map(o => {
+        const canonicalId = (o.username || o.displayName).replace(/'/g, "\\'");
+        const safeDisplayName = o.displayName.replace(/'/g, "\\'");
+        return `
+        <div onclick="confirmRelinkCollectorOwner('${canonicalId}', '${safeDisplayName}')" class="flex items-center gap-2 px-2 py-1.5 hover:bg-rose-500/10 cursor-pointer rounded-lg transition-colors">
+          <img src="${o.avatarUrl}" class="w-6 h-6 rounded-full object-cover border border-slate-700 bg-slate-950 flex-shrink-0">
+          <div class="text-[11px] min-w-0">
+            <div class="font-bold text-white truncate">${o.displayName}</div>
+            ${o.username ? `<div class="text-slate-500 font-mono text-[10px]">@${o.username}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function confirmRelinkCollectorOwner(canonicalIdentifier, displayName) {
+      const rawOwner = adminEditingCollectorOwner;
+      if (!rawOwner) return;
+      if (!canonicalIdentifier) return showToast("That account has no name or username set — ask them to set one in their profile first.");
+
+      const affectedCards = inventory.filter(c => c.owner === rawOwner);
+      if (affectedCards.length === 0) return showToast('No cards found for this owner label.');
+
+      const confirmed = confirm(`Relink ${affectedCards.length} card(s) currently listed under "${rawOwner}" to ${displayName} (@${canonicalIdentifier})?\n\nThis updates the actual ownership record on each card — not just the display — so ${displayName}'s own Vault will show them correctly.`);
+      if (!confirmed) return;
+
+      try {
+        const batch = db.batch();
+        affectedCards.forEach(c => {
+          batch.update(db.collection("cards").doc(c.id), { owner: canonicalIdentifier });
+        });
+        await batch.commit();
+
+        closeAdminEditCollectorModal();
+        renderHoldersTable();
+        showToast(`Relinked ${affectedCards.length} card(s) to ${displayName}.`);
+        addNotification('Collector Relinked', `Relinked ${affectedCards.length} card(s) from "${rawOwner}" to the registered account of ${displayName}.`, 'fa-link text-rose-400');
+      } catch (e) {
+        showToast('Error relinking owner: ' + e.message);
+      }
     }
 
     function closeAdminEditCollectorModal() {
