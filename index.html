@@ -20,6 +20,7 @@
 
   <!-- Chart.js (visual analytics: price/volume history, rarity distribution) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -1726,6 +1727,50 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
     const analytics = firebase.analytics();
+
+    // ---------------------------------------------------------------------
+    // EmailJS — sends the admin (Eugene Card) a notification email every
+    // time a new transaction lands in the Admin Hub approval queue
+    // (a purchase order or a sell-back request with status PENDING).
+    // NOTE: the Public Key below is meant to be exposed client-side, that's
+    // how EmailJS works. The Private Key is NOT used here on purpose —
+    // pasting it into this HTML file would expose it to anyone who views
+    // page source / devtools, which defeats its purpose. If you want the
+    // extra "strict mode" origin check, keep the Private Key only in your
+    // EmailJS dashboard settings, not in client code.
+    const EMAILJS_SERVICE_ID = 'service_bmzjam4';
+    const EMAILJS_TEMPLATE_ID = 'template_kradqlq';
+    const EMAILJS_PUBLIC_KEY = 'OzXPBb2X4h5MJ_-9X';
+    const EMAILJS_ADMIN_TO = 'eugenecard.market@gmail.com';
+
+    if (window.emailjs) {
+      emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    }
+
+    // Fires an EmailJS notification whenever a new item needs Admin approval.
+    // `params` keys are passed straight through as EmailJS template variables —
+    // make sure the names below (order_id, order_type, user_name, amount,
+    // detail, to_email) match the variables used in template "template_kradqlq"
+    // in the EmailJS dashboard (rename either side if they don't match).
+    function sendAdminApprovalEmail(params) {
+      if (!window.emailjs) {
+        console.warn('EmailJS SDK not loaded, skipping approval email.');
+        return;
+      }
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: EMAILJS_ADMIN_TO,
+        order_id: params.order_id || '',
+        order_type: params.order_type || '',
+        user_name: params.user_name || '',
+        amount: params.amount || '',
+        detail: params.detail || '',
+        created_at: new Date().toLocaleString()
+      }).then(() => {
+        console.log('Admin approval email sent for', params.order_id);
+      }).catch((err) => {
+        console.warn('Admin approval email failed:', err);
+      });
+    }
 
     const TRADE_FEE_PERCENT = 0.02;
     const OFFICIAL_QRIS_STRING = "00020101021126610014COM.GO-JEK.WWW01189360091430419400360210G0419400360303UMI51440014ID.CO.QRIS.WWW0215ID10265490344800303UMI5204594453033605802ID5925Eugene Card, Toko Kartu &6012TORAJA UTARA61059183162070703A0163048BD9";
@@ -5156,6 +5201,13 @@
         await db.collection("transactions").doc(orderRef).set(sellbackOrder);
         showToast(`Sell-back request ${orderRef} submitted! Waiting for Admin payout.`);
         addNotification('Sell-Back Requested', `Sell-back request ${orderRef} for ${card.serial} sent to Admin approval queue.`, 'fa-rotate-left text-amber-400');
+        sendAdminApprovalEmail({
+          order_id: orderRef,
+          order_type: 'SELLBACK',
+          user_name: activeUserIdent,
+          amount: formatIDR(card.price),
+          detail: `Sell-back request for ${card.serial} (${card.name})`
+        });
         closeSellbackQrisModal();
       } catch (e) {
         showToast('Sell-back request error: ' + e.message);
@@ -6321,6 +6373,14 @@
 
       try {
         await db.collection("transactions").doc(orderRef).set(orderData);
+
+        sendAdminApprovalEmail({
+          order_id: orderRef,
+          order_type: 'BUY',
+          user_name: activeUserIdent,
+          amount: formatIDR(total),
+          detail: `Purchase order: ${cart.map(i => i.serial).join(', ')}`
+        });
 
         cart = [];
         saveCartToStorage();
