@@ -4635,15 +4635,52 @@
 
     function closeProfileManagerModal() { document.getElementById('profile-manager-modal').classList.add('hidden'); }
 
-    function handleProfileAvatarUpload(event) {
+    // Raw camera-phone photos, base64-encoded, routinely land at 2-6MB+ — well
+    // past Firestore's 1MB-per-document limit. Every avatar upload used to
+    // store the raw file as-is, so writes to the "profiles" collection could
+    // silently exceed that limit and fail (see saveProfileChanges below, which
+    // used to swallow the error and still claim success). Downscaling +
+    // re-encoding here keeps avatars comfortably small so the sync actually
+    // goes through.
+    function compressImageToDataUrl(file, maxDimension = 256, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Could not read the selected file.'));
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('Could not load the selected image.'));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > height && width > maxDimension) {
+              height = Math.round(height * (maxDimension / width));
+              width = maxDimension;
+            } else if (height >= width && height > maxDimension) {
+              width = Math.round(width * (maxDimension / height));
+              height = maxDimension;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleProfileAvatarUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('profile-edit-avatar-input').value = e.target.result;
-        document.getElementById('profile-modal-avatar-preview').src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 256, 0.82);
+        document.getElementById('profile-edit-avatar-input').value = dataUrl;
+        document.getElementById('profile-modal-avatar-preview').src = dataUrl;
+      } catch (e) {
+        showToast('Could not process that image: ' + e.message);
+      }
     }
 
     async function saveProfileChanges() {
@@ -4694,13 +4731,22 @@
       try {
         await db.collection("profiles").doc(currentUser.email).set(profilePayload, { merge: true });
         await loadCollectorProfiles();
-      } catch (e) {}
 
-      closeProfileManagerModal();
-      renderAuthHeader();
-      updateAllViews();
-      showToast('Profile and unique username updated!');
-      addNotification('Profile Updated', `Your unique username (@${newUsername}) and profile details were saved.`, 'fa-user-gear text-amber-400');
+        closeProfileManagerModal();
+        renderAuthHeader();
+        updateAllViews();
+        showToast('Profile and unique username updated!');
+        addNotification('Profile Updated', `Your unique username (@${newUsername}) and profile details were saved.`, 'fa-user-gear text-amber-400');
+      } catch (e) {
+        // Previously this catch block was empty, so a failed sync (e.g. an
+        // oversized avatar pushing the document past Firestore's 1MB limit)
+        // still showed "Profile updated!" — the change looked saved locally
+        // but never reached other viewers. Now we're honest about it.
+        closeProfileManagerModal();
+        renderAuthHeader();
+        updateAllViews();
+        showToast('Saved on this device, but syncing to the server failed: ' + e.message + '. Other collectors may not see this update yet — try again or use a smaller photo.');
+      }
     }
 
     // ===== 3D TILT + HOLOGRAPHIC POINTER TRACKING (item 6) =====
@@ -6463,15 +6509,16 @@
       adminEditingCollectorOwner = null;
     }
 
-    function handleAdminEditCollectorAvatarUpload(event) {
+    async function handleAdminEditCollectorAvatarUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('admin-edit-collector-avatar-input').value = e.target.result;
-        document.getElementById('admin-edit-collector-avatar-preview').src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 256, 0.82);
+        document.getElementById('admin-edit-collector-avatar-input').value = dataUrl;
+        document.getElementById('admin-edit-collector-avatar-preview').src = dataUrl;
+      } catch (e) {
+        showToast('Could not process that image: ' + e.message);
+      }
     }
 
     async function saveAdminCollectorProfile() {
