@@ -404,8 +404,9 @@
           <i class="fa-solid fa-sack-dollar text-emerald-400"></i> <span data-i18n="navRevenueTab">Revenue</span>
         </button>
 
-        <button id="nav-inbox" onclick="switchTab('inbox')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+        <button id="nav-inbox" onclick="switchTab('inbox')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="navInbox">Inbox</span>
+          <span id="inbox-unread-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
         </button>
         <button id="nav-holders" onclick="switchTab('holders')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-users text-teal-400"></i> <span data-i18n="navHolders">Holders</span>
@@ -1240,6 +1241,23 @@
     </div>
   </div>
 
+  <!-- HOLDERS: VIEW PEOPLE'S VAULTS MODAL -->
+  <div id="holder-vault-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4" onclick="closeHolderVaultModal()">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <img id="holder-vault-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950 shrink-0">
+          <div class="min-w-0">
+            <h3 id="holder-vault-title" class="text-sm font-black text-white truncate">Collector Vault</h3>
+            <p id="holder-vault-subtitle" class="text-[10px] text-slate-400"></p>
+          </div>
+        </div>
+        <button onclick="closeHolderVaultModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="holder-vault-grid" class="p-5 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+    </div>
+  </div>
+
   <!-- ADMIN: SEND PAYOUT RECEIPT MODAL -->
   <div id="send-receipt-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
@@ -1825,6 +1843,7 @@
     let wishlist = new Set();
     let currentFilter = 'ALL';
     let historyFilter = 'ALL';
+    let proofUrlById = {}; // txId -> qrisProofUrl, populated whenever a transaction list renders
     let inventory = [];
     let transactionsList = [];
     let ownerOptionsList = [];
@@ -2861,6 +2880,12 @@
       const participants = [myIdent, targetIdent].sort();
       currentChatContextId = `chat-${participants.join('-vs-')}`;
 
+      // Mark this thread as read by me the moment I open it, so the unread
+      // inbox bubble clears without waiting for a new snapshot elsewhere.
+      db.collection("chats").doc(currentChatContextId).set({
+        readBy: firebase.firestore.FieldValue.arrayUnion(myIdent)
+      }, { merge: true }).catch(() => {});
+
       document.getElementById('chat-target-user-name').innerText = targetUserName;
       document.getElementById('chat-target-context').innerText = contextInfo;
 
@@ -2969,7 +2994,10 @@
           lastMessage: text || (chatAttachedImage ? '[Screenshot / Image]' : ''),
           lastSender: currentUser.username || currentUser.name,
           participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => p.toLowerCase()),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          // A fresh message is unread by everyone except the sender - reset readBy
+          // so the recipient's inbox bubble picks it up.
+          readBy: [(currentUser.username || currentUser.name || '').trim().toLowerCase()]
         }, { merge: true });
 
         const msgDocRef = chatDocRef.collection("messages").doc();
@@ -2991,12 +3019,24 @@
       }
     }
 
+    function updateInboxUnreadBadge(count) {
+      const badge = document.getElementById('inbox-unread-badge');
+      if (!badge) return;
+      if (count > 0) {
+        badge.innerText = count > 9 ? '9+' : String(count);
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
     function loadUserInboxThreads() {
       const container = document.getElementById('inbox-threads-list');
       if (!container) return;
 
       if (!currentUser) {
         container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">Please log in to view your inbox.</div>`;
+        updateInboxUnreadBadge(0);
         return;
       }
 
@@ -3005,6 +3045,7 @@
       inboxUnsubscribe = db.collection("chats").onSnapshot(snapshot => {
         if (snapshot.empty) {
           container.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">No active chat threads found.</p>`;
+          updateInboxUnreadBadge(0);
           return;
         }
 
@@ -3031,6 +3072,15 @@
 
         const uniqueThreads = Array.from(threadsMap.values());
 
+        // Unread = threads whose last message wasn't sent by me and that I
+        // haven't opened yet (my identity isn't in readBy).
+        const unreadCount = uniqueThreads.filter(t => {
+          const lastSenderLower = (t.lastSender || '').trim().toLowerCase();
+          const readByArr = Array.isArray(t.readBy) ? t.readBy.map(r => (r || '').trim().toLowerCase()) : [];
+          return lastSenderLower && lastSenderLower !== myUsername && !readByArr.includes(myUsername);
+        }).length;
+        updateInboxUnreadBadge(unreadCount);
+
         if (uniqueThreads.length === 0) {
           container.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">No chat messages in your inbox.</p>`;
           return;
@@ -3042,16 +3092,24 @@
           const isOtherAdmin = isUserAdmin(otherUser);
           const otherUserAvatar = getCollectorAvatar(otherUser);
 
+          const lastSenderLower = (c.lastSender || '').trim().toLowerCase();
+          const readByArr = Array.isArray(c.readBy) ? c.readBy.map(r => (r || '').trim().toLowerCase()) : [];
+          const isUnread = lastSenderLower && lastSenderLower !== myUsername && !readByArr.includes(myUsername);
+
           return `
-            <div class="bg-slate-900 border ${isOtherAdmin ? 'border-rose-500/30' : 'border-slate-800'} p-4 rounded-2xl flex justify-between items-center text-xs hover:border-indigo-500/40 transition-all">
+            <div class="bg-slate-900 border ${isOtherAdmin ? 'border-rose-500/30' : (isUnread ? 'border-indigo-500/50' : 'border-slate-800')} p-4 rounded-2xl flex justify-between items-center text-xs hover:border-indigo-500/40 transition-all">
               <div class="flex items-center gap-3">
-                <img src="${otherUserAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950 shrink-0">
+                <div class="relative shrink-0">
+                  <img src="${otherUserAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950">
+                  ${isUnread ? `<span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-indigo-500 border-2 border-slate-900"></span>` : ''}
+                </div>
                 <div>
                   <div class="flex items-center gap-1.5">
                     <p class="font-extrabold text-white text-sm">${otherUser}</p>
                     ${isOtherAdmin ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved text-[8px] mr-0.5"></i> ADMIN</span>` : ''}
+                    ${isUnread ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">NEW</span>` : ''}
                   </div>
-                  <p class="text-xs text-slate-400 truncate max-w-xs sm:max-w-md mt-0.5">${lastMsg}</p>
+                  <p class="text-xs ${isUnread ? 'text-slate-200 font-semibold' : 'text-slate-400'} truncate max-w-xs sm:max-w-md mt-0.5">${lastMsg}</p>
                 </div>
               </div>
               <button onclick="openDirectChat('${otherUser}', 'Direct Chat')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl transition-all shadow shrink-0 flex items-center gap-1.5">
@@ -4229,6 +4287,8 @@
           handleUserSession(user);
         } else {
           currentUser = null;
+          if (inboxUnsubscribe) { inboxUnsubscribe(); inboxUnsubscribe = null; }
+          updateInboxUnreadBadge(0);
           renderAuthHeader();
           updateAllViews();
         }
@@ -4302,6 +4362,29 @@
     function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
     function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
 
+    // Payment proof screenshots are stored as base64 data URLs. Opening those
+    // directly via <a target="_blank"> is unreliable (browsers frequently
+    // block/strip large data: URL navigations), so route every "View Payment
+    // Proof" / "View Receipt" action through this in-app preview modal instead.
+    function openImagePreviewModal(imgUrl, title = 'Payment Proof') {
+      if (!imgUrl) return showToast('No proof image available for this transaction.');
+      document.getElementById('image-preview-title').innerText = title;
+      document.getElementById('image-preview-img').src = imgUrl;
+      document.getElementById('image-preview-download').href = imgUrl;
+      document.getElementById('image-preview-modal').classList.remove('hidden');
+    }
+
+    function closeImagePreviewModal() {
+      document.getElementById('image-preview-modal').classList.add('hidden');
+      document.getElementById('image-preview-img').src = '';
+    }
+
+    function viewTransactionProof(txId) {
+      const proofUrl = proofUrlById[txId];
+      if (!proofUrl) return showToast('No proof file attached to this transaction.');
+      openImagePreviewModal(proofUrl, `Payment Proof — ${txId}`);
+    }
+
     async function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
       try {
@@ -4363,6 +4446,7 @@
       closeAuthModal();
       renderAuthHeader();
       updateAllViews();
+      loadUserInboxThreads();
     }
 
     async function logoutUser() {
@@ -4643,8 +4727,9 @@
         if (tx.status === 'APPROVED') badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
         if (tx.status === 'REJECTED') badgeClass = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
 
+        if (tx.qrisProofUrl) proofUrlById[tx.id] = tx.qrisProofUrl;
         const proofBtn = tx.qrisProofUrl 
-          ? `<a href="${tx.qrisProofUrl}" target="_blank" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Receipt</a>`
+          ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Receipt</button>`
           : `<span class="text-slate-600 text-[10px]">No File</span>`;
 
         const methodBadge = tx.paymentMethod === 'PAYPAL'
@@ -6098,6 +6183,36 @@
       showToast('Wishlist cleared.');
     }
 
+    function openHolderVaultModal(ownerName) {
+      const modal = document.getElementById('holder-vault-modal');
+      const grid = document.getElementById('holder-vault-grid');
+      if (!modal || !grid) return;
+
+      const cards = inventory.filter(c => c.owner === ownerName);
+
+      document.getElementById('holder-vault-title').innerText = `${ownerName}'s Vault`;
+      document.getElementById('holder-vault-subtitle').innerText = `${cards.length} card${cards.length === 1 ? '' : 's'} held`;
+      document.getElementById('holder-vault-avatar').src = getCollectorAvatar(ownerName);
+
+      grid.innerHTML = cards.length > 0 ? cards.map(card => `
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-2.5 text-center">
+          <div class="w-full aspect-[4/5] bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center mb-2">
+            <img src="${card.imgUrl}" loading="lazy" class="w-full h-full object-contain">
+          </div>
+          <p class="font-black text-amber-400 font-mono text-[11px] serial-engraved truncate">${card.serial}</p>
+          <p class="text-[10px] font-bold text-white truncate">${card.name}</p>
+          <span class="inline-block mt-1 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${card.type === 'PREMIUM' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}">${card.type}</span>
+        </div>
+      `).join('') : `<div class="col-span-full text-center py-10 text-slate-500 text-xs">No cards currently held.</div>`;
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeHolderVaultModal() {
+      const modal = document.getElementById('holder-vault-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
     function renderHoldersTable() {
       const tbody = document.getElementById('holders-table-body');
       if (!tbody) return;
@@ -6138,9 +6253,14 @@
             <td class="p-3 font-mono font-bold text-indigo-400 text-xs">${cards.length} Cards</td>
             <td class="p-3">${serialsList}</td>
             <td class="p-3 text-right">
-              <button onclick="openDirectChat('${ownerName}', 'Collector Inquiry')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center gap-1">
-                <i class="fa-solid fa-comments"></i> Chat Collector
-              </button>
+              <div class="flex justify-end gap-2">
+                <button onclick="openHolderVaultModal('${ownerName}')" class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] rounded-xl border border-amber-500/30 transition-all inline-flex items-center gap-1">
+                  <i class="fa-solid fa-vault"></i> View Vault
+                </button>
+                <button onclick="openDirectChat('${ownerName}', 'Collector Inquiry')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center gap-1">
+                  <i class="fa-solid fa-comments"></i> Chat Collector
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -6164,8 +6284,9 @@
 
         container.innerHTML = pendingList.map(tx => {
           const isSellback = tx.type === 'SELLBACK';
+          if (tx.qrisProofUrl) proofUrlById[tx.id] = tx.qrisProofUrl;
           const proofButton = tx.qrisProofUrl
-            ? `<a href="${tx.qrisProofUrl}" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</a>`
+            ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</button>`
             : `<span class="text-slate-500 text-[10px]">No Proof File Attached</span>`;
 
           return `
