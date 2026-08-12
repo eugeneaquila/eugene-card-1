@@ -3571,6 +3571,24 @@
         }
       });
 
+      // Collector profiles (display name, avatar, bio, socials) were only ever
+      // fetched once via loadCollectorProfiles(), so anyone who edited their
+      // profile after that snapshot was taken (or after another visitor's
+      // session started) wouldn't show up correctly elsewhere - e.g. the
+      // Holders Directory kept showing raw usernames / placeholder avatars.
+      // A live listener keeps globalCollectorProfiles current for everyone.
+      db.collection("profiles").onSnapshot((snapshot) => {
+        globalCollectorProfiles = {};
+        snapshot.forEach(doc => {
+          globalCollectorProfiles[doc.id] = doc.data();
+        });
+        renderHoldersTable();
+        const holderVaultView = document.getElementById('view-holder-vault');
+        if (viewingHolderName && holderVaultView && !holderVaultView.classList.contains('hidden')) {
+          renderHolderVaultPage(viewingHolderName);
+        }
+      });
+
       setupViewTrackingSync();
     }
 
