@@ -2184,6 +2184,11 @@
     let openCommentsPostId = null;
     let postCommentsUnsubscribe = null;
     let postCommentsCache = {};      // { postId: [comments] }
+    let openRepostMenuPostId = null;
+    let originalPostsCache = {};     // { postId: post data } — for reposts/quotes whose original has scrolled out of the live 50-doc feed window
+    let originalPostsFetching = {};  // { postId: true } — de-dupes in-flight fetches
+    let quoteRepostTargetPostId = null;
+    let quoteRepostImageDataUrl = null;
 
     // Comprehensive i18n Dictionary
     const i18nDict = {
@@ -4066,6 +4071,16 @@
       renderTradeRequests();
       renderHomepageHighlights();
       renderHomeStatsStrip();
+      // BUGFIX: login/logout resolves asynchronously (Firebase auth), often
+      // *after* the Home feed has already rendered once with currentUser
+      // still null. Without refreshing the composer + feed here too, the
+      // per-post comment box (only injected into the HTML when currentUser
+      // is truthy — see renderPostsFeed) stays permanently missing until
+      // something else happens to touch the "posts" collection. Refreshing
+      // both here keeps them in sync with auth state on whichever tab is
+      // currently active.
+      refreshHomeComposerState();
+      renderPostsFeed();
       if (!document.getElementById('view-analytics').classList.contains('hidden')) {
         renderMarketAnalytics();
       }
@@ -4683,6 +4698,7 @@
       if (!text && !postComposerImageDataUrl) return showToast(dict.emptyPostWarning);
 
       const postPayload = {
+        type: 'original',
         authorUid: currentUser.uid,
         authorName: currentUser.name || '',
         authorUsername: currentUser.username || '',
@@ -4691,6 +4707,8 @@
         imageUrl: postComposerImageDataUrl || null,
         likes: [],
         commentCount: 0,
+        reposts: [],
+        quoteCount: 0,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
 
