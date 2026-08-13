@@ -931,30 +931,66 @@
     </section>
 
     <!-- INBOX / CHAT VIEW -->
-    <section id="view-inbox" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-comments text-indigo-400 mr-2"></i> <span data-i18n="inboxTitle">Direct Messages & Support Inbox</span></h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="inboxSubtitle">Search collectors to start a chat or view ongoing direct conversations.</p>
+    <section id="view-inbox" class="hidden space-y-5">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 inline-flex items-center justify-center"><i class="fa-solid fa-inbox"></i></span>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-black text-white uppercase tracking-wide"><span data-i18n="inboxTitle">Direct Messages & Support Inbox</span></h2>
+                <p class="text-xs text-slate-400 mt-0.5" data-i18n="inboxSubtitle">Search collectors to start a chat or view ongoing direct conversations.</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="markAllInboxRead()" class="px-3 py-2 bg-slate-950 hover:bg-slate-800 text-[11px] font-bold text-slate-300 rounded-xl border border-slate-800 transition-all flex items-center gap-1.5" title="Mark all conversations as read">
+              <i class="fa-solid fa-check-double text-teal-400"></i> Mark all read
+            </button>
+            <button onclick="loadUserInboxThreads()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl shadow transition-all flex items-center gap-2">
+              <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshInbox">Refresh Inbox</span>
+            </button>
+          </div>
         </div>
-        <button onclick="loadUserInboxThreads()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-indigo-400 rounded-xl border border-slate-700 flex items-center gap-2">
-          <i class="fa-solid fa-rotate"></i> <span data-i18n="refreshInbox">Refresh Inbox</span>
-        </button>
+
+        <div class="mt-5 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="inbox-thread-search-input" oninput="setInboxSearch(this.value)" placeholder="Search conversations..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" autocomplete="off">
+          </div>
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button id="inbox-filter-ALL" onclick="setInboxFilter('ALL')" class="px-3 py-1.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white">All</button>
+            <button id="inbox-filter-UNREAD" onclick="setInboxFilter('UNREAD')" class="px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-400 hover:text-white">Unread</button>
+            <button id="inbox-filter-ADMIN" onclick="setInboxFilter('ADMIN')" class="px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-400 hover:text-white">Support</button>
+          </div>
+        </div>
       </div>
 
       <!-- SEARCH & START CHAT WITH OTHER USERS -->
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
-        <h3 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider"><i class="fa-solid fa-user-plus text-amber-400 mr-1.5"></i> <span data-i18n="findCollector">Find & Chat Collector</span></h3>
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-xs font-extrabold text-slate-200 uppercase tracking-wider"><i class="fa-solid fa-user-plus text-amber-400 mr-1.5"></i> <span data-i18n="findCollector">Find & Chat Collector</span></h3>
+          <span class="text-[9px] font-bold text-slate-600 uppercase">UID-backed identity</span>
+        </div>
         <div class="relative">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-          <input type="text" id="user-chat-search-input" oninput="searchUsersForChat()" placeholder="Type collector name or email to start a chat..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" data-i18n-placeholder="chatSearchPlaceholder">
+          <input type="text" id="user-chat-search-input" oninput="searchUsersForChat()" placeholder="Type collector name or username to start a chat..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" data-i18n-placeholder="chatSearchPlaceholder" autocomplete="off">
         </div>
-        <div id="user-chat-search-results" class="space-y-2 hidden max-h-48 overflow-y-auto"></div>
+        <div id="user-chat-search-results" class="space-y-2 hidden max-h-56 overflow-y-auto"></div>
       </div>
 
       <!-- EXISTING CHAT THREADS -->
-      <div id="inbox-threads-list" class="space-y-3">
-        <p class="text-xs text-slate-500 text-center py-10" data-i18n="loadingMessages">Loading messages...</p>
+      <div>
+        <div class="flex items-center justify-between px-1 mb-2">
+          <div class="flex items-center gap-2">
+            <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider">Conversations</h3>
+            <span id="inbox-thread-count" class="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-500">0</span>
+          </div>
+          <span id="inbox-unread-summary" class="text-[10px] font-bold text-indigo-400"></span>
+        </div>
+        <div id="inbox-threads-list" class="space-y-2.5">
+          <p class="text-xs text-slate-500 text-center py-10" data-i18n="loadingMessages">Loading messages...</p>
+        </div>
       </div>
     </section>
 
@@ -2213,6 +2249,10 @@
     let chatUnsubscribe = null;
     let chatAttachedImage = null;
     let inboxUnsubscribe = null;
+    let inboxThreadsCache = [];
+    let inboxFilter = 'ALL';
+    let inboxSearchQuery = '';
+    const inboxPinnedThreads = new Set(JSON.parse(localStorage.getItem('eugene_inbox_pinned') || '[]'));
 
     let visibleCardCount = 10;
     const CARDS_PER_BATCH = 10;
@@ -3455,111 +3495,307 @@
       showToast('Notifications cleared.');
     }
 
-    function searchUsersForChat() {
-      const query = (document.getElementById('user-chat-search-input')?.value || '').toLowerCase().trim();
-      const resultsContainer = document.getElementById('user-chat-search-results');
-      if (!resultsContainer) return;
+    function getChatIdentityProfile(identifier) {
+      if (!identifier) return null;
+      const profile = getCanonicalCollectorIdentity(identifier);
+      if (profile) return profile;
+      if (typeof identifier === 'object') return identifier;
+      return { name: identifier, username: identifier, avatarUrl: getCollectorAvatar(identifier) };
+    }
 
-      if (!query) {
-        resultsContainer.classList.add('hidden');
-        resultsContainer.innerHTML = '';
+    function getChatIdentityTokens(identifier) {
+      const p = getChatIdentityProfile(identifier) || {};
+      const raw = typeof identifier === 'string' ? identifier : '';
+      return [...new Set([
+        p.uid,
+        p.username,
+        p.name,
+        raw,
+        typeof identifier === 'object' ? identifier.email : ''
+      ].map(normalizeCollectorValue).filter(Boolean))];
+    }
+
+    function getChatCanonicalKey(identifier) {
+      const p = getChatIdentityProfile(identifier);
+      if (p?.uid) return `uid:${p.uid}`;
+      return getCanonicalCollectorKey(identifier);
+    }
+
+    function getCurrentChatIdentity() {
+      return currentUser ? getChatIdentityProfile(currentUser) : null;
+    }
+
+    function getChatDisplayName(identifier) {
+      const p = getChatIdentityProfile(identifier);
+      return p?.name || p?.username || (typeof identifier === 'string' ? identifier : 'Collector');
+    }
+
+    function formatChatUpdatedAt(value) {
+      if (!value) return 'No recent activity';
+      try {
+        const date = value.toDate ? value.toDate() : new Date(value);
+        if (Number.isNaN(date.getTime())) return 'No recent activity';
+        const diff = Date.now() - date.getTime();
+        if (diff < 60 * 1000) return 'Just now';
+        if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 3600000)}h ago`;
+        if (diff < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(diff / 86400000)}d ago`;
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      } catch (e) { return 'No recent activity'; }
+    }
+
+    function isChatThreadUnread(thread) {
+      if (!currentUser) return false;
+      const lastSenderTokens = getChatIdentityTokens({ uid: thread.lastSenderUid, username: thread.lastSenderUsername, name: thread.lastSender });
+      const myTokens = getChatIdentityTokens(currentUser);
+      if (!thread.lastSender && !thread.lastSenderUid) return false;
+      if (lastSenderTokens.some(t => myTokens.includes(t))) return false;
+      const readBy = Array.isArray(thread.readBy) ? thread.readBy.map(normalizeCollectorValue).filter(Boolean) : [];
+      return !myTokens.some(t => readBy.includes(t));
+    }
+
+    function setInboxFilter(filter) {
+      inboxFilter = ['ALL','UNREAD','ADMIN'].includes(filter) ? filter : 'ALL';
+      ['ALL','UNREAD','ADMIN'].forEach(f => {
+        const el = document.getElementById(`inbox-filter-${f}`);
+        if (!el) return;
+        const active = f === inboxFilter;
+        el.className = active
+          ? 'px-3 py-1.5 rounded-lg text-[10px] font-black bg-indigo-600 text-white'
+          : 'px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-400 hover:text-white';
+      });
+      renderInboxThreads();
+    }
+
+    function setInboxSearch(value) {
+      inboxSearchQuery = normalizeCollectorValue(value);
+      renderInboxThreads();
+    }
+
+    function toggleInboxPin(chatId) {
+      if (!chatId) return;
+      if (inboxPinnedThreads.has(chatId)) inboxPinnedThreads.delete(chatId);
+      else inboxPinnedThreads.add(chatId);
+      localStorage.setItem('eugene_inbox_pinned', JSON.stringify([...inboxPinnedThreads]));
+      renderInboxThreads();
+    }
+
+    async function markInboxThreadRead(thread) {
+      if (!thread?.id || !currentUser) return;
+      const tokens = getChatIdentityTokens(currentUser);
+      try {
+        await db.collection('chats').doc(thread.id).set({
+          readBy: firebase.firestore.FieldValue.arrayUnion(...tokens)
+        }, { merge: true });
+      } catch (e) { console.warn('Could not mark chat read:', e); }
+    }
+
+    async function markAllInboxRead() {
+      if (!currentUser || !inboxThreadsCache.length) return;
+      const unread = inboxThreadsCache.filter(isChatThreadUnread);
+      if (!unread.length) return showToast('Inbox is already up to date.');
+      try {
+        const batch = db.batch();
+        const tokens = getChatIdentityTokens(currentUser);
+        unread.forEach(t => batch.set(db.collection('chats').doc(t.id), { readBy: firebase.firestore.FieldValue.arrayUnion(...tokens) }, { merge: true }));
+        await batch.commit();
+        showToast(`Marked ${unread.length} conversation${unread.length === 1 ? '' : 's'} as read.`);
+      } catch (e) { showToast('Could not mark conversations as read: ' + e.message); }
+    }
+
+    function renderInboxThreads() {
+      const container = document.getElementById('inbox-threads-list');
+      if (!container) return;
+      const query = inboxSearchQuery;
+      let list = inboxThreadsCache.filter(t => {
+        const unread = isChatThreadUnread(t);
+        if (inboxFilter === 'UNREAD' && !unread) return false;
+        if (inboxFilter === 'ADMIN' && !t.isOtherAdmin) return false;
+        if (query) {
+          const haystack = [t.otherUser, t.otherUsername, t.lastMessage, t.otherUid].map(normalizeCollectorValue).join(' ');
+          if (!haystack.includes(query)) return false;
+        }
+        return true;
+      });
+
+      list.sort((a,b) => {
+        const ap = inboxPinnedThreads.has(a.id) ? 1 : 0;
+        const bp = inboxPinnedThreads.has(b.id) ? 1 : 0;
+        if (ap !== bp) return bp - ap;
+        const au = isChatThreadUnread(a) ? 1 : 0;
+        const bu = isChatThreadUnread(b) ? 1 : 0;
+        if (au !== bu) return bu - au;
+        const at = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : new Date(a.updatedAt || 0).getTime();
+        const bt = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : new Date(b.updatedAt || 0).getTime();
+        return bt - at;
+      });
+
+      const unreadTotal = inboxThreadsCache.filter(isChatThreadUnread).length;
+      const countEl = document.getElementById('inbox-thread-count');
+      const summaryEl = document.getElementById('inbox-unread-summary');
+      if (countEl) countEl.textContent = String(list.length);
+      if (summaryEl) summaryEl.textContent = unreadTotal ? `${unreadTotal} unread` : 'All caught up';
+
+      if (!list.length) {
+        const title = inboxFilter === 'UNREAD' ? 'No unread conversations.' : (query ? 'No conversations match your search.' : 'No active chat threads found.');
+        container.innerHTML = `<div class="bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-10 text-center"><div class="w-11 h-11 mx-auto rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600 mb-3"><i class="fa-solid fa-inbox"></i></div><p class="text-xs text-slate-500">${title}</p></div>`;
         return;
       }
 
-      const foundUsersMap = new Map();
-      
-      ADMIN_EMAILS.forEach(email => {
-        const name = email.split('@')[0];
-        if (name.toLowerCase().includes(query) || email.toLowerCase().includes(query)) {
-          foundUsersMap.set(name, true);
-        }
-      });
-
-      inventory.forEach(c => {
-        if (c.owner && c.owner.toLowerCase().includes(query) && !foundUsersMap.has(c.owner)) {
-          foundUsersMap.set(c.owner, isUserAdmin(c.owner));
-        }
-      });
-
-      transactionsList.forEach(t => {
-        if (t.user_name && t.user_name.toLowerCase().includes(query) && !foundUsersMap.has(t.user_name)) {
-          foundUsersMap.set(t.user_name, isUserAdmin(t.user_name));
-        }
-      });
-
-      if (currentUser) {
-        foundUsersMap.delete(currentUser.name);
-        if (currentUser.username) foundUsersMap.delete(currentUser.username);
-      }
-
-      if (foundUsersMap.size === 0) {
-        resultsContainer.classList.remove('hidden');
-        resultsContainer.innerHTML = `<div class="p-3 text-center text-slate-500 text-xs bg-slate-950 rounded-xl border border-slate-800">No matching collectors found for "${query}"</div>`;
-        return;
-      }
-
-      resultsContainer.classList.remove('hidden');
-      resultsContainer.innerHTML = Array.from(foundUsersMap.entries()).map(([userName, isAdmin]) => {
-        const avatarUrl = getCollectorAvatar(userName);
+      container.innerHTML = list.map(t => {
+        const unread = isChatThreadUnread(t);
+        const pinned = inboxPinnedThreads.has(t.id);
+        const admin = !!t.isOtherAdmin;
+        const avatar = t.otherAvatar || getCollectorAvatar(t.otherUser);
+        const display = escapeHtml(t.otherUser || 'Collector');
+        const username = t.otherUsername ? `@${escapeHtml(t.otherUsername)}` : '';
+        const preview = escapeHtml(t.lastMessage || 'Click to view conversation');
+        const time = formatChatUpdatedAt(t.updatedAt);
+        const online = t.otherUid && userPresenceMap[t.otherUid] && userPresenceMap[t.otherUid].lastSeen;
+        const onlineAt = online && userPresenceMap[t.otherUid].lastSeen?.toMillis ? userPresenceMap[t.otherUid].lastSeen.toMillis() : 0;
+        const isOnline = !!onlineAt && (Date.now() - onlineAt <= PRESENCE_ACTIVE_WINDOW_MS);
         return `
-          <div onclick="openDirectChat('${userName}', 'Direct Collector Chat'); document.getElementById('user-chat-search-results').classList.add('hidden');" class="p-3 bg-slate-950 hover:bg-slate-800 border ${isAdmin ? 'border-rose-500/40 bg-rose-950/10' : 'border-slate-800'} rounded-xl flex items-center justify-between cursor-pointer transition-all">
-            <div class="flex items-center gap-2.5">
-              <img src="${avatarUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-700 bg-slate-900">
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <p class="font-extrabold text-white text-xs">${userName}</p>
-                  ${isAdmin ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved text-[8px] mr-0.5"></i> ADMIN</span>` : ''}
-                </div>
-                <p class="text-[10px] text-slate-400">${isAdmin ? 'Official Platform Support' : 'Registered Collector'}</p>
+          <div class="group bg-slate-900 border ${admin ? 'border-rose-500/30' : (unread ? 'border-indigo-500/50 shadow-lg shadow-indigo-950/20' : 'border-slate-800')} rounded-2xl p-3 sm:p-4 transition-all hover:border-indigo-500/40">
+            <div class="flex items-center gap-3">
+              <button onclick="toggleInboxPin('${escapeHtml(t.id)}')" class="shrink-0 w-7 h-7 rounded-lg bg-slate-950 border border-slate-800 text-[10px] ${pinned ? 'text-amber-400 border-amber-500/30' : 'text-slate-600 hover:text-amber-400'}" title="${pinned ? 'Unpin' : 'Pin'} conversation"><i class="fa-solid fa-thumbtack"></i></button>
+              <div class="relative shrink-0">
+                <img src="${escapeHtml(avatar)}" class="w-11 h-11 rounded-full object-cover border ${admin ? 'border-rose-500/40' : 'border-slate-700'} bg-slate-950">
+                ${isOnline ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900"></span>' : ''}
+                ${unread ? '<span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-slate-900"></span>' : ''}
               </div>
+              <button onclick="openDirectChatByThreadId('${escapeHtml(t.id)}')" class="min-w-0 flex-1 text-left">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-extrabold ${unread ? 'text-white' : 'text-slate-200'} text-sm">${display}</span>
+                  ${username ? `<span class="text-[10px] text-slate-500 font-mono">${username}</span>` : ''}
+                  ${admin ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved mr-0.5"></i> ADMIN</span>' : ''}
+                  ${unread ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">NEW</span>' : ''}
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <p class="text-[11px] ${unread ? 'text-slate-200 font-semibold' : 'text-slate-400'} truncate">${preview}</p>
+                  <span class="text-[9px] text-slate-600 shrink-0">${escapeHtml(time)}</span>
+                </div>
+              </button>
+              <button onclick="openDirectChatByThreadId('${escapeHtml(t.id)}')" class="px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] rounded-xl transition-all shadow shrink-0 flex items-center gap-1.5"><i class="fa-solid fa-comments"></i><span class="hidden sm:inline">Chat</span></button>
             </div>
-            <button class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg flex items-center gap-1 shadow">
-              <i class="fa-solid fa-comments"></i> Start Chat
-            </button>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
-    function openDirectChat(targetUserName, contextInfo = 'Trade Chat') {
-      if (!currentUser) return showToast('Please log in to start a chat.');
-      
-      const myIdent = (currentUser.username || currentUser.name || '').trim().toLowerCase();
-      const targetIdent = targetUserName.trim().toLowerCase();
+    function searchUsersForChat() {
+      const query = normalizeCollectorValue(document.getElementById('user-chat-search-input')?.value || '');
+      const resultsContainer = document.getElementById('user-chat-search-results');
+      if (!resultsContainer) return;
+      if (!query) { resultsContainer.classList.add('hidden'); resultsContainer.innerHTML = ''; return; }
 
-      if (myIdent === targetIdent && !currentUser.isAdmin) {
-        return showToast('Cannot chat with yourself.');
+      const found = new Map();
+      Object.values(globalCollectorProfiles || {}).forEach(p => {
+        if (!p || !p.uid) return;
+        const hay = [p.name, p.username, p.email, p.uid].map(normalizeCollectorValue).join(' ');
+        if (!hay.includes(query)) return;
+        const key = `uid:${p.uid}`;
+        if (!found.has(key)) found.set(key, p);
+      });
+      ADMIN_EMAILS.forEach(email => {
+        const name = email.split('@')[0];
+        if (normalizeCollectorValue(email).includes(query) || normalizeCollectorValue(name).includes(query)) {
+          found.set(`admin:${normalizeCollectorValue(email)}`, { name, username: name, email, isAdmin: true });
+        }
+      });
+
+      const meKey = getChatCanonicalKey(currentUser);
+      const results = [...found.values()].filter(p => getChatCanonicalKey(p) !== meKey);
+      results.sort((a,b) => (a.isAdmin ? -1 : 0) - (b.isAdmin ? -1 : 0) || (a.name || a.username || '').localeCompare(b.name || b.username || ''));
+
+      if (!results.length) {
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.innerHTML = `<div class="p-3 text-center text-slate-500 text-xs bg-slate-950 rounded-xl border border-slate-800">No matching collectors found for "${escapeHtml(query)}"</div>`;
+        return;
+      }
+      resultsContainer.classList.remove('hidden');
+      resultsContainer.innerHTML = results.slice(0, 12).map(p => {
+        const name = escapeHtml(p.name || p.username || 'Collector');
+        const username = p.username ? `@${escapeHtml(p.username)}` : '';
+        const avatar = escapeHtml(p.avatarUrl || getCollectorAvatar(p.username || p.name));
+        const admin = !!p.isAdmin || isUserAdmin(p.username || p.name || p.email);
+        return `<button onclick="openDirectChatByIdentity('${escapeHtml(p.uid || p.username || p.name)}'); document.getElementById('user-chat-search-results').classList.add('hidden');" class="w-full p-3 bg-slate-950 hover:bg-slate-800 border ${admin ? 'border-rose-500/40' : 'border-slate-800'} rounded-xl flex items-center justify-between text-left cursor-pointer transition-all">
+          <span class="flex items-center gap-2.5 min-w-0"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-slate-700 bg-slate-900"><span class="min-w-0"><span class="flex items-center gap-1.5"><span class="font-extrabold text-white text-xs truncate">${name}</span>${admin ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">ADMIN</span>' : ''}</span><span class="text-[10px] text-slate-500 truncate">${username || (p.uid ? 'Verified collector account' : 'Platform support')}</span></span></span>
+          <span class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg shrink-0"><i class="fa-solid fa-comments"></i> Start</span>
+        </button>`;
+      }).join('');
+    }
+
+    async function findExistingChatIdForParticipants(a, b) {
+      const keyA = getChatCanonicalKey(a);
+      const keyB = getChatCanonicalKey(b);
+      try {
+        const snapshot = await db.collection('chats').get();
+        let best = null;
+        snapshot.forEach(doc => {
+          const d = doc.data() || {};
+          const participants = Array.isArray(d.participants) ? d.participants : doc.id.replace(/^chat-/, '').split('-vs-');
+          if (participants.length < 2) return;
+          const keys = participants.slice(0, 2).map(getChatCanonicalKey);
+          if (keys.includes(keyA) && keys.includes(keyB)) {
+            const ts = d.updatedAt?.toMillis ? d.updatedAt.toMillis() : 0;
+            if (!best || ts > best.ts) best = { id: doc.id, ts };
+          }
+        });
+        return best?.id || null;
+      } catch (e) { return null; }
+    }
+
+    async function openDirectChatByIdentity(identifier, contextInfo = 'Direct Collector Chat') {
+      const profile = getChatIdentityProfile(identifier);
+      return openDirectChat(profile?.username || profile?.name || identifier, contextInfo, profile);
+    }
+
+    async function openDirectChatByThreadId(threadId) {
+      const thread = inboxThreadsCache.find(t => t.id === threadId);
+      if (!thread) return;
+      await markInboxThreadRead(thread);
+      return openDirectChat(thread.otherUser, 'Direct Chat', getChatIdentityProfile({ uid: thread.otherUid, username: thread.otherUsername, name: thread.otherUser }));
+    }
+
+    async function openDirectChat(targetUserName, contextInfo = 'Trade Chat', resolvedProfile = null) {
+      if (!currentUser) return showToast('Please log in to start a chat.');
+      const targetProfile = resolvedProfile || getChatIdentityProfile(targetUserName);
+      const targetDisplay = getChatDisplayName(targetProfile || targetUserName);
+      const myKey = getChatCanonicalKey(currentUser);
+      const targetKey = getChatCanonicalKey(targetProfile || targetUserName);
+      if (myKey === targetKey && !currentUser.isAdmin) return showToast('Cannot chat with yourself.');
+
+      currentChatTargetUser = targetDisplay;
+      const cachedMatch = inboxThreadsCache.find(t => t.otherKey === targetKey);
+      const existingId = cachedMatch?.id || await findExistingChatIdForParticipants(currentUser, targetProfile || targetUserName);
+      if (existingId) {
+        currentChatContextId = existingId;
+      } else {
+        const ids = [myKey, targetKey].sort();
+        currentChatContextId = `chat-${ids.join('-vs-')}`;
       }
 
-      currentChatTargetUser = targetUserName;
-
-      const participants = [myIdent, targetIdent].sort();
-      currentChatContextId = `chat-${participants.join('-vs-')}`;
-
-      // Mark this thread as read by me the moment I open it, so the unread
-      // inbox bubble clears without waiting for a new snapshot elsewhere.
-      db.collection("chats").doc(currentChatContextId).set({
-        readBy: firebase.firestore.FieldValue.arrayUnion(myIdent)
+      const myTokens = getChatIdentityTokens(currentUser);
+      db.collection('chats').doc(currentChatContextId).set({
+        participantUids: [currentUser.uid || null, targetProfile?.uid || null].filter(Boolean),
+        participantKeys: [myKey, targetKey],
+        participantProfiles: {
+          [myKey]: { uid: currentUser.uid || null, name: currentUser.name || currentUser.username || '', username: currentUser.username || '' },
+          [targetKey]: { uid: targetProfile?.uid || null, name: targetDisplay, username: targetProfile?.username || '' }
+        },
+        readBy: firebase.firestore.FieldValue.arrayUnion(...myTokens)
       }, { merge: true }).catch(() => {});
 
-      document.getElementById('chat-target-user-name').innerText = targetUserName;
+      document.getElementById('chat-target-user-name').innerText = targetDisplay;
       document.getElementById('chat-target-context').innerText = contextInfo;
-
-      const targetAvatarUrl = getCollectorAvatar(targetUserName);
+      const targetAvatarUrl = targetProfile?.avatarUrl || getCollectorAvatar(targetDisplay);
       const avatarContainer = document.getElementById('chat-target-avatar-container');
-      if (avatarContainer) {
-        avatarContainer.innerHTML = `<img src="${targetAvatarUrl}" class="w-full h-full object-cover">`;
-      }
-
+      if (avatarContainer) avatarContainer.innerHTML = `<img src="${escapeHtml(targetAvatarUrl)}" class="w-full h-full object-cover">`;
       const adminBadgeEl = document.getElementById('chat-target-admin-badge');
-      if (adminBadgeEl) {
-        if (isUserAdmin(targetUserName)) adminBadgeEl.classList.remove('hidden');
-        else adminBadgeEl.classList.add('hidden');
-      }
-
+      if (adminBadgeEl) adminBadgeEl.classList.toggle('hidden', !isUserAdmin(targetDisplay));
       document.getElementById('chat-drawer').classList.remove('translate-x-full');
       document.getElementById('chat-drawer-overlay').classList.remove('hidden');
-
+      const activeThread = inboxThreadsCache.find(t => t.id === currentChatContextId);
+      if (activeThread) markInboxThreadRead(activeThread);
       listenToChatMessages(currentChatContextId);
     }
 
@@ -3602,72 +3838,75 @@
     function listenToChatMessages(chatId) {
       const container = document.getElementById('chat-messages-container');
       if (!container) return;
-
       if (chatUnsubscribe) chatUnsubscribe();
-
-      chatUnsubscribe = db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp", "asc").onSnapshot(snapshot => {
+      chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
         if (snapshot.empty) {
-          container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs" data-i18n="noChatMessages">${i18nDict[currentLanguage].noChatMessages}</div>`;
+          container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs" data-i18n="noChatMessages">${escapeHtml(i18nDict[currentLanguage].noChatMessages)}</div>`;
           return;
         }
-
         container.innerHTML = snapshot.docs.map(doc => {
-          const msg = doc.data();
-          const isMe = currentUser && (msg.sender === currentUser.name || msg.sender === currentUser.username);
-          const isSenderAdmin = isUserAdmin(msg.sender);
-          const senderAvatar = getCollectorAvatar(msg.sender);
-
+          const msg = doc.data() || {};
+          const senderProfile = getChatIdentityProfile({ uid: msg.senderUid, username: msg.senderUsername, name: msg.senderName || msg.sender });
+          const senderKey = getChatCanonicalKey(senderProfile || msg.sender);
+          const isMe = currentUser && senderKey === getChatCanonicalKey(currentUser);
+          const senderName = senderProfile?.name || senderProfile?.username || msg.sender || 'Collector';
+          const isSenderAdmin = isUserAdmin(senderProfile?.username || senderName || msg.sender);
+          const senderAvatar = senderProfile?.avatarUrl || getCollectorAvatar(senderName);
+          const timestamp = msg.timestamp ? formatChatUpdatedAt(msg.timestamp) : '';
           return `
             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1">
               <div class="flex items-center gap-1.5">
-                <img src="${senderAvatar}" class="w-4 h-4 rounded-full object-cover">
-                <span class="text-[9px] font-bold text-slate-400">${msg.sender}</span>
-                ${isSenderAdmin ? `<span class="text-[8px] font-black px-1 py-0 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">ADMIN</span>` : ''}
+                <img src="${escapeHtml(senderAvatar)}" class="w-4 h-4 rounded-full object-cover">
+                <span class="text-[9px] font-bold text-slate-400">${escapeHtml(senderName)}</span>
+                ${isSenderAdmin ? '<span class="text-[8px] font-black px-1 py-0 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">ADMIN</span>' : ''}
+                ${timestamp ? `<span class="text-[8px] text-slate-600">${escapeHtml(timestamp)}</span>` : ''}
               </div>
               <div class="max-w-[80%] px-3 py-2 rounded-2xl text-xs ${isMe ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none' : 'bg-slate-950 border border-slate-800 text-white rounded-tl-none'}">
-                ${msg.imgUrl ? `<a href="${msg.imgUrl}" target="_blank"><img src="${msg.imgUrl}" class="max-w-full max-h-48 rounded-lg mb-1 border border-slate-800 hover:opacity-90 transition-opacity"></a>` : ''}
-                ${msg.text ? `<div>${msg.text}</div>` : ''}
+                ${msg.imgUrl ? `<a href="${escapeHtml(msg.imgUrl)}" target="_blank" rel="noopener"><img src="${escapeHtml(msg.imgUrl)}" class="max-w-full max-h-48 rounded-lg mb-1 border border-slate-800 hover:opacity-90 transition-opacity"></a>` : ''}
+                ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ''}
               </div>
-            </div>
-          `;
+            </div>`;
         }).join('');
-
         container.scrollTop = container.scrollHeight;
-      });
+      }, err => console.warn('Chat message listener error:', err));
     }
 
     async function sendChatMessage() {
       const input = document.getElementById('chat-text-input');
       const text = input ? input.value.trim() : '';
-
       if ((!text && !chatAttachedImage) || !currentChatContextId || !currentUser) return;
-
       try {
         const batch = db.batch();
-
-        const chatDocRef = db.collection("chats").doc(currentChatContextId);
+        const chatDocRef = db.collection('chats').doc(currentChatContextId);
+        const targetProfile = getChatIdentityProfile(currentChatTargetUser);
+        const myKey = getChatCanonicalKey(currentUser);
+        const targetKey = getChatCanonicalKey(targetProfile || currentChatTargetUser);
+        const myTokens = getChatIdentityTokens(currentUser);
         batch.set(chatDocRef, {
           lastMessage: text || (chatAttachedImage ? '[Screenshot / Image]' : ''),
           lastSender: currentUser.username || currentUser.name,
-          participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => p.toLowerCase()),
+          lastSenderUid: currentUser.uid || null,
+          lastSenderUsername: currentUser.username || '',
+          lastSenderName: currentUser.name || '',
+          participants: [currentUser.username || currentUser.name, currentChatTargetUser].map(p => String(p || '').toLowerCase()),
+          participantUids: [currentUser.uid || null, targetProfile?.uid || null].filter(Boolean),
+          participantKeys: [myKey, targetKey],
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          // A fresh message is unread by everyone except the sender - reset readBy
-          // so the recipient's inbox bubble picks it up.
-          readBy: [(currentUser.username || currentUser.name || '').trim().toLowerCase()]
+          readBy: myTokens
         }, { merge: true });
 
-        const msgDocRef = chatDocRef.collection("messages").doc();
+        const msgDocRef = chatDocRef.collection('messages').doc();
         const payload = {
           sender: currentUser.username || currentUser.name,
+          senderUid: currentUser.uid || null,
+          senderUsername: currentUser.username || '',
+          senderName: currentUser.name || '',
           text: text,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (chatAttachedImage) payload.imgUrl = chatAttachedImage;
-
         batch.set(msgDocRef, payload);
-
         await batch.commit();
-
         input.value = '';
         clearChatImageAttachment();
       } catch (e) {
@@ -3675,108 +3914,80 @@
       }
     }
 
-    function updateInboxUnreadBadge(count) {
-      const badge = document.getElementById('inbox-unread-badge');
-      if (!badge) return;
-      if (count > 0) {
-        badge.innerText = count > 9 ? '9+' : String(count);
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-    }
-
     function loadUserInboxThreads() {
       const container = document.getElementById('inbox-threads-list');
       if (!container) return;
-
       if (!currentUser) {
         container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">Please log in to view your inbox.</div>`;
         updateInboxUnreadBadge(0);
         return;
       }
-
       if (inboxUnsubscribe) inboxUnsubscribe();
 
-      inboxUnsubscribe = db.collection("chats").onSnapshot(snapshot => {
-        if (snapshot.empty) {
-          container.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">No active chat threads found.</p>`;
-          updateInboxUnreadBadge(0);
-          return;
-        }
-
-        const myUsername = (currentUser.username || currentUser.name || '').trim().toLowerCase();
-        const threadsMap = new Map();
+      inboxUnsubscribe = db.collection('chats').onSnapshot(snapshot => {
+        const myKey = getChatCanonicalKey(currentUser);
+        const myTokens = getChatIdentityTokens(currentUser);
+        const candidates = [];
 
         snapshot.forEach(doc => {
-          const chatId = doc.id;
-          const data = doc.data();
-          const participants = data.participants || chatId.replace('chat-', '').split('-vs-');
-          const lowerParticipants = participants.map(p => p.toLowerCase());
+          const data = doc.data() || {};
+          const participants = Array.isArray(data.participants) && data.participants.length >= 2
+            ? data.participants
+            : doc.id.replace(/^chat-/, '').split('-vs-');
+          if (participants.length < 2) return;
 
-          const isParticipant = lowerParticipants.includes(myUsername) || lowerParticipants.includes((currentUser.name || '').toLowerCase());
-          
-          if (currentUser.isAdmin || isParticipant) {
-            const otherUserRaw = participants.find(p => p.toLowerCase() !== myUsername && p.toLowerCase() !== (currentUser.name || '').toLowerCase()) || participants[0] || 'Collector';
-            const uniqueKey = otherUserRaw.toLowerCase();
+          const participantKeys = participants.map(getChatCanonicalKey);
+          const isMine = participantKeys.includes(myKey) || myTokens.some(t =>
+            participantKeys.includes(`username:${t}`) ||
+            participantKeys.includes(`name:${t}`) ||
+            participantKeys.includes(`raw:${t}`)
+          );
+          if (!currentUser.isAdmin && !isMine) return;
 
-            if (!threadsMap.has(uniqueKey) || (data.updatedAt && threadsMap.get(uniqueKey).updatedAt < data.updatedAt)) {
-              threadsMap.set(uniqueKey, { id: chatId, otherUser: otherUserRaw, ...data });
-            }
-          }
+          let otherIndex = participantKeys.findIndex(k => k !== myKey);
+          if (otherIndex < 0) otherIndex = 0;
+          const otherRaw = participants[otherIndex] || 'Collector';
+          const otherKeyFromData = participantKeys[otherIndex];
+          const storedOther = data.participantProfiles?.[otherKeyFromData] || {};
+          const otherUid = Array.isArray(data.participantUids) ? data.participantUids[otherIndex] : null;
+          const otherProfile = getChatIdentityProfile({
+            uid: otherUid,
+            username: storedOther.username,
+            name: storedOther.name || otherRaw
+          }) || getChatIdentityProfile(otherRaw);
+          const otherKey = getChatCanonicalKey(otherProfile || otherRaw);
+
+          candidates.push({
+            id: doc.id,
+            ...data,
+            otherKey,
+            otherUid: otherProfile?.uid || otherUid || null,
+            otherUser: otherProfile?.name || otherProfile?.username || otherRaw,
+            otherUsername: otherProfile?.username || '',
+            otherAvatar: otherProfile?.avatarUrl || getCollectorAvatar(otherRaw),
+            isOtherAdmin: isUserAdmin(otherProfile?.username || otherProfile?.name || otherRaw)
+          });
         });
 
-        const uniqueThreads = Array.from(threadsMap.values());
+        // Canonical deduplication: one inbox row per real collector. This is
+        // deliberately UID-first, so legacy username chat IDs and newer UID
+        // chat IDs cannot create duplicate conversations for the same person.
+        const deduped = new Map();
+        candidates.forEach(thread => {
+          const key = thread.otherKey;
+          const current = deduped.get(key);
+          const threadTime = thread.updatedAt?.toMillis ? thread.updatedAt.toMillis() : 0;
+          const currentTime = current?.updatedAt?.toMillis ? current.updatedAt.toMillis() : 0;
+          if (!current || threadTime >= currentTime) deduped.set(key, thread);
+        });
 
-        // Unread = threads whose last message wasn't sent by me and that I
-        // haven't opened yet (my identity isn't in readBy).
-        const unreadCount = uniqueThreads.filter(t => {
-          const lastSenderLower = (t.lastSender || '').trim().toLowerCase();
-          const readByArr = Array.isArray(t.readBy) ? t.readBy.map(r => (r || '').trim().toLowerCase()) : [];
-          return lastSenderLower && lastSenderLower !== myUsername && !readByArr.includes(myUsername);
-        }).length;
-        updateInboxUnreadBadge(unreadCount);
-
-        if (uniqueThreads.length === 0) {
-          container.innerHTML = `<p class="text-xs text-slate-500 text-center py-10">No chat messages in your inbox.</p>`;
-          return;
-        }
-
-        container.innerHTML = uniqueThreads.map(c => {
-          const otherUser = c.otherUser;
-          const lastMsg = c.lastMessage || 'Click to view conversation';
-          const isOtherAdmin = isUserAdmin(otherUser);
-          const otherUserAvatar = getCollectorAvatar(otherUser);
-
-          const lastSenderLower = (c.lastSender || '').trim().toLowerCase();
-          const readByArr = Array.isArray(c.readBy) ? c.readBy.map(r => (r || '').trim().toLowerCase()) : [];
-          const isUnread = lastSenderLower && lastSenderLower !== myUsername && !readByArr.includes(myUsername);
-
-          return `
-            <div class="bg-slate-900 border ${isOtherAdmin ? 'border-rose-500/30' : (isUnread ? 'border-indigo-500/50' : 'border-slate-800')} p-4 rounded-2xl flex justify-between items-center text-xs hover:border-indigo-500/40 transition-all">
-              <div class="flex items-center gap-3">
-                <div class="relative shrink-0">
-                  <img src="${otherUserAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-700 bg-slate-950">
-                  ${isUnread ? `<span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-indigo-500 border-2 border-slate-900"></span>` : ''}
-                </div>
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <p class="font-extrabold text-white text-sm">${otherUser}</p>
-                    ${isOtherAdmin ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-shield-halved text-[8px] mr-0.5"></i> ADMIN</span>` : ''}
-                    ${isUnread ? `<span class="text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">NEW</span>` : ''}
-                  </div>
-                  <p class="text-xs ${isUnread ? 'text-slate-200 font-semibold' : 'text-slate-400'} truncate max-w-xs sm:max-w-md mt-0.5">${lastMsg}</p>
-                </div>
-              </div>
-              <button onclick="openDirectChat('${otherUser}', 'Direct Chat')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl transition-all shadow shrink-0 flex items-center gap-1.5">
-                <i class="fa-solid fa-comments"></i> Chat
-              </button>
-            </div>
-          `;
-        }).join('');
+        inboxThreadsCache = [...deduped.values()];
+        updateInboxUnreadBadge(inboxThreadsCache.filter(isChatThreadUnread).length);
+        renderInboxThreads();
       }, err => {
         console.warn('Inbox snapshot error:', err);
         container.innerHTML = `<p class="text-xs text-rose-400 text-center py-10">Error fetching inbox messages.</p>`;
+        updateInboxUnreadBadge(0);
       });
     }
 
