@@ -1237,6 +1237,63 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
 .achievement-chip{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);font-size:8px;font-weight:900;color:#cbd5e1}.achievement-chip i{color:#fbbf24}.achievement-chip.locked{opacity:.38;filter:grayscale(1)}
 @media(max-width:640px){.market-stat .value{font-size:12px}.market-sales-bars{gap:4px}.reputation-stat{padding:9px}.reputation-stat strong{font-size:12px}}
 </style>
+
+<style id="eugene-profile-modal-fix">
+  #profile-manager-modal{
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-gutter:stable;
+  }
+  #profile-manager-modal .profile-manager-modal-panel{
+    flex:none;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(139,92,246,.55) rgba(2,6,23,.35);
+  }
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar{width:8px}
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-track{background:rgba(2,6,23,.35);border-radius:999px}
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,rgba(129,140,248,.75),rgba(139,92,246,.55));
+    border-radius:999px;
+    border:2px solid rgba(15,23,42,.85);
+  }
+  #profile-manager-modal .profile-manager-modal-panel > .space-y-3{
+    padding-bottom:max(.5rem, env(safe-area-inset-bottom));
+  }
+  @media(max-width:640px){
+    #profile-manager-modal{padding:8px 10px}
+    #profile-manager-modal .profile-manager-modal-panel{
+      width:100%;
+      max-width:none;
+      margin:0;
+      max-height:calc(100dvh - 1rem);
+      border-radius:22px;
+    }
+  }
+</style>
+
+
+<style id="eugene-chat-viewport-fix">
+  body.chat-drawer-open{overflow:hidden !important;touch-action:none}
+  body.chat-drawer-open #chat-drawer{height:100dvh;max-height:100dvh}
+  #chat-drawer{
+    isolation:isolate;
+    contain:layout paint;
+  }
+  #chat-messages-container{
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-gutter:stable;
+  }
+  #chat-drawer footer{
+    margin-top:auto;
+    flex-shrink:0;
+    transform:translateZ(0);
+  }
+  @media(max-width:640px){
+    #chat-drawer{width:100%;max-width:none}
+  }
+</style>
+
 </head>
 <body class="premium-global min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
 
@@ -1370,7 +1427,7 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
 
   <!-- PREMIUM DIRECT CHAT DRAWER -->
   <div id="chat-drawer-overlay" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9990] hidden transition-opacity" onclick="closeChatDrawer()"></div>
-  <aside id="chat-drawer" class="fixed top-0 right-0 h-full w-full max-w-[680px] bg-[#050817] border-l border-indigo-400/20 z-[9995] transform translate-x-full transition-transform duration-300 flex flex-col overflow-hidden shadow-[-24px_0_80px_rgba(0,0,0,.55)]">
+  <aside id="chat-drawer" class="fixed top-0 right-0 h-[100dvh] max-h-[100dvh] w-full max-w-[680px] bg-[#050817] border-l border-indigo-400/20 z-[9995] transform translate-x-full transition-transform duration-300 flex flex-col overflow-hidden shadow-[-24px_0_80px_rgba(0,0,0,.55)]">
     <div class="pointer-events-none absolute -top-32 -right-32 w-80 h-80 rounded-full bg-violet-600/15 blur-3xl"></div>
     <div class="pointer-events-none absolute bottom-20 -left-32 w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl"></div>
     <header class="relative shrink-0 px-5 py-4 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
@@ -1400,13 +1457,13 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       </div>
     </header>
     <div class="relative shrink-0 px-5 py-2.5 border-b border-white/[.06] bg-slate-950/45 flex items-center justify-between">
-      <div class="flex items-center gap-2"><span class="text-[9px] uppercase tracking-[.18em] font-black text-slate-500">Conversation</span><span class="w-1 h-1 rounded-full bg-violet-400"></span><span class="text-[9px] text-slate-500">Private &amp; encrypted</span></div>
-      <button type="button" onclick="document.getElementById('chat-messages-container').scrollTo({top:document.getElementById('chat-messages-container').scrollHeight,behavior:'smooth'})" class="text-[9px] font-bold text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-arrow-down mr-1"></i> Latest</button>
+      <div class="flex items-center gap-2"><span class="text-[9px] uppercase tracking-[.18em] font-black text-slate-500" data-i18n="conversationLabel">Conversation</span><span class="w-1 h-1 rounded-full bg-violet-400"></span><span class="text-[9px] text-slate-500" data-i18n="privateEncrypted">Private &amp; encrypted</span></div>
+      <button type="button" onclick="document.getElementById('chat-messages-container').scrollTo({top:document.getElementById('chat-messages-container').scrollHeight,behavior:'smooth'})" class="text-[9px] font-bold text-slate-400 hover:text-white transition-colors"><i class="fa-solid fa-arrow-down mr-1"></i> <span data-i18n="latestLabel">Latest</span></button>
     </div>
-    <div id="chat-messages-container" class="relative flex-1 min-h-0 px-5 py-5 space-y-4 overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_80%_15%,rgba(124,58,237,.08),transparent_30%),radial-gradient(circle_at_15%_70%,rgba(6,182,212,.05),transparent_28%)]" style="scrollbar-width:thin;scrollbar-color:rgba(139,92,246,.35) transparent;">
+    <div id="chat-messages-container" class="relative flex-1 min-h-0 h-0 px-5 py-5 space-y-4 overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_80%_15%,rgba(124,58,237,.08),transparent_30%),radial-gradient(circle_at_15%_70%,rgba(6,182,212,.05),transparent_28%)]" style="scrollbar-width:thin;scrollbar-color:rgba(139,92,246,.35) transparent;">
       <div class="text-center py-16 text-slate-500 text-xs" data-i18n="noChatMessages">No chat messages yet. Start the conversation!</div>
     </div>
-    <footer class="relative shrink-0 p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-xl">
+    <footer class="relative shrink-0 sticky bottom-0 p-4 border-t border-white/10 bg-slate-950/90 backdrop-blur-xl z-10" style="padding-bottom:max(1rem,env(safe-area-inset-bottom));">
       <div id="chat-image-preview-box" class="hidden mb-3 p-2.5 bg-white/[.03] border border-violet-400/20 rounded-2xl relative">
         <button onclick="clearChatImageAttachment()" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-lg bg-slate-950/90 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark text-[10px]"></i></button>
         <img id="chat-image-preview-img" src="" class="h-28 max-w-full rounded-xl object-contain mx-auto border border-white/10">
@@ -1416,7 +1473,7 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
           <label class="shrink-0 w-10 h-10 rounded-xl hover:bg-white/[.06] text-slate-400 hover:text-violet-300 cursor-pointer flex items-center justify-center transition-all" title="Attach image"><i class="fa-solid fa-paperclip"></i><input type="file" id="chat-file-input" accept="image/*" onchange="handleChatImageUpload(event)" class="hidden"></label>
           <div class="flex-1 min-w-0">
             <input type="text" id="chat-text-input" placeholder="Write a message..." autocomplete="off" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatMessage();}" class="w-full h-10 bg-transparent px-1 text-sm text-white placeholder:text-slate-600 focus:outline-none" data-i18n-placeholder="chatInputPlaceholder">
-            <div class="px-1 pb-0.5 text-[8px] text-slate-600">Enter to send • Attach screenshots with the paperclip</div>
+            <div class="px-1 pb-0.5 text-[8px] text-slate-600"><span data-i18n="enterToSend">Enter to send</span> • <span data-i18n="attachScreenshotsHint">Attach screenshots with the paperclip</span></div>
           </div>
           <button type="button" onclick="sendChatMessage()" class="shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 text-white flex items-center justify-center shadow-[0_8px_25px_rgba(124,58,237,.28)] transition-all active:scale-95" aria-label="Send message"><i class="fa-solid fa-paper-plane text-sm"></i></button>
         </div>
@@ -1673,24 +1730,24 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       <div id="catalog-market-intelligence" class="catalog-market-intelligence rounded-[26px] p-5 sm:p-6">
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <div>
-            <span class="catalog-section-chip purple"><i class="fa-solid fa-chart-line"></i> Market Intelligence</span>
-            <h3 class="text-lg sm:text-xl font-black text-white mt-2">Know the market before you collect.</h3>
-            <p class="text-[11px] text-slate-500 mt-1">Live indicators calculated from the cards and approved marketplace transactions available to this app.</p>
+            <span class="catalog-section-chip purple"><i class="fa-solid fa-chart-line"></i> <span data-i18n="marketIntelligenceChip">Market Intelligence</span></span>
+            <h3 class="text-lg sm:text-xl font-black text-white mt-2" data-i18n="marketIntelligenceTitle">Know the market before you collect.</h3>
+            <p class="text-[11px] text-slate-500 mt-1" data-i18n="marketIntelligenceSub">Live indicators calculated from the cards and approved marketplace transactions available to this app.</p>
           </div>
-          <div class="market-refresh-label"><span></span> Live marketplace data</div>
+          <div class="market-refresh-label"><span></span> <span data-i18n="liveMarketplaceData">Live marketplace data</span></div>
         </div>
         <div id="market-stat-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 mt-5"></div>
         <div class="grid grid-cols-1 lg:grid-cols-[1.25fr_.75fr] gap-4 mt-4">
           <div class="market-chart-panel">
             <div class="flex items-center justify-between mb-3">
-              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500">Recent Sales</p><p class="text-sm font-black text-white mt-1">Transaction pulse</p></div>
+              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="recentSalesTitle">Recent Sales</p><p class="text-sm font-black text-white mt-1" data-i18n="transactionPulse">Transaction pulse</p></div>
               <span id="market-sale-count" class="text-[9px] font-bold text-slate-500">0 sales</span>
             </div>
             <div id="market-sales-bars" class="market-sales-bars"></div>
           </div>
           <div class="market-chart-panel">
             <div class="flex items-center justify-between mb-3">
-              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500">Pricing Context</p><p class="text-sm font-black text-white mt-1">Where the market sits</p></div>
+              <div><p class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="pricingContextTitle">Pricing Context</p><p class="text-sm font-black text-white mt-1" data-i18n="whereMarketSits">Where the market sits</p></div>
               <i class="fa-solid fa-crosshairs text-indigo-400"></i>
             </div>
             <div id="market-price-context" class="space-y-3"></div>
@@ -1704,9 +1761,9 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-sm font-black text-white uppercase tracking-wide flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-amber-400"></i> Live Marketplace Activity
+                <i class="fa-solid fa-bolt text-amber-400"></i> <span data-i18n="liveMarketplaceActivityTitle">Live Marketplace Activity</span>
               </h3>
-              <p class="text-[10px] text-slate-500 mt-1">Recent movement across the collection.</p>
+              <p class="text-[10px] text-slate-500 mt-1"><span data-i18n="recentMovementCollection">Recent movement across the collection.</span></p>
             </div>
             <span id="activity-live-badge" class="catalog-live-badge">
               <span></span> Live
@@ -1718,15 +1775,15 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         <div class="catalog-surface rounded-[26px] p-5">
           <div class="flex items-center justify-between mb-4">
             <div>
-              <h3 class="text-sm font-black text-white uppercase tracking-wide">Market Insights</h3>
-              <p class="text-[10px] text-slate-500 mt-1">Collection composition at a glance.</p>
+              <h3 class="text-sm font-black text-white uppercase tracking-wide" data-i18n="marketInsightsTitle">Market Insights</h3>
+              <p class="text-[10px] text-slate-500 mt-1"><span data-i18n="collectionComposition">Collection composition at a glance.</span></p>
             </div>
             <i class="fa-solid fa-chart-pie text-indigo-400"></i>
           </div>
           <div class="space-y-5">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-black uppercase tracking-wider text-slate-500">Rarity Distribution</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-slate-500" data-i18n="rarityDistributionTitle">Rarity Distribution</span>
               </div>
               <div id="rarity-distribution-bars" class="space-y-2.5"></div>
             </div>
@@ -2205,19 +2262,19 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         <div class="flex items-center gap-4">
           <div id="collector-reputation-avatar" class="collector-reputation-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
           <div>
-            <span class="catalog-section-chip"><i class="fa-solid fa-shield-halved"></i> Collector Identity</span>
+            <span class="catalog-section-chip"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="collectorIdentityTitle">Collector Identity</span></span>
             <h3 id="collector-reputation-name" class="text-lg font-black text-white mt-2">Collector</h3>
-            <p id="collector-reputation-sub" class="text-[10px] text-slate-500 mt-1">Your public reputation across Eugene Card.</p>
+            <p id="collector-reputation-sub" class="text-[10px] text-slate-500 mt-1"><span data-i18n="publicReputation">Your public reputation across Eugene Card.</span></p>
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2.5 min-w-[280px]">
-          <div class="reputation-stat"><span>Reputation</span><strong id="collector-reputation-score">100</strong></div>
-          <div class="reputation-stat"><span>Trades</span><strong id="collector-reputation-trades">0</strong></div>
-          <div class="reputation-stat"><span>Badges</span><strong id="collector-reputation-badges">0</strong></div>
+          <div class="reputation-stat"><span data-i18n="reputationLabel">Reputation</span><strong id="collector-reputation-score">100</strong></div>
+          <div class="reputation-stat"><span data-i18n="tradesLabel">Trades</span><strong id="collector-reputation-trades">0</strong></div>
+          <div class="reputation-stat"><span data-i18n="badgesLabel">Badges</span><strong id="collector-reputation-badges">0</strong></div>
         </div>
       </div>
       <div class="mt-5 pt-4 border-t border-white/[.06]">
-        <div class="flex items-center justify-between mb-2"><span class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500">Collector Achievements</span><span class="text-[9px] text-slate-600">Earned from your activity</span></div>
+        <div class="flex items-center justify-between mb-2"><span class="text-[9px] uppercase tracking-[.14em] font-black text-slate-500" data-i18n="collectorAchievementsTitle">Collector Achievements</span><span class="text-[9px] text-slate-600" data-i18n="earnedFromActivity">Earned from your activity</span></div>
         <div id="collector-achievements-row" class="flex flex-wrap gap-2"></div>
       </div>
     </section>
@@ -2660,13 +2717,14 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
   </div>
 
   <!-- PROFILE MANAGER MODAL -->
-  <div id="profile-manager-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+  <div id="profile-manager-modal" class="profile-manager-modal fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-start justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain">
+    <div class="profile-manager-modal-panel bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl my-2 sm:my-4 max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
       <button onclick="closeProfileManagerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
       <div class="text-center space-y-1">
+        <div class="text-[8px] font-black uppercase tracking-[.18em] text-violet-300/70 mb-2"><i class="fa-solid fa-sliders mr-1"></i> Profile</div>
         <div class="relative w-20 h-20 mx-auto mb-2">
           <img id="profile-modal-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-amber-500/50 shadow-lg bg-slate-950">
         </div>
@@ -2970,7 +3028,7 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
           <div>
             <div class="flex items-center gap-2">
               <span class="text-[8px] uppercase tracking-[.18em] font-black text-slate-500">EUGENE CARD • CARD DETAILS</span>
-              <span id="detail-card-live-state" class="catalog-live-badge"><span></span> Live</span>
+              <span id="detail-card-live-state" class="catalog-live-badge"><span></span> <span data-i18n="liveWord">Live</span></span>
             </div>
             <h3 id="detail-card-title" class="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1">Card Title</h3>
             <p class="text-[10px] text-slate-500 mt-1">Inspect the card's edition, serial, ownership, scarcity and market activity.</p>
@@ -3695,6 +3753,55 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         tiktokLabel: "TikTok Handle / URL",
         webLabel: "Website URL (Clickable)",
         saveProfileBtn: "Save Profile Updates",
+
+        marketIntelligenceChip: "Market Intelligence",
+        marketIntelligenceTitle: "Know the market before you collect.",
+        marketIntelligenceSub: "Live indicators calculated from the cards and approved marketplace transactions available to this app.",
+        liveMarketplaceData: "Live marketplace data",
+        recentSalesTitle: "Recent Sales",
+        transactionPulse: "Transaction pulse",
+        pricingContextTitle: "Pricing Context",
+        whereMarketSits: "Where the market sits",
+        approvedSales: "approved sales",
+        approvedSalesWillAppear: "Approved sales will appear here as the marketplace grows.",
+        marketFloorPrice: "Floor Price",
+        marketAveragePrice: "Average Price",
+        marketMedianPrice: "Median Price",
+        marketTopSale: "Top Sale",
+        marketLiquidity: "Liquidity",
+        lowestCurrentlyAvailable: "Lowest currently available",
+        cardsTracked: "cards tracked",
+        middleCurrentCatalog: "Middle of current catalog",
+        highestApprovedSale: "Highest approved sale",
+        highestRecordedCardValue: "Highest recorded card value",
+        distributedSold: "distributed / sold",
+        liveMarketplaceActivityTitle: "Live Marketplace Activity",
+        recentMovementCollection: "Recent movement across the collection.",
+        marketInsightsTitle: "Market Insights",
+        collectionComposition: "Collection composition at a glance.",
+        collectorIdentityTitle: "Collector Identity",
+        publicReputation: "Your public reputation across Eugene Card.",
+        reputationLabel: "Reputation",
+        tradesLabel: "Trades",
+        badgesLabel: "Badges",
+        collectorAchievementsTitle: "Collector Achievements",
+        earnedFromActivity: "Earned from your activity",
+        startConversation: "Start the conversation",
+        sendMessageOrScreenshot: "Send a message or share a card screenshot.",
+        privateEncrypted: "Private & encrypted",
+        latestLabel: "Latest",
+        conversationLabel: "Conversation",
+        enterToSend: "Enter to send",
+        attachScreenshotsHint: "Attach screenshots with the paperclip",
+        marketCardsTracked: "cards tracked",
+        collectedSuffix: "collected",
+        reputationGrowthHint: "Reputation grows with verified marketplace activity.",
+        achievementFirstCollector: "First Collector",
+        achievementPremiumHunter: "Premium Hunter",
+        achievementTrader: "Trader",
+        achievementActiveCollector: "Active Collector",
+        achievementVaultBuilder: "Vault Builder",
+
         customizeCardTitle: "Customize Card Details",
         cardNameLabel: "Card Name",
         cardCodeLabel: "Card Code (e.g. *01 / *001)",
@@ -4006,6 +4113,55 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         tiktokLabel: "Handle / URL TikTok",
         webLabel: "URL Situs Web (Dapat Diklik)",
         saveProfileBtn: "Simpan Perubahan Profil",
+
+        marketIntelligenceChip: "Intelijen Pasar",
+        marketIntelligenceTitle: "Pahami pasar sebelum mengoleksi.",
+        marketIntelligenceSub: "Indikator langsung dihitung dari kartu dan transaksi marketplace yang telah disetujui.",
+        liveMarketplaceData: "Data marketplace langsung",
+        recentSalesTitle: "Penjualan Terbaru",
+        transactionPulse: "Aktivitas transaksi",
+        pricingContextTitle: "Konteks Harga",
+        whereMarketSits: "Posisi harga pasar",
+        approvedSales: "penjualan disetujui",
+        approvedSalesWillAppear: "Penjualan yang disetujui akan muncul di sini seiring marketplace berkembang.",
+        marketFloorPrice: "Harga Dasar",
+        marketAveragePrice: "Harga Rata-rata",
+        marketMedianPrice: "Harga Median",
+        marketTopSale: "Penjualan Tertinggi",
+        marketLiquidity: "Likuiditas",
+        lowestCurrentlyAvailable: "Harga terendah yang tersedia",
+        cardsTracked: "kartu dilacak",
+        middleCurrentCatalog: "Nilai tengah katalog saat ini",
+        highestApprovedSale: "Penjualan disetujui tertinggi",
+        highestRecordedCardValue: "Nilai kartu tertinggi yang tercatat",
+        distributedSold: "terdistribusi / terjual",
+        liveMarketplaceActivityTitle: "Aktivitas Marketplace Langsung",
+        recentMovementCollection: "Pergerakan terbaru di seluruh koleksi.",
+        marketInsightsTitle: "Wawasan Pasar",
+        collectionComposition: "Komposisi koleksi secara ringkas.",
+        collectorIdentityTitle: "Identitas Kolektor",
+        publicReputation: "Reputasi publik Anda di Eugene Card.",
+        reputationLabel: "Reputasi",
+        tradesLabel: "Tukar",
+        badgesLabel: "Lencana",
+        collectorAchievementsTitle: "Pencapaian Kolektor",
+        earnedFromActivity: "Diperoleh dari aktivitas Anda",
+        startConversation: "Mulai percakapan",
+        sendMessageOrScreenshot: "Kirim pesan atau bagikan tangkapan layar kartu.",
+        privateEncrypted: "Pribadi & terenkripsi",
+        latestLabel: "Terbaru",
+        conversationLabel: "Percakapan",
+        enterToSend: "Enter untuk mengirim",
+        attachScreenshotsHint: "Lampirkan tangkapan layar dengan ikon klip",
+        marketCardsTracked: "kartu dilacak",
+        collectedSuffix: "dikoleksi",
+        reputationGrowthHint: "Reputasi meningkat melalui aktivitas marketplace yang terverifikasi.",
+        achievementFirstCollector: "Kolektor Pertama",
+        achievementPremiumHunter: "Pemburu Premium",
+        achievementTrader: "Trader",
+        achievementActiveCollector: "Kolektor Aktif",
+        achievementVaultBuilder: "Pembangun Vault",
+
         customizeCardTitle: "Kustomisasi Rincian Kartu",
         cardNameLabel: "Nama Kartu",
         cardCodeLabel: "Kode Kartu (misal: *01 / *001)",
@@ -4052,6 +4208,10 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       if (!document.getElementById('view-catalog').classList.contains('hidden')) renderCardGrid();
       if (!document.getElementById('view-wishlist').classList.contains('hidden')) renderWishlistPage();
       if (!document.getElementById('view-home').classList.contains('hidden')) { renderHomeMembersList(); renderPostsFeed(); }
+      if (typeof renderMarketIntelligence === 'function') renderMarketIntelligence();
+      if (typeof renderCollectorReputationPanel === 'function' && currentUser) renderCollectorReputationPanel();
+      if (typeof renderInboxThreads === 'function' && !document.getElementById('view-inbox').classList.contains('hidden')) renderInboxThreads();
+      applyTranslations();
       showToast(currentLanguage === 'ID' ? 'Bahasa diubah ke Bahasa Indonesia' : 'Language switched to English');
     }
 
@@ -4065,6 +4225,11 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         const key = el.getAttribute('data-i18n-placeholder');
         if (dict[key]) el.setAttribute('placeholder', dict[key]);
       });
+    }
+
+
+    function tr(key, fallback = '') {
+      return (i18nDict[currentLanguage] && i18nDict[currentLanguage][key]) || fallback || key;
     }
 
     function switchCheckoutMethod(method) {
@@ -4982,6 +5147,11 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       if (adminBadgeEl) adminBadgeEl.classList.toggle('hidden', !isUserAdmin(targetDisplay));
       document.getElementById('chat-drawer').classList.remove('translate-x-full');
       document.getElementById('chat-drawer-overlay').classList.remove('hidden');
+      document.body.classList.add('chat-drawer-open');
+      requestAnimationFrame(() => {
+        const chatInput = document.getElementById('chat-text-input');
+        if (chatInput) chatInput.focus({ preventScroll: true });
+      });
       const activeThread = inboxThreadsCache.find(t => t.id === currentChatContextId);
       if (activeThread) markInboxThreadRead(activeThread);
       listenToChatMessages(currentChatContextId);
@@ -4990,6 +5160,7 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
     function closeChatDrawer() {
       document.getElementById('chat-drawer').classList.add('translate-x-full');
       document.getElementById('chat-drawer-overlay').classList.add('hidden');
+      document.body.classList.remove('chat-drawer-open');
       if (chatUnsubscribe) {
         chatUnsubscribe();
         chatUnsubscribe = null;
@@ -5029,7 +5200,7 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       if (chatUnsubscribe) chatUnsubscribe();
       chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
         if (snapshot.empty) {
-          container.innerHTML = `<div class="flex flex-col items-center justify-center h-full min-h-[300px] text-center"><div class="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-400/15 flex items-center justify-center mb-4"><i class="fa-regular fa-comments text-xl text-violet-300"></i></div><p class="text-sm font-black text-slate-300">Start the conversation</p><p class="text-[10px] text-slate-600 mt-1">Send a message or share a card screenshot.</p></div>`;
+          container.innerHTML = `<div class="flex flex-col items-center justify-center h-full min-h-[300px] text-center"><div class="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-400/15 flex items-center justify-center mb-4"><i class="fa-regular fa-comments text-xl text-violet-300"></i></div><p class="text-sm font-black text-slate-300">${tr("startConversation","Start the conversation")}</p><p class="text-[10px] text-slate-600 mt-1">${tr("sendMessageOrScreenshot","Send a message or share a card screenshot.")}</p></div>`;
           return;
         }
         let lastDateKey=null;
@@ -7643,57 +7814,101 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       const bars = document.getElementById('market-sales-bars');
       const context = document.getElementById('market-price-context');
       if (!statGrid && !bars && !context) return;
+
       const m = getMarketMetrics();
       const stats = [
-        ['Floor Price', formatCompactIDR(m.floor), 'Lowest currently available', ''],
-        ['Average Price', formatCompactIDR(m.avg), `${inventory.length} cards tracked`, 'purple'],
-        ['Median Price', formatCompactIDR(m.median), 'Middle of current catalog', 'gold'],
-        ['Top Sale', formatCompactIDR(m.topSale), m.sales.length ? 'Highest approved sale' : 'Highest recorded card value', 'positive'],
-        ['Liquidity', `${m.available}/${inventory.length || 0}`, `${m.sold} distributed / sold`, 'positive']
+        [tr('marketFloorPrice','Floor Price'), formatCompactIDR(m.floor), tr('lowestCurrentlyAvailable','Lowest currently available'), ''],
+        [tr('marketAveragePrice','Average Price'), formatCompactIDR(m.avg), `${inventory.length} ${tr('cardsTracked','cards tracked')}`, 'purple'],
+        [tr('marketMedianPrice','Median Price'), formatCompactIDR(m.median), tr('middleCurrentCatalog','Middle of current catalog'), 'gold'],
+        [tr('marketTopSale','Top Sale'), formatCompactIDR(m.topSale), m.sales.length ? tr('highestApprovedSale','Highest approved sale') : tr('highestRecordedCardValue','Highest recorded card value'), 'positive'],
+        [tr('marketLiquidity','Liquidity'), `${m.available}/${inventory.length || 0}`, `${m.sold} ${tr('distributedSold','distributed / sold')}`, 'positive']
       ];
-      if (statGrid) statGrid.innerHTML = stats.map(s=>`<div class="market-stat ${s[3]}"><div class="label">${s[0]}</div><div class="value">${s[1]}</div><div class="sub">${s[2]}</div></div>`).join('');
+
+      if (statGrid) {
+        statGrid.innerHTML = stats.map(s =>
+          `<div class="market-stat ${s[3]}"><div class="label">${s[0]}</div><div class="value">${s[1]}</div><div class="sub">${s[2]}</div></div>`
+        ).join('');
+      }
+
       const recent = m.sales.slice().sort((a,b)=>new Date(a.date||0)-new Date(b.date||0)).slice(-8);
       if (bars) {
         if (!recent.length) {
-          bars.innerHTML = '<div class="h-full w-full flex items-center justify-center text-[9px] text-slate-600">Approved sales will appear here as the marketplace grows.</div>';
+          bars.innerHTML = `<div class="h-full w-full flex items-center justify-center text-[9px] text-slate-600">${tr('approvedSalesWillAppear','Approved sales will appear here as the marketplace grows.')}</div>`;
         } else {
-          const max=Math.max(...recent.map(s=>s.price),1);
-          bars.innerHTML=recent.map(s=>`<div class="market-sale-bar" title="${formatIDR(s.price)}"><div class="bar" style="height:${Math.max(8,(s.price/max)*82)}%"></div><span>${formatCompactIDR(s.price)}</span></div>`).join('');
+          const max = Math.max(...recent.map(s=>s.price),1);
+          bars.innerHTML = recent.map(s =>
+            `<div class="market-sale-bar" title="${formatIDR(s.price)}"><div class="bar" style="height:${Math.max(8,(s.price/max)*82)}%"></div><span>${formatCompactIDR(s.price)}</span></div>`
+          ).join('');
         }
       }
-      const maxContext=Math.max(m.topSale,m.floor,m.avg,1);
+
+      const maxContext = Math.max(m.topSale,m.floor,m.avg,1);
       if (context) {
         context.innerHTML = [
-          ['Floor',m.floor],['Median',m.median],['Average',m.avg],['Top Sale',m.topSale]
-        ].map(([label,val])=>`<div class="market-context-row"><div class="w-full"><div class="flex items-center justify-between"><span class="meta">${label}</span><strong>${formatCompactIDR(val)}</strong></div><div class="market-context-track"><div class="market-context-fill" style="width:${Math.max(3,Math.min(100,(val/maxContext)*100))}%"></div></div></div></div>`).join('');
+          [tr('marketFloorPrice','Floor'),m.floor],
+          [tr('marketMedianPrice','Median'),m.median],
+          [tr('marketAveragePrice','Average'),m.avg],
+          [tr('marketTopSale','Top Sale'),m.topSale]
+        ].map(([label,val]) =>
+          `<div class="market-context-row"><div class="w-full"><div class="flex items-center justify-between"><span class="meta">${label}</span><strong>${formatCompactIDR(val)}</strong></div><div class="market-context-track"><div class="market-context-fill" style="width:${Math.max(3,Math.min(100,(val/maxContext)*100))}%"></div></div></div></div>`
+        ).join('');
       }
-      const saleCount=document.getElementById('market-sale-count'); if(saleCount) saleCount.textContent=`${m.sales.length} approved sales`;
-      const volume=m.sales.reduce((a,s)=>a+s.price,0);
-      const heroVolume=document.getElementById('hero-stat-volume'); if(heroVolume) heroVolume.textContent=formatCompactIDR(volume);
-      const remaining=document.getElementById('remaining-cards-count'); if(remaining) remaining.textContent=m.available;
+
+      const saleCount = document.getElementById('market-sale-count');
+      if (saleCount) saleCount.textContent = `${m.sales.length} ${tr('approvedSales','approved sales')}`;
+
+      const volume = m.sales.reduce((a,s)=>a+s.price,0);
+      const heroVolume = document.getElementById('hero-stat-volume');
+      if (heroVolume) heroVolume.textContent = formatCompactIDR(volume);
+
+      const remaining = document.getElementById('remaining-cards-count');
+      if (remaining) remaining.textContent = m.available;
     }
 
     function renderCollectorReputationPanel() {
-      const panel=document.getElementById('collector-reputation-panel');
-      if(!panel || !currentUser) return;
+      const panel = document.getElementById('collector-reputation-panel');
+      if (!panel || !currentUser) return;
+
       panel.classList.remove('hidden');
-      const profile=getCollectorProfile(currentUser.email || currentUser.uid) || {};
-      const name=profile.name || currentUser.displayName || currentUser.email?.split('@')[0] || 'Collector';
-      const owned=inventory.filter(c=>c.owner && String(c.owner).toLowerCase()===String(name).toLowerCase()).length;
-      const trades=tradeRequestsList.filter(t=>String(t.from || '').toLowerCase()===String(name).toLowerCase() || String(t.to || '').toLowerCase()===String(name).toLowerCase()).length;
-      const badges=Math.min(8,Math.floor(owned/2)+Math.floor(trades/3));
-      const reputation=Math.min(100,Math.max(70,85+owned*2+trades*2));
-      const n=document.getElementById('collector-reputation-name'); if(n)n.textContent=name;
-      const s=document.getElementById('collector-reputation-sub'); if(s)s.textContent=`${owned} card${owned===1?'':'s'} collected • Reputation grows with verified marketplace activity.`;
-      const score=document.getElementById('collector-reputation-score'); if(score)score.textContent=reputation;
-      const tr=document.getElementById('collector-reputation-trades'); if(tr)tr.textContent=trades;
-      const bc=document.getElementById('collector-reputation-badges'); if(bc)bc.textContent=badges;
-      const row=document.getElementById('collector-achievements-row');
-      if(row){
-        const achievements=[
-          ['fa-id-card','First Collector',owned>=1],['fa-gem','Premium Hunter',inventory.some(c=>c.owner && String(c.owner).toLowerCase()===String(name).toLowerCase() && c.type==='PREMIUM')],['fa-handshake','Trader',trades>=1],['fa-fire','Active Collector',owned>=3],['fa-crown','Vault Builder',owned>=5]
+
+      const profile = getCollectorProfile(currentUser.email || currentUser.uid) || {};
+      const name = profile.name || currentUser.displayName || currentUser.email?.split('@')[0] || tr('collectorFallback','Collector');
+      const owned = inventory.filter(c => c.owner && String(c.owner).toLowerCase() === String(name).toLowerCase()).length;
+      const trades = tradeRequestsList.filter(t =>
+        String(t.from || '').toLowerCase() === String(name).toLowerCase() ||
+        String(t.to || '').toLowerCase() === String(name).toLowerCase()
+      ).length;
+
+      const badges = Math.min(8, Math.floor(owned/2) + Math.floor(trades/3));
+      const reputation = Math.min(100, Math.max(70, 85 + owned*2 + trades*2));
+
+      const n = document.getElementById('collector-reputation-name');
+      if (n) n.textContent = name;
+
+      const s = document.getElementById('collector-reputation-sub');
+      if (s) s.textContent = `${owned} ${tr('collectedSuffix','collected')} • ${tr('reputationGrowthHint','Reputation grows with verified marketplace activity.')}`;
+
+      const score = document.getElementById('collector-reputation-score');
+      if (score) score.textContent = reputation;
+
+      const trEl = document.getElementById('collector-reputation-trades');
+      if (trEl) trEl.textContent = trades;
+
+      const bc = document.getElementById('collector-reputation-badges');
+      if (bc) bc.textContent = badges;
+
+      const row = document.getElementById('collector-achievements-row');
+      if (row) {
+        const achievements = [
+          ['fa-id-card','achievementFirstCollector',owned >= 1],
+          ['fa-gem','achievementPremiumHunter',inventory.some(c => c.owner && String(c.owner).toLowerCase() === String(name).toLowerCase() && c.type === 'PREMIUM')],
+          ['fa-handshake','achievementTrader',trades >= 1],
+          ['fa-fire','achievementActiveCollector',owned >= 3],
+          ['fa-crown','achievementVaultBuilder',owned >= 5]
         ];
-        row.innerHTML=achievements.map(a=>`<span class="achievement-chip ${a[2]?'':'locked'}"><i class="fa-solid ${a[0]}"></i>${a[1]}</span>`).join('');
+        row.innerHTML = achievements.map(a =>
+          `<span class="achievement-chip ${a[2] ? '' : 'locked'}"><i class="fa-solid ${a[0]}"></i>${tr(a[1], a[1])}</span>`
+        ).join('');
       }
     }
 
