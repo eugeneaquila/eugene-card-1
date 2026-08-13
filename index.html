@@ -622,7 +622,41 @@ body.premium-global main > section {
 
 </style>
 
-<style id="eugene-premium-modal-system">
+<style id="eugene-home-feed-images-css">
+    /* Home feed images: preserve the complete artwork instead of cropping it.
+       Clicking an image opens the existing full-size image preview modal. */
+    .home-post-image-button {
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-in;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 14px 35px rgba(0,0,0,.18);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .home-post-image-button:hover {
+      border-color: rgba(99,102,241,.45);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 18px 45px rgba(0,0,0,.28), 0 0 28px rgba(99,102,241,.08);
+    }
+    .home-post-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 560px;
+      min-height: 180px;
+      object-fit: contain;
+      object-position: center;
+    }
+    @media (max-width: 768px) {
+      .home-post-image-button { min-height: 140px; }
+      .home-post-image { min-height: 140px; max-height: 420px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .home-post-image-button { transition: none; }
+    }
+  </style>
+
+  <style id="eugene-premium-modal-system">
 /* =========================================================
    EUGENE CARD — PREMIUM MODAL SYSTEM
    Visual-only layer: preserves existing modal IDs, handlers,
@@ -6738,7 +6772,11 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
           <p class="text-[11px] font-black text-white">${escapeHtml(q.authorName || 'Collector')} <span class="text-slate-600 font-normal ml-1">${escapeHtml(timeAgoShort(createdAt))}</span></p>
         </div>
         ${q.text ? `<p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(q.text)}</p>` : ''}
-        ${q.imageUrl ? `<img src="${q.imageUrl}" class="w-full max-h-56 object-cover rounded-xl border border-slate-800">` : ''}
+        ${q.imageUrl ? `
+          <button type="button" class="home-post-image-button group relative block w-full rounded-2xl border border-slate-800/90 bg-slate-950/80 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/60" onclick="openImagePreviewModal(this.querySelector('img').src, 'Community Post Image')" aria-label="Open post image">
+            <img src="${escapeHtml(q.imageUrl)}" class="home-post-image w-full max-h-[560px] object-contain rounded-2xl" alt="Community post image" loading="lazy">
+            <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity backdrop-blur-md"><i class="fa-solid fa-expand"></i> View</span>
+          </button>` : ''}
       </div>`;
     }
 
@@ -6763,7 +6801,11 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         </div>
 
         ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
-        ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full max-h-96 object-cover rounded-2xl border border-slate-800">` : ''}
+        ${post.imageUrl ? `
+          <button type="button" class="home-post-image-button group relative block w-full rounded-2xl border border-slate-800/90 bg-slate-950/80 overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/60" onclick="openImagePreviewModal(this.querySelector('img').src, 'Community Post Image')" aria-label="Open post image">
+            <img src="${escapeHtml(post.imageUrl)}" class="home-post-image w-full max-h-[560px] object-contain rounded-2xl" alt="Community post image" loading="lazy">
+            <span class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity backdrop-blur-md"><i class="fa-solid fa-expand"></i> View</span>
+          </button>` : ''}
         ${post.type === 'quote' && post.quotedPostId ? renderEmbeddedPostSnippet(post.quotedPostId, dict) : ''}
 
         ${renderPostActionsRow(post, dict)}
