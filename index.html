@@ -3080,15 +3080,73 @@
         socialTwitter: u.twitter || u.socialTwitter || '',
         socialTiktok: u.tiktok || u.socialTiktok || '',
         socialWeb: u.website || u.socialWeb || '',
-        // BUGFIX: this field was previously dropped here, so any collector
-        // whose data only lived in the legacy "users" doc (no "profiles" doc
-        // yet) had `profileCompleted` silently resolve to undefined on every
-        // single login — re-triggering the "Complete Your Profile" popup
-        // forever, even for collectors who already had a working profile.
-        // Legacy "users" docs predate the popup entirely, so unless it
-        // explicitly says otherwise, treat them as already completed.
         profileCompleted: u.profileCompleted !== undefined ? !!u.profileCompleted : true
       };
+    }
+
+    // ===== CANONICAL COLLECTOR IDENTITY =====
+    // Firebase Auth UID is the canonical identity. Display names/usernames are
+    // mutable labels and must never create a second person when the same UID
+    // exists in both the newer `profiles/{email}` collection and legacy
+    // `users/{uid}` collection.
+    function normalizeCollectorValue(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function collectorProfileMatches(a, b) {
+      if (!a || !b) return false;
+      if (a.uid && b.uid && a.uid === b.uid) return true;
+      const au = normalizeCollectorValue(a.username);
+      const bu = normalizeCollectorValue(b.username);
+      if (au && bu && au === bu) return true;
+      const an = normalizeCollectorValue(a.name);
+      const bn = normalizeCollectorValue(b.name);
+      // Only use display-name matching when one side has no authenticated UID.
+      // Two authenticated accounts are allowed to share the same display name.
+      if (an && bn && an === bn && (!a.uid || !b.uid)) return true;
+      return false;
+    }
+
+    function mergeCollectorProfile(primary, secondary) {
+      const merged = { ...(secondary || {}), ...(primary || {}) };
+      // Prefer populated fields from either source without allowing legacy
+      // placeholder/empty values to erase the real profile.
+      ['name','username','avatarUrl','bio','socialIg','socialTwitter','socialTiktok','socialWeb'].forEach(field => {
+        if (!normalizeCollectorValue(primary?.[field]) && secondary?.[field]) merged[field] = secondary[field];
+      });
+      if (!merged.uid && secondary?.uid) merged.uid = secondary.uid;
+      if (primary?.profileCompleted !== undefined) merged.profileCompleted = !!primary.profileCompleted;
+      else if (secondary?.profileCompleted !== undefined) merged.profileCompleted = !!secondary.profileCompleted;
+      return merged;
+    }
+
+    function getCanonicalCollectorIdentity(identifier) {
+      if (!identifier) return null;
+      const raw = typeof identifier === 'object' ? identifier : { name: identifier, username: identifier };
+      const key = normalizeCollectorValue(typeof identifier === 'object' ? (identifier.uid || identifier.username || identifier.name) : identifier);
+      if (!key) return null;
+
+      // UID is always the strongest match.
+      if (raw.uid) {
+        for (const p of Object.values(globalCollectorProfiles || {})) {
+          if (p?.uid === raw.uid) return p;
+        }
+      }
+
+      for (const p of Object.values(globalCollectorProfiles || {})) {
+        if (!p) continue;
+        if (normalizeCollectorValue(p.username) === key || normalizeCollectorValue(p.name) === key) return p;
+        if (typeof identifier === 'string' && normalizeCollectorValue(p.uid) === key) return p;
+      }
+      return null;
+    }
+
+    function getCanonicalCollectorKey(identifier) {
+      const p = getCanonicalCollectorIdentity(identifier);
+      if (p?.uid) return `uid:${p.uid}`;
+      if (p?.username) return `username:${normalizeCollectorValue(p.username)}`;
+      if (p?.name) return `name:${normalizeCollectorValue(p.name)}`;
+      return `raw:${normalizeCollectorValue(identifier)}`;
     }
 
     function mapProfileToUsersDocShape(p) {
@@ -3118,29 +3176,50 @@
       }
     }
 
-    // Rebuilds globalCollectorProfiles from the latest "profiles" and "users"
-    // snapshots. A "profiles" entry always wins for a given person — "users"
-    // entries only fill in collectors who don't have a "profiles" doc yet
-    // (matched by username where possible, otherwise added under their own
-    // uid so they still resolve everywhere getCollectorProfile() is used).
+    // Rebuilds the public collector roster from both profile collections while
+    // collapsing records that represent the same Firebase Auth account.
+    // `profiles` is preferred because it contains the current profile fields;
+    // `users/{uid}` is treated as a legacy mirror/fallback only.
     function rebuildGlobalCollectorProfiles() {
-      globalCollectorProfiles = { ...globalRawProfilesData };
+      const canonical = [];
 
-      const existingUsernames = new Set(
-        Object.values(globalCollectorProfiles)
-          .map(p => (p.username || '').toLowerCase())
-          .filter(Boolean)
-      );
-
-      for (const uid in globalRawUsersData) {
-        const mapped = mapUsersDocToProfileShape(globalRawUsersData[uid]);
-        mapped.uid = uid;
-        const usernameKey = (mapped.username || '').toLowerCase();
-        if (usernameKey && existingUsernames.has(usernameKey)) continue; // already represented via "profiles"
-        if (!globalCollectorProfiles[uid]) {
-          globalCollectorProfiles[uid] = mapped;
+      const addOrMerge = (candidate, sourceKey, preferCandidate = false) => {
+        if (!candidate) return;
+        const existingIndex = canonical.findIndex(existing => collectorProfileMatches(existing.profile, candidate));
+        if (existingIndex >= 0) {
+          const existing = canonical[existingIndex];
+          existing.profile = preferCandidate
+            ? mergeCollectorProfile(candidate, existing.profile)
+            : mergeCollectorProfile(existing.profile, candidate);
+          // Preserve the stable profile document key for callers that need it.
+          if (existing.profile.uid == null && candidate.uid) existing.profile.uid = candidate.uid;
+          return;
         }
+        canonical.push({ sourceKey, profile: { ...candidate } });
+      };
+
+      // New profiles collection is the source of truth when both collections
+      // contain the same collector.
+      for (const [emailKey, rawProfile] of Object.entries(globalRawProfilesData || {})) {
+        if (!rawProfile) continue;
+        addOrMerge({ ...rawProfile }, emailKey, false);
       }
+
+      // Legacy users are only added when they do not already represent an
+      // existing collector. If their UID matches a profile, their missing fields
+      // are merged into that profile instead of creating a second roster entry.
+      for (const uid of Object.keys(globalRawUsersData || {})) {
+        const mapped = mapUsersDocToProfileShape(globalRawUsersData[uid]);
+        if (!mapped) continue;
+        mapped.uid = uid;
+        addOrMerge(mapped, uid, false);
+      }
+
+      globalCollectorProfiles = {};
+      canonical.forEach(({ sourceKey, profile }) => {
+        const stableKey = sourceKey || profile.uid || profile.username || profile.name;
+        if (stableKey) globalCollectorProfiles[stableKey] = profile;
+      });
     }
 
     // BUGFIX: this used to swallow a failed "profiles" fetch and leave
@@ -3188,7 +3267,7 @@
       
       for (let emailKey in globalCollectorProfiles) {
         const p = globalCollectorProfiles[emailKey];
-        if (p.name?.toLowerCase() === key || p.username?.toLowerCase() === key || emailKey.toLowerCase() === key) {
+        if (p.uid === nameOrUsername || p.name?.toLowerCase() === key || p.username?.toLowerCase() === key || emailKey.toLowerCase() === key) {
           return p;
         }
       }
@@ -3217,7 +3296,7 @@
 
       for (let emailKey in globalCollectorProfiles) {
         const p = globalCollectorProfiles[emailKey];
-        if (p.name?.toLowerCase() === key || p.username?.toLowerCase() === key || emailKey.toLowerCase() === key) {
+        if (p.uid === nameOrUsername || p.name?.toLowerCase() === key || p.username?.toLowerCase() === key || emailKey.toLowerCase() === key) {
           return emailKey;
         }
       }
@@ -4644,15 +4723,53 @@
       // Google — get a synthetic key instead and always render as offline,
       // since there's no auth session for them to ever send a heartbeat.
       const roster = {};
+      const rosterEntries = [];
       Object.entries(globalCollectorProfiles || {}).forEach(([key, p]) => {
         if (!p) return;
         const hasAuth = !!p.uid;
-        const rosterId = hasAuth ? p.uid : `noauth:${key}`;
-        roster[rosterId] = { name: p.name || key || 'Collector', username: p.username || '', avatarUrl: p.avatarUrl || '', hasAuth };
+        const candidate = {
+          uid: p.uid || null,
+          name: p.name || key || 'Collector',
+          username: p.username || '',
+          avatarUrl: p.avatarUrl || '',
+          hasAuth
+        };
+
+        // Collapse legacy/no-UID profile records into an authenticated record
+        // when they clearly describe the same username/name. Never merge two
+        // authenticated accounts merely because they share a display name.
+        const matchIndex = rosterEntries.findIndex(existing => {
+          if (candidate.uid && existing.uid) return candidate.uid === existing.uid;
+          const sameUsername = candidate.username && existing.username && normalizeCollectorValue(candidate.username) === normalizeCollectorValue(existing.username);
+          const sameName = candidate.name && existing.name && normalizeCollectorValue(candidate.name) === normalizeCollectorValue(existing.name);
+          return !!(sameUsername || (sameName && (!candidate.uid || !existing.uid)));
+        });
+
+        if (matchIndex >= 0) {
+          const existing = rosterEntries[matchIndex];
+          rosterEntries[matchIndex] = {
+            ...existing,
+            ...candidate,
+            uid: existing.uid || candidate.uid,
+            hasAuth: existing.hasAuth || candidate.hasAuth,
+            name: candidate.hasAuth || !existing.name ? candidate.name : existing.name,
+            username: candidate.username || existing.username,
+            avatarUrl: candidate.avatarUrl || existing.avatarUrl
+          };
+        } else {
+          rosterEntries.push(candidate);
+        }
       });
       if (currentUser && currentUser.uid) {
-        roster[currentUser.uid] = { name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl, hasAuth: true };
+        const idx = rosterEntries.findIndex(p => p.uid === currentUser.uid);
+        const me = { uid: currentUser.uid, name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl, hasAuth: true };
+        if (idx >= 0) rosterEntries[idx] = { ...rosterEntries[idx], ...me };
+        else rosterEntries.push(me);
       }
+      rosterEntries.forEach((p, index) => {
+        const rosterId = p.uid || `noauth:${normalizeCollectorValue(p.username || p.name)}:${index}`;
+        roster[rosterId] = p;
+      });
 
       const active = [];
       const offline = [];
@@ -7889,7 +8006,13 @@
       const grid = document.getElementById('holder-vault-page-grid');
       if (!grid || !ownerName) return;
 
-      const owned = inventory.filter(c => c.owner === ownerName);
+      const canonicalProfile = getCanonicalCollectorIdentity(ownerName);
+      const owned = inventory.filter(c => {
+        if (c.owner === ownerName) return true;
+        if (!canonicalProfile) return false;
+        const cardProfile = getCanonicalCollectorIdentity(c.owner);
+        return !!cardProfile && !!canonicalProfile.uid && cardProfile.uid === canonicalProfile.uid;
+      });
       const meta = getCollectorProfileMeta(ownerName);
       const isAdmin = isUserAdmin(ownerName);
 
@@ -8016,12 +8139,27 @@
       const grid = document.getElementById('holders-directory-grid');
       if (!grid) return;
 
+      // Group cards by canonical collector identity, not by the mutable owner
+      // label stored on older cards. This makes "Stellar", "stellar", and a
+      // UID-backed owner resolve to the same holder when they represent one
+      // Firebase account.
       const holdersMap = {};
       inventory.forEach(c => {
-        if (c.owner) {
-          if (!holdersMap[c.owner]) holdersMap[c.owner] = [];
-          holdersMap[c.owner].push(c);
+        if (!c.owner) return;
+        const profile = getCanonicalCollectorIdentity(c.owner);
+        const groupKey = getCanonicalCollectorKey(c.owner);
+        if (!holdersMap[groupKey]) {
+          holdersMap[groupKey] = {
+            profile: profile || null,
+            cards: [],
+            ownerName: profile?.username || profile?.name || c.owner,
+            rawOwners: new Set()
+          };
         }
+        holdersMap[groupKey].cards.push(c);
+        holdersMap[groupKey].rawOwners.add(c.owner);
+        if (!holdersMap[groupKey].profile && profile) holdersMap[groupKey].profile = profile;
+        if (profile) holdersMap[groupKey].ownerName = profile.username || profile.name || c.owner;
       });
 
       const entries = Object.entries(holdersMap);
@@ -8029,27 +8167,29 @@
       const statCount = document.getElementById('holders-stat-count');
       const statCards = document.getElementById('holders-stat-cards');
       if (statCount) statCount.innerText = entries.length;
-      if (statCards) statCards.innerText = entries.reduce((sum, [, cards]) => sum + cards.length, 0);
+      if (statCards) statCards.innerText = entries.reduce((sum, [, holder]) => sum + holder.cards.length, 0);
 
       if (entries.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">${currentLanguage === 'ID' ? 'Belum ada kolektor sekunder eksternal terdaftar. Semua stok masih di rumah utama.' : 'No external secondary holders registered yet. All stock with primary house.'}</div>`;
         return;
       }
 
-      // Show the most active collectors first.
-      entries.sort((a, b) => b[1].length - a[1].length);
+      entries.sort((a, b) => b[1].cards.length - a[1].cards.length);
 
-      grid.innerHTML = entries.map(([ownerName, cards]) => {
+      grid.innerHTML = entries.map(([groupKey, holder]) => {
+        const cards = holder.cards;
+        const ownerName = holder.ownerName;
         const serialsList = cards.map(c => `<span class="inline-block bg-slate-950 border border-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-400">${c.serial}</span>`).join('');
-        const avatarUrl = getCollectorAvatar(ownerName);
-        const isAdmin = isUserAdmin(ownerName);
-        const displayName = getCollectorDisplayName(ownerName);
+        const avatarUrl = holder.profile?.avatarUrl || getCollectorAvatar(ownerName);
+        const isAdmin = isUserAdmin(ownerName) || !!holder.profile?.isAdmin;
+        const displayName = holder.profile?.name || getCollectorDisplayName(ownerName);
         const cardsHeldLabel = currentLanguage === 'ID' ? `${cards.length} kartu dimiliki` : `${cards.length} cards held`;
         const cardsOwnedLabel = currentLanguage === 'ID' ? 'Kartu Dimiliki' : 'Cards Owned';
         const serialsHeldLabel = currentLanguage === 'ID' ? 'Serial yang Dimiliki' : 'Serials Held';
         const viewVaultLabel = currentLanguage === 'ID' ? 'Lihat Brankas' : 'View Vault';
         const chatCollectorLabel = currentLanguage === 'ID' ? 'Chat Kolektor' : 'Chat Collector';
         const collectorInquiryContext = currentLanguage === 'ID' ? 'Pertanyaan Kolektor' : 'Collector Inquiry';
+        const safeOwner = String(ownerName).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
         return `
           <div class="premium-panel rounded-3xl p-5 flex flex-col gap-4 border border-slate-800/60 hover:border-teal-500/40 transition-all">
@@ -8065,7 +8205,7 @@
                 </div>
               </div>
               ${currentUser && currentUser.isAdmin ? `
-              <button onclick="openAdminEditCollectorModal('${ownerName}')" title="Admin: Edit collector profile" class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 transition-all">
+              <button onclick="openAdminEditCollectorModal('${safeOwner}')" title="Admin: Edit collector profile" class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 transition-all">
                 <i class="fa-solid fa-user-pen text-[11px]"></i>
               </button>` : ''}
             </div>
@@ -8081,10 +8221,10 @@
             </div>
 
             <div class="flex gap-2 pt-1 mt-auto">
-              <button onclick="openHolderVaultModal('${ownerName}')" class="flex-1 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] rounded-xl border border-amber-500/30 transition-all inline-flex items-center justify-center gap-1.5">
+              <button onclick="openHolderVaultModal('${safeOwner}')" class="flex-1 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] rounded-xl border border-amber-500/30 transition-all inline-flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-vault"></i> ${viewVaultLabel}
               </button>
-              <button onclick="openDirectChat('${ownerName}', '${collectorInquiryContext}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center justify-center gap-1.5">
+              <button onclick="openDirectChat('${safeOwner}', '${collectorInquiryContext}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-comments"></i> ${chatCollectorLabel}
               </button>
             </div>
