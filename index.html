@@ -363,7 +363,7 @@
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
       <!-- Brand Logo -->
-      <div class="flex items-center gap-3 cursor-pointer shrink-0" onclick="switchTab('catalog')">
+      <div class="flex items-center gap-3 cursor-pointer shrink-0" onclick="switchTab('home')">
         <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-indigo-500/30 p-1 flex items-center justify-center shadow-lg shadow-indigo-500/10">
           <svg viewBox="0 0 100 100" class="w-full h-full"><use href="#eugene-logo-mark"/></svg>
         </div>
@@ -378,11 +378,11 @@
 
       <!-- Navigation Tabs & External Pages Navigation -->
       <nav class="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
-        <button id="nav-home" onclick="switchTab('home')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+        <button id="nav-home" onclick="switchTab('home')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-house text-emerald-400"></i> <span data-i18n="navHome">Home</span>
           <span id="home-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
         </button>
-        <button id="nav-catalog" onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+        <button id="nav-catalog" onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="navCollection">Collection</span>
         </button>
         <button id="nav-trade" onclick="switchTab('trade')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
@@ -542,7 +542,7 @@
 
     <!-- CATALOG VIEW -->
     <!-- HOME VIEW: COMMUNITY FEED + ACTIVE/OFFLINE MEMBERS (DISCORD-STYLE) -->
-    <section id="view-home" class="hidden space-y-6">
+    <section id="view-home" class="space-y-6">
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-house text-emerald-400 mr-2"></i> <span data-i18n="homeTitle">Community Home</span></h2>
@@ -604,7 +604,7 @@
       </div>
     </section>
 
-    <section id="view-catalog" class="space-y-6">
+    <section id="view-catalog" class="hidden space-y-6">
       <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-amber-950/40 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div class="flex items-center gap-4">
@@ -1575,6 +1575,30 @@
         <div>
           <label class="block font-bold text-slate-400 mb-1" data-i18n="bioLabel">Collector Tagline / Bio</label>
           <textarea id="complete-profile-bio-input" rows="2" placeholder="e.g. Genesis Card Enthusiast" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 focus:outline-none resize-y" data-i18n-placeholder="bioPlaceholder"></textarea>
+        </div>
+
+        <!-- SOCIAL MEDIA & WEBSITE (OPTIONAL) - captured up front so Holders can
+             start promoting their socials/site on their Vault right away,
+             instead of only discovering these fields later in Profile Settings. -->
+        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+          <label class="block font-bold text-emerald-400 uppercase text-[10px]"><i class="fa-solid fa-share-nodes mr-1"></i> <span data-i18n="socialsTitle">Social Media & Links (Optional)</span></label>
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-instagram text-rose-400 mr-1"></i> <span data-i18n="igLabel">Instagram Handle / URL</span></label>
+            <input type="text" id="complete-profile-ig-input" placeholder="e.g. @eugene_cards or https://instagram.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-x-twitter text-slate-300 mr-1"></i> <span data-i18n="twitterLabel">X/Twitter Handle / URL</span></label>
+            <input type="text" id="complete-profile-twitter-input" placeholder="e.g. @eugene_cards or https://twitter.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-brands fa-tiktok text-cyan-400 mr-1"></i> <span data-i18n="tiktokLabel">TikTok Handle / URL</span></label>
+            <input type="text" id="complete-profile-tiktok-input" placeholder="e.g. @eugene_cards or https://tiktok.com/@..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-0.5"><i class="fa-solid fa-globe text-indigo-400 mr-1"></i> <span data-i18n="webLabel">Website URL (Clickable)</span></label>
+            <input type="text" id="complete-profile-web-input" placeholder="e.g. https://eugenecards.com" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-emerald-500">
+          </div>
+          <p class="text-[9px] text-slate-500">Holders: these links show up on your public Vault so other collectors can find and follow you.</p>
         </div>
 
         <button onclick="submitCompleteProfile()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 shadow-lg transition-all" data-i18n="saveContinueBtn">
@@ -2940,7 +2964,15 @@
         socialIg: u.instagram || u.socialIg || '',
         socialTwitter: u.twitter || u.socialTwitter || '',
         socialTiktok: u.tiktok || u.socialTiktok || '',
-        socialWeb: u.website || u.socialWeb || ''
+        socialWeb: u.website || u.socialWeb || '',
+        // BUGFIX: this field was previously dropped here, so any collector
+        // whose data only lived in the legacy "users" doc (no "profiles" doc
+        // yet) had `profileCompleted` silently resolve to undefined on every
+        // single login — re-triggering the "Complete Your Profile" popup
+        // forever, even for collectors who already had a working profile.
+        // Legacy "users" docs predate the popup entirely, so unless it
+        // explicitly says otherwise, treat them as already completed.
+        profileCompleted: u.profileCompleted !== undefined ? !!u.profileCompleted : true
       };
     }
 
@@ -2953,7 +2985,8 @@
         bio: p.bio || '',
         instagram: p.socialIg || '',
         tiktok: p.socialTiktok || '',
-        website: p.socialWeb || ''
+        website: p.socialWeb || '',
+        profileCompleted: !!p.profileCompleted
       };
     }
 
@@ -5108,6 +5141,7 @@
       renderAuthHeader();
       startAuctionTimer();
       setupCardTiltEffect();
+      switchTab('home'); // Home is the main landing page on first open
       showOnboardingIfFirstVisit();
 
       auth.onAuthStateChanged((user) => {
@@ -5308,6 +5342,10 @@
       document.getElementById('complete-profile-name-input').value = currentUser.name || '';
       document.getElementById('complete-profile-username-input').value = currentUser.username || '';
       document.getElementById('complete-profile-bio-input').value = currentUser.bio || '';
+      document.getElementById('complete-profile-ig-input').value = currentUser.socialIg || '';
+      document.getElementById('complete-profile-twitter-input').value = currentUser.socialTwitter || '';
+      document.getElementById('complete-profile-tiktok-input').value = currentUser.socialTiktok || '';
+      document.getElementById('complete-profile-web-input').value = currentUser.socialWeb || '';
       document.getElementById('complete-profile-avatar-preview').src = currentUser.avatarUrl || '';
       document.getElementById('complete-profile-modal').classList.remove('hidden');
     }
@@ -5322,7 +5360,16 @@
       if (!currentUser) return;
       currentUser.profileCompleted = true;
       try {
-        await db.collection('profiles').doc(currentUser.email).set({ profileCompleted: true }, { merge: true });
+        // Write the full current snapshot (not just the flag) so a collector
+        // who doesn't have a "profiles" doc yet gets one created with their
+        // actual name/username/avatar/bio/socials, instead of a doc that
+        // only contains `profileCompleted: true` and nothing else.
+        await db.collection('profiles').doc(currentUser.email).set({
+          name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl,
+          bio: currentUser.bio, isPlusMember: currentUser.isPlusMember, socialIg: currentUser.socialIg,
+          socialTwitter: currentUser.socialTwitter, socialTiktok: currentUser.socialTiktok,
+          socialWeb: currentUser.socialWeb, uid: currentUser.uid, profileCompleted: true
+        }, { merge: true });
         const cached = JSON.parse(localStorage.getItem(`profile_${currentUser.email}`) || '{}');
         cached.profileCompleted = true;
         localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(cached));
@@ -5343,6 +5390,10 @@
       const rawUsername = document.getElementById('complete-profile-username-input').value.trim();
       const newUsername = rawUsername ? rawUsername.replace(/^@/, '').toLowerCase().replace(/\s+/g, '_') : (currentUser.username || newName.toLowerCase().replace(/\s+/g, '_'));
       const newBio = document.getElementById('complete-profile-bio-input').value.trim();
+      const newSocialIg = document.getElementById('complete-profile-ig-input').value.trim();
+      const newSocialTwitter = document.getElementById('complete-profile-twitter-input').value.trim();
+      const newSocialTiktok = document.getElementById('complete-profile-tiktok-input').value.trim();
+      const newSocialWeb = document.getElementById('complete-profile-web-input').value.trim();
 
       await loadCollectorProfiles();
       let isTaken = false;
@@ -5357,12 +5408,16 @@
       currentUser.name = newName;
       currentUser.username = newUsername;
       currentUser.bio = newBio;
+      currentUser.socialIg = newSocialIg;
+      currentUser.socialTwitter = newSocialTwitter;
+      currentUser.socialTiktok = newSocialTiktok;
+      currentUser.socialWeb = newSocialWeb;
       currentUser.profileCompleted = true;
 
       const profilePayload = {
         name: newName, username: newUsername, avatarUrl: currentUser.avatarUrl, bio: newBio,
-        isPlusMember: currentUser.isPlusMember, socialIg: currentUser.socialIg, socialTwitter: currentUser.socialTwitter,
-        socialTiktok: currentUser.socialTiktok, socialWeb: currentUser.socialWeb, uid: currentUser.uid, profileCompleted: true
+        isPlusMember: currentUser.isPlusMember, socialIg: newSocialIg, socialTwitter: newSocialTwitter,
+        socialTiktok: newSocialTiktok, socialWeb: newSocialWeb, uid: currentUser.uid, profileCompleted: true
       };
       localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${currentUser.email}`, profilePayload, 30);
@@ -5388,7 +5443,7 @@
       await auth.signOut();
       currentUser = null;
       renderAuthHeader();
-      switchTab('catalog');
+      switchTab('home');
       await loadAppState();
       showToast('Logged out.');
     }
