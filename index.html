@@ -1580,6 +1580,7 @@
   <!-- COMPLETE YOUR PROFILE POPUP (shown once, right after a collector's first Google login) -->
   <div id="complete-profile-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9997] hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button onclick="skipCompleteProfile()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
       <div class="text-center space-y-1">
         <div class="relative w-20 h-20 mx-auto mb-2">
           <img id="complete-profile-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/50 shadow-lg bg-slate-950">
@@ -3066,7 +3067,23 @@
       }
     }
 
+    // BUGFIX: this used to swallow a failed "profiles" fetch and leave
+    // globalRawProfilesData looking exactly like "this collector has no
+    // profile yet" (an empty object, same as a real first-time signup).
+    // On a brand-new device with no localStorage/cookie cache to fall back
+    // on, handleUserSession() would then compute fresh default name/avatar/
+    // bio values AND persist them back to Firestore with merge:true — which
+    // silently overwrote the collector's real profile, since the payload
+    // includes exactly those fields. That's what made a profile "change
+    // completely" on another device: a transient read failure (e.g. the
+    // Firestore auth token not being ready yet on a fresh sign-in) got
+    // permanently written over the real data. profilesFetchFailed lets
+    // callers tell "genuinely no profile" apart from "couldn't check", so
+    // they can skip writing anything back in the second case.
+    let profilesFetchFailed = false;
+
     async function loadCollectorProfiles() {
+      profilesFetchFailed = false;
       try {
         const snapshot = await db.collection("profiles").get();
         globalRawProfilesData = {};
@@ -3075,6 +3092,7 @@
         });
       } catch (e) {
         console.warn('Error loading collector profiles:', e);
+        profilesFetchFailed = true;
       }
       try {
         const usersSnapshot = await db.collection("users").get();
@@ -5354,7 +5372,8 @@
       const email = user.email ? user.email.toLowerCase() : '';
 
       await loadCollectorProfiles();
-      const savedCustomProfile = globalRawProfilesData[email] || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
+      const firestoreProfile = globalRawProfilesData[email];
+      const savedCustomProfile = firestoreProfile || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
       let customData = {};
       if (savedCustomProfile) {
         try { customData = typeof savedCustomProfile === 'object' ? savedCustomProfile : JSON.parse(savedCustomProfile); } catch (e) {}
@@ -5417,14 +5436,37 @@
       // service, persona switch, or admin edit) can find its way back to the
       // matching "users/{uid}" doc to keep both collections in sync.
       const profilePayload = { name, username, avatarUrl, bio, isPlusMember, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid, profileCompleted };
+      // The local cache is harmless to refresh unconditionally — it only
+      // ever affects this device.
       localStorage.setItem(`profile_${email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${email}`, profilePayload, 30);
-      try {
-        await db.collection("profiles").doc(email).set(profilePayload, { merge: true });
-      } catch (e) {
-        console.warn('Error saving profile on login (username/name may not persist):', e);
+
+      // BUGFIX: this used to write profilePayload back to Firestore on
+      // *every* login, unconditionally. If the "profiles" fetch above had
+      // failed or simply hadn't found this email yet (e.g. on a fresh
+      // device with no local cache to fall back on), `customData` resolved
+      // to {} and every field above silently fell back to a generated
+      // default (email-prefix name, dicebear avatar, "Standard Collector"
+      // bio) — and this write-back would then persist those defaults over
+      // the collector's real profile, corrupting it for every device going
+      // forward. Only write here when it's actually safe to:
+      //   - the "profiles" fetch genuinely succeeded (so an empty result
+      //     really does mean "no profile exists yet", not "couldn't check"), AND
+      //   - either this is a real first-time profile (nothing existed for
+      //     this email) or we're just patching a missing/changed uid onto
+      //     an already-matching doc.
+      // Routine logins where a profile already exists just use the loaded
+      // data as-is and don't write anything back.
+      const isNewProfile = !firestoreProfile;
+      const needsUidPatch = firestoreProfile && firestoreProfile.uid !== user.uid;
+      if (!profilesFetchFailed && (isNewProfile || needsUidPatch)) {
+        try {
+          await db.collection("profiles").doc(email).set(profilePayload, { merge: true });
+        } catch (e) {
+          console.warn('Error saving profile on login (username/name may not persist):', e);
+        }
+        await syncProfileToUsersDoc(user.uid, profilePayload);
       }
-      await syncProfileToUsersDoc(user.uid, profilePayload);
 
       startUserHeartbeat();
       closeAuthModal();
