@@ -378,6 +378,10 @@
 
       <!-- Navigation Tabs & External Pages Navigation -->
       <nav class="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
+        <button id="nav-home" onclick="switchTab('home')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-house text-emerald-400"></i> <span data-i18n="navHome">Home</span>
+          <span id="home-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
+        </button>
         <button id="nav-catalog" onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="navCollection">Collection</span>
         </button>
@@ -537,6 +541,69 @@
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-8">
 
     <!-- CATALOG VIEW -->
+    <!-- HOME VIEW: COMMUNITY FEED + ACTIVE/OFFLINE MEMBERS (DISCORD-STYLE) -->
+    <section id="view-home" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-white uppercase tracking-wide"><i class="fa-solid fa-house text-emerald-400 mr-2"></i> <span data-i18n="homeTitle">Community Home</span></h2>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="homeSubtitle">See who's online and share updates with the Eugene Card community.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <!-- FEED COLUMN -->
+        <div class="lg:col-span-2 space-y-4">
+          <!-- COMPOSER -->
+          <div id="home-composer-card" class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+            <div class="flex items-start gap-3">
+              <img id="home-composer-avatar" src="" class="w-10 h-10 rounded-full object-cover border border-slate-700 shrink-0 hidden">
+              <div class="flex-1 space-y-2">
+                <textarea id="home-post-text-input" rows="2" placeholder="What's on your mind, collector?" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none" data-i18n-placeholder="whatsOnMindPlaceholder"></textarea>
+                <div id="home-post-image-preview-wrap" class="hidden relative w-fit">
+                  <img id="home-post-image-preview" src="" class="max-h-40 rounded-xl border border-slate-800">
+                  <button onclick="removePostImageDraft()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-image"></i> <span data-i18n="attachImageBtn">Attach Image</span>
+                    <input type="file" accept="image/*" class="hidden" onchange="attachPostImage(event)">
+                  </label>
+                  <button onclick="submitNewPost()" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all" data-i18n="postBtn">Post</button>
+                </div>
+              </div>
+            </div>
+            <p id="home-composer-login-hint" class="hidden text-[11px] text-slate-500 text-center py-1" data-i18n="loginToPostHint">Log in to share a post with the community.</p>
+          </div>
+
+          <!-- FEED LIST -->
+          <div id="home-posts-feed" class="space-y-4">
+            <p class="text-xs text-slate-500 text-center py-10" data-i18n="loadingFeed">Loading feed...</p>
+          </div>
+        </div>
+
+        <!-- MEMBERS SIDEBAR -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 lg:sticky lg:top-24">
+          <div>
+            <h3 class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span data-i18n="activeNowTitle">Active Now</span> — <span id="home-active-count">0</span>
+            </h3>
+            <div id="home-active-list" class="space-y-1.5">
+              <p class="text-[11px] text-slate-500" data-i18n="noActiveUsers">No one online right now.</p>
+            </div>
+          </div>
+          <div class="h-px bg-slate-800"></div>
+          <div>
+            <h3 class="text-xs font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+              <span data-i18n="offlineTitle">Offline</span> — <span id="home-offline-count">0</span>
+            </h3>
+            <div id="home-offline-list" class="space-y-1.5 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="view-catalog" class="space-y-6">
       <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-amber-950/40 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
@@ -1479,6 +1546,47 @@
     </div>
   </div>
 
+  <!-- COMPLETE YOUR PROFILE POPUP (shown once, right after a collector's first Google login) -->
+  <div id="complete-profile-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9997] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="text-center space-y-1">
+        <div class="relative w-20 h-20 mx-auto mb-2">
+          <img id="complete-profile-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-500/50 shadow-lg bg-slate-950">
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider" data-i18n="welcomeBadge">Welcome!</span>
+        <h3 class="text-lg font-black text-white" data-i18n="completeProfileTitle">Complete Your Profile</h3>
+        <p class="text-xs text-slate-400" data-i18n="completeProfileSub">Just a couple of details so other collectors can recognize you on the marketplace.</p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-400 mb-1" data-i18n="displayNameLabel">Display Name</label>
+          <input type="text" id="complete-profile-name-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-400 mb-1" data-i18n="usernameLabel">Username (@handle - Unique)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">@</span>
+            <input type="text" id="complete-profile-username-input" placeholder="e.g. eugenecards" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-400 mb-1" data-i18n="bioLabel">Collector Tagline / Bio</label>
+          <textarea id="complete-profile-bio-input" rows="2" placeholder="e.g. Genesis Card Enthusiast" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 focus:outline-none resize-y" data-i18n-placeholder="bioPlaceholder"></textarea>
+        </div>
+
+        <button onclick="submitCompleteProfile()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 shadow-lg transition-all" data-i18n="saveContinueBtn">
+          Save &amp; Continue
+        </button>
+        <button onclick="skipCompleteProfile()" class="w-full py-2 text-slate-500 hover:text-slate-300 font-bold text-[11px] transition-all" data-i18n="maybeLaterBtn">
+          Maybe later
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADMIN: EDIT COLLECTOR PROFILE MODAL -->
   <div id="admin-edit-collector-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -2009,6 +2117,17 @@
     const CARDS_PER_BATCH = 10;
     let scrollObserver = null;
 
+    // ===== HOME PAGE: ACTIVE/OFFLINE MEMBERS + COMMUNITY FEED STATE =====
+    let userPresenceMap = {};        // { uid: { name, username, avatarUrl, lastSeen } }
+    const PRESENCE_ACTIVE_WINDOW_MS = 2 * 60 * 1000; // considered "active" if a heartbeat landed in the last 2 minutes
+    const USER_HEARTBEAT_MS = 25 * 1000;
+    let userHeartbeatInterval = null;
+    let postComposerImageDataUrl = null;
+    let postsList = [];
+    let openCommentsPostId = null;
+    let postCommentsUnsubscribe = null;
+    let postCommentsCache = {};      // { postId: [comments] }
+
     // Comprehensive i18n Dictionary
     const i18nDict = {
       EN: {
@@ -2027,6 +2146,33 @@
         navWishlist: "Wishlist",
         navInventory: "Inventory",
         navAdmin: "Admin Hub",
+        navHome: "Home",
+        homeTitle: "Community Home",
+        homeSubtitle: "See who's online and share updates with the Eugene Card community.",
+        whatsOnMindPlaceholder: "What's on your mind, collector?",
+        attachImageBtn: "Attach Image",
+        postBtn: "Post",
+        loginToPostHint: "Log in to share a post with the community.",
+        loadingFeed: "Loading feed...",
+        noPostsYet: "No posts yet. Be the first to share something!",
+        activeNowTitle: "Active Now",
+        offlineTitle: "Offline",
+        noActiveUsers: "No one online right now.",
+        noOfflineUsers: "No other members yet.",
+        likeBtnLabel: "Like",
+        commentBtnLabel: "Comment",
+        writeCommentPlaceholder: "Write a comment...",
+        sendCommentBtn: "Send",
+        noCommentsYet: "No comments yet.",
+        deletePostConfirm: "Delete this post? This can't be undone.",
+        postDeleted: "Post deleted.",
+        postPublished: "Post published!",
+        emptyPostWarning: "Write something or attach an image before posting.",
+        welcomeBadge: "Welcome!",
+        completeProfileTitle: "Complete Your Profile",
+        completeProfileSub: "Just a couple of details so other collectors can recognize you on the marketplace.",
+        saveContinueBtn: "Save & Continue",
+        maybeLaterBtn: "Maybe later",
         notifHeader: "Cookie & Activity Logs",
         clearAll: "Clear All",
         noNotifications: "No recent notifications.",
@@ -2295,6 +2441,33 @@
         navWishlist: "Keinginan",
         navInventory: "Inventaris",
         navAdmin: "Admin Hub",
+        navHome: "Beranda",
+        homeTitle: "Beranda Komunitas",
+        homeSubtitle: "Lihat siapa yang sedang online dan bagikan pembaruan dengan komunitas Eugene Card.",
+        whatsOnMindPlaceholder: "Apa yang sedang Anda pikirkan, kolektor?",
+        attachImageBtn: "Lampirkan Gambar",
+        postBtn: "Kirim",
+        loginToPostHint: "Masuk untuk membagikan postingan dengan komunitas.",
+        loadingFeed: "Memuat linimasa...",
+        noPostsYet: "Belum ada postingan. Jadilah yang pertama berbagi sesuatu!",
+        activeNowTitle: "Aktif Sekarang",
+        offlineTitle: "Offline",
+        noActiveUsers: "Belum ada yang online sekarang.",
+        noOfflineUsers: "Belum ada anggota lain.",
+        likeBtnLabel: "Suka",
+        commentBtnLabel: "Komentar",
+        writeCommentPlaceholder: "Tulis komentar...",
+        sendCommentBtn: "Kirim",
+        noCommentsYet: "Belum ada komentar.",
+        deletePostConfirm: "Hapus postingan ini? Tindakan ini tidak dapat dibatalkan.",
+        postDeleted: "Postingan dihapus.",
+        postPublished: "Postingan berhasil dikirim!",
+        emptyPostWarning: "Tulis sesuatu atau lampirkan gambar sebelum mengirim.",
+        welcomeBadge: "Selamat Datang!",
+        completeProfileTitle: "Lengkapi Profil Anda",
+        completeProfileSub: "Beberapa detail singkat agar kolektor lain dapat mengenali Anda di marketplace.",
+        saveContinueBtn: "Simpan & Lanjutkan",
+        maybeLaterBtn: "Nanti saja",
         notifHeader: "Cookie & Catatan Aktivitas",
         clearAll: "Hapus Semua",
         noNotifications: "Tidak ada notifikasi terbaru.",
@@ -2556,6 +2729,7 @@
       applyTranslations();
       if (!document.getElementById('view-catalog').classList.contains('hidden')) renderCardGrid();
       if (!document.getElementById('view-wishlist').classList.contains('hidden')) renderWishlistPage();
+      if (!document.getElementById('view-home').classList.contains('hidden')) { renderHomeMembersList(); renderPostsFeed(); }
       showToast(currentLanguage === 'ID' ? 'Bahasa diubah ke Bahasa Indonesia' : 'Language switched to English');
     }
 
@@ -3782,6 +3956,8 @@
       });
 
       setupViewTrackingSync();
+      setupUserPresenceSync();
+      setupPostsFeedSync();
     }
 
     function updateAllViews() {
@@ -4165,6 +4341,370 @@
       }, HEARTBEAT_MS);
 
       window.addEventListener('beforeunload', () => { clearPresence(); });
+    }
+
+    // ===== HOME PAGE: ACTIVE/OFFLINE MEMBERS (DISCORD-STYLE PRESENCE) =====
+    // Reuses the same "write a lastSeen heartbeat, age it out client-side"
+    // pattern as the card-watching presence above, but scoped to the whole
+    // session (not a specific card) so the Home tab can show who is
+    // currently using the app at all.
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function updateUserPresence() {
+      if (!currentUser || !currentUser.uid) return;
+      try {
+        db.collection('userPresence').doc(currentUser.uid).set({
+          name: currentUser.name || '',
+          username: currentUser.username || '',
+          avatarUrl: currentUser.avatarUrl || '',
+          email: currentUser.email || '',
+          lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (e) {
+        console.warn('User presence heartbeat error:', e);
+      }
+    }
+
+    function startUserHeartbeat() {
+      updateUserPresence();
+      if (userHeartbeatInterval) clearInterval(userHeartbeatInterval);
+      userHeartbeatInterval = setInterval(updateUserPresence, USER_HEARTBEAT_MS);
+    }
+
+    function stopUserHeartbeat() {
+      if (userHeartbeatInterval) { clearInterval(userHeartbeatInterval); userHeartbeatInterval = null; }
+    }
+
+    function setupUserPresenceSync() {
+      db.collection('userPresence').onSnapshot(snapshot => {
+        const map = {};
+        snapshot.forEach(doc => { map[doc.id] = doc.data(); });
+        userPresenceMap = map;
+        renderHomeMembersList();
+      }, e => console.warn('userPresence listener error:', e));
+
+      // Presence ages out even without a new snapshot, so re-derive periodically.
+      setInterval(renderHomeMembersList, 30000);
+    }
+
+    function renderHomeMembersList() {
+      const activeList = document.getElementById('home-active-list');
+      const offlineList = document.getElementById('home-offline-list');
+      const activeCountEl = document.getElementById('home-active-count');
+      const offlineCountEl = document.getElementById('home-offline-count');
+      const navBadge = document.getElementById('home-active-count-badge');
+      if (!activeList || !offlineList) return;
+
+      const dict = i18nDict[currentLanguage];
+      const now = Date.now();
+
+      // Build a roster keyed by uid from known collector profiles (so
+      // members who are offline still show up), then layer live presence
+      // heartbeats on top to decide who is active right now.
+      const roster = {};
+      Object.values(globalCollectorProfiles || {}).forEach(p => {
+        if (!p || !p.uid) return;
+        roster[p.uid] = { name: p.name || 'Collector', username: p.username || '', avatarUrl: p.avatarUrl || '' };
+      });
+      if (currentUser && currentUser.uid) {
+        roster[currentUser.uid] = { name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl };
+      }
+
+      const active = [];
+      const offline = [];
+
+      Object.keys(roster).forEach(uid => {
+        const presence = userPresenceMap[uid];
+        const person = { uid, ...roster[uid] };
+        if (presence && presence.avatarUrl) person.avatarUrl = presence.avatarUrl;
+        if (presence && presence.name) person.name = presence.name;
+
+        let isActive = false;
+        if (presence && presence.lastSeen) {
+          const seenAt = presence.lastSeen.toMillis ? presence.lastSeen.toMillis() : new Date(presence.lastSeen).getTime();
+          isActive = !isNaN(seenAt) && (now - seenAt) <= PRESENCE_ACTIVE_WINDOW_MS;
+        }
+        if (isActive) active.push(person); else offline.push(person);
+      });
+
+      // Also surface any presence heartbeat for a uid we don't have a
+      // collector profile for yet (edge case: brand-new account before its
+      // profile doc synced).
+      Object.keys(userPresenceMap).forEach(uid => {
+        if (roster[uid]) return;
+        const presence = userPresenceMap[uid];
+        if (!presence) return;
+        const seenAt = presence.lastSeen && presence.lastSeen.toMillis ? presence.lastSeen.toMillis() : (presence.lastSeen ? new Date(presence.lastSeen).getTime() : NaN);
+        if (!isNaN(seenAt) && (now - seenAt) <= PRESENCE_ACTIVE_WINDOW_MS) {
+          active.push({ uid, name: presence.name || 'Collector', username: presence.username || '', avatarUrl: presence.avatarUrl || '' });
+        }
+      });
+
+      active.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      offline.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+      const rowHtml = (p, dotClass) => `
+        <div class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-800/60 transition-colors">
+          <div class="relative shrink-0">
+            <img src="${escapeHtml(p.avatarUrl) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(p.uid)}`}" class="w-8 h-8 rounded-full object-cover border border-slate-700">
+            <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${dotClass} border-2 border-slate-900"></span>
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-white truncate">${escapeHtml(p.name)}</p>
+            ${p.username ? `<p class="text-[10px] text-slate-500 truncate">@${escapeHtml(p.username)}</p>` : ''}
+          </div>
+        </div>
+      `;
+
+      activeList.innerHTML = active.length
+        ? active.map(p => rowHtml(p, 'bg-emerald-400')).join('')
+        : `<p class="text-[11px] text-slate-500" data-i18n="noActiveUsers">${dict.noActiveUsers}</p>`;
+
+      offlineList.innerHTML = offline.length
+        ? offline.map(p => rowHtml(p, 'bg-slate-600')).join('')
+        : `<p class="text-[11px] text-slate-500" data-i18n="noOfflineUsers">${dict.noOfflineUsers}</p>`;
+
+      if (activeCountEl) activeCountEl.innerText = active.length;
+      if (offlineCountEl) offlineCountEl.innerText = offline.length;
+      if (navBadge) {
+        if (active.length > 0) { navBadge.innerText = active.length; navBadge.classList.remove('hidden'); }
+        else navBadge.classList.add('hidden');
+      }
+    }
+
+    // ===== HOME PAGE: COMMUNITY FEED (POSTS, LIKES, COMMENTS) =====
+    function refreshHomeComposerState() {
+      const avatar = document.getElementById('home-composer-avatar');
+      const hint = document.getElementById('home-composer-login-hint');
+      const textInput = document.getElementById('home-post-text-input');
+      if (!avatar || !hint || !textInput) return;
+
+      if (currentUser) {
+        avatar.src = currentUser.avatarUrl || '';
+        avatar.classList.remove('hidden');
+        hint.classList.add('hidden');
+        textInput.disabled = false;
+      } else {
+        avatar.classList.add('hidden');
+        hint.classList.remove('hidden');
+        textInput.disabled = true;
+      }
+    }
+
+    async function attachPostImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 720, 0.75);
+        postComposerImageDataUrl = dataUrl;
+        document.getElementById('home-post-image-preview').src = dataUrl;
+        document.getElementById('home-post-image-preview-wrap').classList.remove('hidden');
+      } catch (e) {
+        showToast('Could not process that image: ' + e.message);
+      }
+    }
+
+    function removePostImageDraft() {
+      postComposerImageDataUrl = null;
+      document.getElementById('home-post-image-preview').src = '';
+      document.getElementById('home-post-image-preview-wrap').classList.add('hidden');
+    }
+
+    async function submitNewPost() {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      const dict = i18nDict[currentLanguage];
+      const textInput = document.getElementById('home-post-text-input');
+      const text = textInput.value.trim();
+      if (!text && !postComposerImageDataUrl) return showToast(dict.emptyPostWarning);
+
+      const postPayload = {
+        authorUid: currentUser.uid,
+        authorName: currentUser.name || '',
+        authorUsername: currentUser.username || '',
+        authorAvatar: currentUser.avatarUrl || '',
+        text,
+        imageUrl: postComposerImageDataUrl || null,
+        likes: [],
+        commentCount: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection('posts').add(postPayload);
+        textInput.value = '';
+        removePostImageDraft();
+        showToast(dict.postPublished);
+      } catch (e) {
+        showToast('Could not publish post: ' + e.message);
+      }
+    }
+
+    function setupPostsFeedSync() {
+      db.collection('posts').orderBy('createdAt', 'desc').limit(50).onSnapshot(snapshot => {
+        postsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderPostsFeed();
+      }, e => console.warn('posts listener error:', e));
+    }
+
+    function renderPostsFeed() {
+      const container = document.getElementById('home-posts-feed');
+      if (!container) return;
+      const dict = i18nDict[currentLanguage];
+
+      if (!postsList.length) {
+        container.innerHTML = `<div class="empty-state"><i class="fa-regular fa-comments text-3xl text-slate-600 mb-2"></i><p class="text-xs text-slate-500" data-i18n="noPostsYet">${dict.noPostsYet}</p></div>`;
+        return;
+      }
+
+      container.innerHTML = postsList.map(post => {
+        const likes = post.likes || [];
+        const likedByMe = !!(currentUser && likes.includes(currentUser.uid));
+        const canDelete = currentUser && (currentUser.uid === post.authorUid || currentUser.isAdmin);
+        const createdAt = post.createdAt && post.createdAt.toDate ? post.createdAt.toDate() : post.createdAt;
+        const commentsOpen = openCommentsPostId === post.id;
+
+        return `
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3" data-post-id="${post.id}">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <img src="${escapeHtml(post.authorAvatar) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(post.authorUid || 'x')}`}" class="w-9 h-9 rounded-full object-cover border border-slate-700">
+              <div>
+                <p class="text-xs font-black text-white">${escapeHtml(post.authorName || 'Collector')}</p>
+                <p class="text-[10px] text-slate-500">${post.authorUsername ? '@' + escapeHtml(post.authorUsername) + ' • ' : ''}${escapeHtml(timeAgoShort(createdAt))}</p>
+              </div>
+            </div>
+            ${canDelete ? `<button onclick="deletePost('${post.id}')" class="w-7 h-7 rounded-xl bg-slate-950 text-slate-500 hover:text-rose-400 flex items-center justify-center transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
+          </div>
+
+          ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
+          ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full max-h-96 object-cover rounded-2xl border border-slate-800">` : ''}
+
+          <div class="flex items-center gap-4 pt-1 border-t border-slate-800/80 mt-1">
+            <button onclick="toggleLikePost('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold ${likedByMe ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'} transition-colors pt-2">
+              <i class="fa-${likedByMe ? 'solid' : 'regular'} fa-heart"></i> ${likes.length} <span class="hidden sm:inline" data-i18n="likeBtnLabel">${dict.likeBtnLabel}</span>
+            </button>
+            <button onclick="toggleCommentsPanel('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-indigo-400 transition-colors pt-2">
+              <i class="fa-regular fa-comment"></i> ${post.commentCount || 0} <span class="hidden sm:inline" data-i18n="commentBtnLabel">${dict.commentBtnLabel}</span>
+            </button>
+          </div>
+
+          <div id="post-comments-${post.id}" class="${commentsOpen ? '' : 'hidden'} space-y-2 pt-2 border-t border-slate-800/80">
+            <div id="post-comments-list-${post.id}" class="space-y-2 max-h-56 overflow-y-auto"></div>
+            ${currentUser ? `
+            <div class="flex items-center gap-2">
+              <input type="text" id="post-comment-input-${post.id}" placeholder="${dict.writeCommentPlaceholder}" data-i18n-placeholder="writeCommentPlaceholder" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-white focus:outline-none focus:border-indigo-500" onkeydown="if(event.key==='Enter'){submitComment('${post.id}');}">
+              <button onclick="submitComment('${post.id}')" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-[10px] rounded-xl transition-all" data-i18n="sendCommentBtn">${dict.sendCommentBtn}</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      if (openCommentsPostId) renderCommentsList(openCommentsPostId);
+    }
+
+    async function toggleLikePost(postId) {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      const post = postsList.find(p => p.id === postId);
+      if (!post) return;
+      const likes = post.likes || [];
+      const alreadyLiked = likes.includes(currentUser.uid);
+      try {
+        await db.collection('posts').doc(postId).update({
+          likes: alreadyLiked
+            ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+            : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+      } catch (e) {
+        showToast('Could not update like: ' + e.message);
+      }
+    }
+
+    function toggleCommentsPanel(postId) {
+      const panel = document.getElementById(`post-comments-${postId}`);
+      if (!panel) return;
+
+      if (openCommentsPostId === postId) {
+        panel.classList.add('hidden');
+        openCommentsPostId = null;
+        if (postCommentsUnsubscribe) { postCommentsUnsubscribe(); postCommentsUnsubscribe = null; }
+        return;
+      }
+
+      // Close any previously open thread's live listener before opening a new one.
+      if (postCommentsUnsubscribe) { postCommentsUnsubscribe(); postCommentsUnsubscribe = null; }
+      const prevPanel = openCommentsPostId ? document.getElementById(`post-comments-${openCommentsPostId}`) : null;
+      if (prevPanel) prevPanel.classList.add('hidden');
+
+      openCommentsPostId = postId;
+      panel.classList.remove('hidden');
+
+      postCommentsUnsubscribe = db.collection('posts').doc(postId).collection('comments').orderBy('createdAt', 'asc')
+        .onSnapshot(snapshot => {
+          postCommentsCache[postId] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderCommentsList(postId);
+        }, e => console.warn('comments listener error:', e));
+    }
+
+    function renderCommentsList(postId) {
+      const list = document.getElementById(`post-comments-list-${postId}`);
+      if (!list) return;
+      const dict = i18nDict[currentLanguage];
+      const comments = postCommentsCache[postId] || [];
+
+      list.innerHTML = comments.length ? comments.map(c => {
+        const createdAt = c.createdAt && c.createdAt.toDate ? c.createdAt.toDate() : c.createdAt;
+        return `
+        <div class="flex items-start gap-2">
+          <img src="${escapeHtml(c.authorAvatar) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(c.authorUid || 'x')}`}" class="w-6 h-6 rounded-full object-cover border border-slate-700 shrink-0">
+          <div class="bg-slate-950 rounded-xl px-2.5 py-1.5 flex-1 min-w-0">
+            <p class="text-[10px] font-bold text-white">${escapeHtml(c.authorName || 'Collector')} <span class="text-slate-600 font-normal ml-1">${escapeHtml(timeAgoShort(createdAt))}</span></p>
+            <p class="text-[11px] text-slate-300 break-words">${escapeHtml(c.text)}</p>
+          </div>
+        </div>`;
+      }).join('') : `<p class="text-[10px] text-slate-500" data-i18n="noCommentsYet">${dict.noCommentsYet}</p>`;
+    }
+
+    async function submitComment(postId) {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      const input = document.getElementById(`post-comment-input-${postId}`);
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      try {
+        await db.collection('posts').doc(postId).collection('comments').add({
+          authorUid: currentUser.uid,
+          authorName: currentUser.name || '',
+          authorAvatar: currentUser.avatarUrl || '',
+          text,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('posts').doc(postId).update({
+          commentCount: firebase.firestore.FieldValue.increment(1)
+        });
+        input.value = '';
+      } catch (e) {
+        showToast('Could not post comment: ' + e.message);
+      }
+    }
+
+    async function deletePost(postId) {
+      const dict = i18nDict[currentLanguage];
+      if (!confirm(dict.deletePostConfirm)) return;
+      try {
+        await db.collection('posts').doc(postId).delete();
+        showToast(dict.postDeleted);
+      } catch (e) {
+        showToast('Could not delete post: ' + e.message);
+      }
     }
 
     function updateCardDetailStatsRow(cardId) {
@@ -4631,6 +5171,7 @@
         container.innerHTML = `<button onclick="openAuthModal()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all">Log In</button>`;
       }
       renderAuctionView();
+      refreshHomeComposerState();
     }
 
     function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
@@ -4717,13 +5258,18 @@
       const socialTwitter = customData.socialTwitter || '';
       const socialTiktok = customData.socialTiktok || '';
       const socialWeb = customData.socialWeb || '';
+      // A collector is only considered "onboarded" once they've been through
+      // the Complete Your Profile popup (or dismissed it) at least once —
+      // never re-derived from whether other fields happen to be filled in,
+      // so re-logins never re-trigger it unexpectedly.
+      const profileCompleted = !!customData.profileCompleted;
 
-      currentUser = { name, username, email, isAdmin, isPlusMember, avatarUrl, bio, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid };
+      currentUser = { name, username, email, isAdmin, isPlusMember, avatarUrl, bio, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid, profileCompleted };
 
       // uid is stored on the profile doc itself so any later edit path (self-
       // service, persona switch, or admin edit) can find its way back to the
       // matching "users/{uid}" doc to keep both collections in sync.
-      const profilePayload = { name, username, avatarUrl, bio, isPlusMember, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid };
+      const profilePayload = { name, username, avatarUrl, bio, isPlusMember, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid, profileCompleted };
       localStorage.setItem(`profile_${email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${email}`, profilePayload, 30);
       try {
@@ -4731,13 +5277,100 @@
       } catch (e) {}
       await syncProfileToUsersDoc(user.uid, profilePayload);
 
+      startUserHeartbeat();
       closeAuthModal();
       renderAuthHeader();
       updateAllViews();
       loadUserInboxThreads();
+
+      // First-ever login (or one where the popup was never completed/skipped
+      // yet): ask the collector to confirm their display name, username, and
+      // bio before they go on to use the marketplace.
+      if (!profileCompleted) openCompleteProfileModal();
+    }
+
+    function openCompleteProfileModal() {
+      if (!currentUser) return;
+      document.getElementById('complete-profile-name-input').value = currentUser.name || '';
+      document.getElementById('complete-profile-username-input').value = currentUser.username || '';
+      document.getElementById('complete-profile-bio-input').value = currentUser.bio || '';
+      document.getElementById('complete-profile-avatar-preview').src = currentUser.avatarUrl || '';
+      document.getElementById('complete-profile-modal').classList.remove('hidden');
+    }
+
+    function closeCompleteProfileModal() {
+      document.getElementById('complete-profile-modal').classList.add('hidden');
+    }
+
+    // Marks the popup as handled (so it won't nag on future logins) without
+    // requiring the collector to change anything right now.
+    async function markProfileCompletedFlag() {
+      if (!currentUser) return;
+      currentUser.profileCompleted = true;
+      try {
+        await db.collection('profiles').doc(currentUser.email).set({ profileCompleted: true }, { merge: true });
+        const cached = JSON.parse(localStorage.getItem(`profile_${currentUser.email}`) || '{}');
+        cached.profileCompleted = true;
+        localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(cached));
+        setCookie(`profile_${currentUser.email}`, cached, 30);
+      } catch (e) {
+        console.warn('Could not persist profileCompleted flag:', e);
+      }
+    }
+
+    function skipCompleteProfile() {
+      closeCompleteProfileModal();
+      markProfileCompletedFlag();
+    }
+
+    async function submitCompleteProfile() {
+      if (!currentUser) return;
+      const newName = document.getElementById('complete-profile-name-input').value.trim() || currentUser.name;
+      const rawUsername = document.getElementById('complete-profile-username-input').value.trim();
+      const newUsername = rawUsername ? rawUsername.replace(/^@/, '').toLowerCase().replace(/\s+/g, '_') : (currentUser.username || newName.toLowerCase().replace(/\s+/g, '_'));
+      const newBio = document.getElementById('complete-profile-bio-input').value.trim();
+
+      await loadCollectorProfiles();
+      let isTaken = false;
+      for (let emailKey in globalCollectorProfiles) {
+        if (emailKey !== currentUser.email) {
+          const p = globalCollectorProfiles[emailKey];
+          if (p.username?.toLowerCase() === newUsername) { isTaken = true; break; }
+        }
+      }
+      if (isTaken) return showToast(`Username @${newUsername} is already taken. Please choose a different one.`);
+
+      currentUser.name = newName;
+      currentUser.username = newUsername;
+      currentUser.bio = newBio;
+      currentUser.profileCompleted = true;
+
+      const profilePayload = {
+        name: newName, username: newUsername, avatarUrl: currentUser.avatarUrl, bio: newBio,
+        isPlusMember: currentUser.isPlusMember, socialIg: currentUser.socialIg, socialTwitter: currentUser.socialTwitter,
+        socialTiktok: currentUser.socialTiktok, socialWeb: currentUser.socialWeb, uid: currentUser.uid, profileCompleted: true
+      };
+      localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
+      setCookie(`profile_${currentUser.email}`, profilePayload, 30);
+
+      try {
+        await db.collection('profiles').doc(currentUser.email).set(profilePayload, { merge: true });
+        await syncProfileToUsersDoc(currentUser.uid, profilePayload);
+        await loadCollectorProfiles();
+      } catch (e) {
+        console.warn('Error saving completed profile:', e);
+      }
+
+      closeCompleteProfileModal();
+      renderAuthHeader();
+      updateAllViews();
+      showToast(currentLanguage === 'ID' ? 'Profil disimpan. Selamat datang!' : 'Profile saved. Welcome aboard!');
     }
 
     async function logoutUser() {
+      stopUserHeartbeat();
+      if (postCommentsUnsubscribe) { postCommentsUnsubscribe(); postCommentsUnsubscribe = null; }
+      openCommentsPostId = null;
       await auth.signOut();
       currentUser = null;
       renderAuthHeader();
@@ -7142,7 +7775,7 @@
     }
 
     function switchTab(tabName) {
-      ['catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'wishlist', 'inventory', 'admin'].forEach(t => {
+      ['home', 'catalog', 'trade', 'auction', 'trade-req', 'analytics', 'revenue', 'inbox', 'holders', 'holder-vault', 'history', 'dashboard', 'wishlist', 'inventory', 'admin'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const navBtn = document.getElementById(`nav-${t}`);
 
@@ -7160,6 +7793,7 @@
         }
       });
 
+      if (tabName === 'home') { renderHomeMembersList(); renderPostsFeed(); refreshHomeComposerState(); }
       if (tabName === 'catalog') { renderCardGrid(); renderHomepageHighlights(); }
       if (tabName === 'trade') renderP2PListings();
       if (tabName === 'auction') renderAuctionView();
