@@ -4406,24 +4406,36 @@
       const dict = i18nDict[currentLanguage];
       const now = Date.now();
 
-      // Build a roster keyed by uid from known collector profiles (so
-      // members who are offline still show up), then layer live presence
-      // heartbeats on top to decide who is active right now.
+      // Build a roster from known collector profiles (so members who are
+      // offline still show up), then layer live presence heartbeats on top
+      // to decide who is active right now. Real accounts are keyed by uid
+      // (so presence can match them); accounts with no uid — e.g. a card
+      // owner name an admin typed in that never actually logged in with
+      // Google — get a synthetic key instead and always render as offline,
+      // since there's no auth session for them to ever send a heartbeat.
       const roster = {};
-      Object.values(globalCollectorProfiles || {}).forEach(p => {
-        if (!p || !p.uid) return;
-        roster[p.uid] = { name: p.name || 'Collector', username: p.username || '', avatarUrl: p.avatarUrl || '' };
+      Object.entries(globalCollectorProfiles || {}).forEach(([key, p]) => {
+        if (!p) return;
+        const hasAuth = !!p.uid;
+        const rosterId = hasAuth ? p.uid : `noauth:${key}`;
+        roster[rosterId] = { name: p.name || key || 'Collector', username: p.username || '', avatarUrl: p.avatarUrl || '', hasAuth };
       });
       if (currentUser && currentUser.uid) {
-        roster[currentUser.uid] = { name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl };
+        roster[currentUser.uid] = { name: currentUser.name, username: currentUser.username, avatarUrl: currentUser.avatarUrl, hasAuth: true };
       }
 
       const active = [];
       const offline = [];
 
-      Object.keys(roster).forEach(uid => {
-        const presence = userPresenceMap[uid];
-        const person = { uid, ...roster[uid] };
+      Object.keys(roster).forEach(rosterId => {
+        const person = { uid: rosterId, ...roster[rosterId] };
+
+        if (!person.hasAuth) {
+          offline.push(person);
+          return;
+        }
+
+        const presence = userPresenceMap[rosterId];
         if (presence && presence.avatarUrl) person.avatarUrl = presence.avatarUrl;
         if (presence && presence.name) person.name = presence.name;
 
