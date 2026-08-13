@@ -2013,6 +2013,37 @@
     </div>
   </div>
 
+  <!-- QUOTE REPOST MODAL -->
+  <div id="quote-repost-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button onclick="closeQuoteRepostComposer()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="text-base font-extrabold text-white"><i class="fa-solid fa-retweet text-emerald-400 mr-2"></i> <span data-i18n="quoteRepostModalTitle">Quote Repost</span></h3>
+
+      <div class="space-y-3 text-xs">
+        <div class="flex items-start gap-3">
+          <img id="quote-repost-avatar" src="" class="w-9 h-9 rounded-full object-cover border border-emerald-500/30 shrink-0">
+          <div class="flex-1 space-y-2">
+            <textarea id="quote-repost-text-input" rows="3" placeholder="Add a comment..." data-i18n-placeholder="quoteRepostPlaceholder" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+            <div id="quote-repost-image-preview-wrap" class="hidden relative w-fit">
+              <img id="quote-repost-image-preview" src="" class="max-h-32 rounded-xl border border-slate-800">
+              <button onclick="removeQuoteRepostImageDraft()" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div id="quote-repost-original-preview"></div>
+
+        <div class="flex items-center justify-between pt-1">
+          <label class="cursor-pointer text-[11px] font-bold text-slate-400 hover:text-emerald-400 flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-image"></i> <span data-i18n="attachImageBtn">Attach Image</span>
+            <input type="file" accept="image/*" class="hidden" onchange="attachQuoteRepostImage(event)">
+          </label>
+          <button onclick="submitQuoteRepost()" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-emerald-500/10" data-i18n="postBtn">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="fixed bottom-6 right-6 z-[10000] bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl transform translate-y-20 opacity-0 transition-all pointer-events-none">
     <span id="toast-msg">Action completed.</span>
@@ -2233,6 +2264,16 @@
         postDeleted: "Post deleted.",
         postPublished: "Post published!",
         emptyPostWarning: "Write something or attach an image before posting.",
+        repostBtnLabel: "Repost",
+        undoRepostBtnLabel: "Undo Repost",
+        quoteRepostBtnLabel: "Quote Repost",
+        repostedLabel: "reposted",
+        repostSuccessToast: "Reposted!",
+        repostRemovedToast: "Repost removed.",
+        originalPostUnavailable: "This post is no longer available.",
+        quoteRepostModalTitle: "Quote Repost",
+        quoteRepostPlaceholder: "Add a comment...",
+        quoteRepostPublished: "Quote reposted!",
         welcomeBadge: "Welcome!",
         completeProfileTitle: "Complete Your Profile",
         completeProfileSub: "Just a couple of details so other collectors can recognize you on the marketplace.",
@@ -2531,6 +2572,16 @@
         postDeleted: "Postingan dihapus.",
         postPublished: "Postingan berhasil dikirim!",
         emptyPostWarning: "Tulis sesuatu atau lampirkan gambar sebelum mengirim.",
+        repostBtnLabel: "Bagikan Ulang",
+        undoRepostBtnLabel: "Batalkan Bagikan Ulang",
+        quoteRepostBtnLabel: "Kutip & Bagikan Ulang",
+        repostedLabel: "membagikan ulang",
+        repostSuccessToast: "Berhasil dibagikan ulang!",
+        repostRemovedToast: "Bagikan ulang dibatalkan.",
+        originalPostUnavailable: "Postingan ini sudah tidak tersedia.",
+        quoteRepostModalTitle: "Kutip & Bagikan Ulang",
+        quoteRepostPlaceholder: "Tambahkan komentar...",
+        quoteRepostPublished: "Berhasil dikutip & dibagikan ulang!",
         welcomeBadge: "Selamat Datang!",
         completeProfileTitle: "Lengkapi Profil Anda",
         completeProfileSub: "Beberapa detail singkat agar kolektor lain dapat mengenali Anda di marketplace.",
@@ -4729,6 +4780,116 @@
       }, e => console.warn('posts listener error:', e));
     }
 
+    // Resolves a post by id: checks the live 50-doc feed window first, then a
+    // local cache for posts that scrolled out (needed for repost/quote embeds).
+    // Returns: post object (found), null (confirmed deleted/missing), or
+    // undefined (fetch in flight — caller should render a loading placeholder).
+    function getPostById(id) {
+      if (!id) return null;
+      const inFeed = postsList.find(p => p.id === id);
+      if (inFeed) return inFeed;
+      if (Object.prototype.hasOwnProperty.call(originalPostsCache, id)) return originalPostsCache[id];
+      if (!originalPostsFetching[id]) {
+        originalPostsFetching[id] = true;
+        db.collection('posts').doc(id).get().then(doc => {
+          originalPostsCache[id] = doc.exists ? { id: doc.id, ...doc.data() } : null;
+          delete originalPostsFetching[id];
+          renderPostsFeed();
+        }).catch(() => { delete originalPostsFetching[id]; });
+      }
+      return undefined;
+    }
+
+    function renderPostActionsRow(post, dict) {
+      const likes = post.likes || [];
+      const likedByMe = !!(currentUser && likes.includes(currentUser.uid));
+      const reposts = post.reposts || [];
+      const repostedByMe = !!(currentUser && reposts.includes(currentUser.uid));
+      const repostCount = reposts.length + (post.quoteCount || 0);
+
+      return `
+      <div class="flex items-center gap-4 pt-1 border-t border-slate-800/80 mt-1">
+        <button onclick="toggleLikePost('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold ${likedByMe ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'} transition-colors pt-2">
+          <i class="fa-${likedByMe ? 'solid' : 'regular'} fa-heart"></i> ${likes.length} <span class="hidden sm:inline" data-i18n="likeBtnLabel">${dict.likeBtnLabel}</span>
+        </button>
+        <button onclick="toggleCommentsPanel('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-indigo-400 transition-colors pt-2">
+          <i class="fa-regular fa-comment"></i> ${post.commentCount || 0} <span class="hidden sm:inline" data-i18n="commentBtnLabel">${dict.commentBtnLabel}</span>
+        </button>
+        <div class="relative" data-repost-wrap="${post.id}">
+          <button onclick="toggleRepostMenu('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold ${repostedByMe ? 'text-emerald-400' : 'text-slate-400 hover:text-emerald-400'} transition-colors pt-2">
+            <i class="fa-solid fa-retweet"></i> ${repostCount} <span class="hidden sm:inline" data-i18n="repostBtnLabel">${dict.repostBtnLabel}</span>
+          </button>
+          <div id="repost-menu-${post.id}" class="hidden absolute bottom-full left-0 mb-2 w-48 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-20 overflow-hidden">
+            <button onclick="handleRepostClick('${post.id}')" class="w-full flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold text-left ${repostedByMe ? 'text-rose-400 hover:bg-rose-500/10' : 'text-slate-200 hover:bg-slate-900'} transition-colors">
+              <i class="fa-solid fa-retweet"></i> <span>${repostedByMe ? dict.undoRepostBtnLabel : dict.repostBtnLabel}</span>
+            </button>
+            <button onclick="openQuoteRepostComposer('${post.id}')" class="w-full flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold text-left text-slate-200 hover:bg-slate-900 transition-colors border-t border-slate-900">
+              <i class="fa-solid fa-pen"></i> <span>${dict.quoteRepostBtnLabel}</span>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Compact, non-interactive preview of a quoted/original post — used inside
+    // quote-repost cards and the quote-repost composer modal.
+    function renderEmbeddedPostSnippet(quotedId, dict) {
+      const q = getPostById(quotedId);
+      if (q === undefined) {
+        return `<div class="border border-slate-800 rounded-2xl p-3 text-[11px] text-slate-500">${dict.loadingFeed}</div>`;
+      }
+      if (q === null) {
+        return `<div class="border border-slate-800 rounded-2xl p-3 text-[11px] text-slate-500">${dict.originalPostUnavailable}</div>`;
+      }
+      const createdAt = q.createdAt && q.createdAt.toDate ? q.createdAt.toDate() : q.createdAt;
+      return `
+      <div class="border border-slate-800 rounded-2xl p-3 space-y-2 bg-slate-950/60">
+        <div class="flex items-center gap-2">
+          <img src="${escapeHtml(q.authorAvatar) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(q.authorUid || 'x')}`}" class="w-6 h-6 rounded-full object-cover border border-slate-700">
+          <p class="text-[11px] font-black text-white">${escapeHtml(q.authorName || 'Collector')} <span class="text-slate-600 font-normal ml-1">${escapeHtml(timeAgoShort(createdAt))}</span></p>
+        </div>
+        ${q.text ? `<p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(q.text)}</p>` : ''}
+        ${q.imageUrl ? `<img src="${q.imageUrl}" class="w-full max-h-56 object-cover rounded-xl border border-slate-800">` : ''}
+      </div>`;
+    }
+
+    // Renders the actual content body (header, text, image, actions, comments)
+    // for a real content post — used for original posts, quote-repost posts,
+    // and for the underlying original embedded inside a repost feed item.
+    function renderPostCardBody(post, dict) {
+      const canDelete = currentUser && (currentUser.uid === post.authorUid || currentUser.isAdmin);
+      const createdAt = post.createdAt && post.createdAt.toDate ? post.createdAt.toDate() : post.createdAt;
+      const commentsOpen = openCommentsPostId === post.id;
+
+      return `
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <img src="${escapeHtml(post.authorAvatar) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(post.authorUid || 'x')}`}" class="w-9 h-9 rounded-full object-cover border border-slate-700">
+            <div>
+              <p class="text-xs font-black text-white">${escapeHtml(post.authorName || 'Collector')}</p>
+              <p class="text-[10px] text-slate-500">${post.authorUsername ? '@' + escapeHtml(post.authorUsername) + ' • ' : ''}${escapeHtml(timeAgoShort(createdAt))}</p>
+            </div>
+          </div>
+          ${canDelete ? `<button onclick="deletePost('${post.id}')" class="w-7 h-7 rounded-xl bg-slate-950 text-slate-500 hover:text-rose-400 flex items-center justify-center transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
+        </div>
+
+        ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
+        ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full max-h-96 object-cover rounded-2xl border border-slate-800">` : ''}
+        ${post.type === 'quote' && post.quotedPostId ? renderEmbeddedPostSnippet(post.quotedPostId, dict) : ''}
+
+        ${renderPostActionsRow(post, dict)}
+
+        <div id="post-comments-${post.id}" class="${commentsOpen ? '' : 'hidden'} space-y-2 pt-2 border-t border-slate-800/80">
+          <div id="post-comments-list-${post.id}" class="space-y-2 max-h-56 overflow-y-auto"></div>
+          ${currentUser ? `
+          <div class="flex items-center gap-2">
+            <input type="text" id="post-comment-input-${post.id}" placeholder="${dict.writeCommentPlaceholder}" data-i18n-placeholder="writeCommentPlaceholder" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-white focus:outline-none focus:border-indigo-500" onkeydown="if(event.key==='Enter'){submitComment('${post.id}');}">
+            <button onclick="submitComment('${post.id}')" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-[10px] rounded-xl transition-all" data-i18n="sendCommentBtn">${dict.sendCommentBtn}</button>
+          </div>` : ''}
+        </div>
+      `;
+    }
+
     function renderPostsFeed() {
       const container = document.getElementById('home-posts-feed');
       if (!container) return;
@@ -4739,50 +4900,170 @@
         return;
       }
 
-      container.innerHTML = postsList.map(post => {
-        const likes = post.likes || [];
-        const likedByMe = !!(currentUser && likes.includes(currentUser.uid));
-        const canDelete = currentUser && (currentUser.uid === post.authorUid || currentUser.isAdmin);
-        const createdAt = post.createdAt && post.createdAt.toDate ? post.createdAt.toDate() : post.createdAt;
-        const commentsOpen = openCommentsPostId === post.id;
+      container.innerHTML = postsList.map(item => {
+        if (item.type === 'repost') {
+          const reposterLine = `
+            <p class="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 px-1">
+              <i class="fa-solid fa-retweet text-emerald-500"></i> ${escapeHtml(item.authorName || 'Collector')} <span data-i18n="repostedLabel">${dict.repostedLabel}</span>
+            </p>`;
+          const original = getPostById(item.originalPostId);
+          if (original === undefined) {
+            return `<div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-2" data-post-id="${item.id}">${reposterLine}<p class="text-[11px] text-slate-500 py-4 text-center">${dict.loadingFeed}</p></div>`;
+          }
+          if (original === null) {
+            return `<div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-2" data-post-id="${item.id}">${reposterLine}<p class="text-[11px] text-slate-500 py-4 text-center">${dict.originalPostUnavailable}</p></div>`;
+          }
+          return `<div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3" data-post-id="${item.id}" data-original-id="${original.id}">${reposterLine}${renderPostCardBody(original, dict)}</div>`;
+        }
 
-        return `
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3" data-post-id="${post.id}">
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-              <img src="${escapeHtml(post.authorAvatar) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(post.authorUid || 'x')}`}" class="w-9 h-9 rounded-full object-cover border border-slate-700">
-              <div>
-                <p class="text-xs font-black text-white">${escapeHtml(post.authorName || 'Collector')}</p>
-                <p class="text-[10px] text-slate-500">${post.authorUsername ? '@' + escapeHtml(post.authorUsername) + ' • ' : ''}${escapeHtml(timeAgoShort(createdAt))}</p>
-              </div>
-            </div>
-            ${canDelete ? `<button onclick="deletePost('${post.id}')" class="w-7 h-7 rounded-xl bg-slate-950 text-slate-500 hover:text-rose-400 flex items-center justify-center transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
-          </div>
-
-          ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
-          ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full max-h-96 object-cover rounded-2xl border border-slate-800">` : ''}
-
-          <div class="flex items-center gap-4 pt-1 border-t border-slate-800/80 mt-1">
-            <button onclick="toggleLikePost('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold ${likedByMe ? 'text-rose-400' : 'text-slate-400 hover:text-rose-400'} transition-colors pt-2">
-              <i class="fa-${likedByMe ? 'solid' : 'regular'} fa-heart"></i> ${likes.length} <span class="hidden sm:inline" data-i18n="likeBtnLabel">${dict.likeBtnLabel}</span>
-            </button>
-            <button onclick="toggleCommentsPanel('${post.id}')" class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-indigo-400 transition-colors pt-2">
-              <i class="fa-regular fa-comment"></i> ${post.commentCount || 0} <span class="hidden sm:inline" data-i18n="commentBtnLabel">${dict.commentBtnLabel}</span>
-            </button>
-          </div>
-
-          <div id="post-comments-${post.id}" class="${commentsOpen ? '' : 'hidden'} space-y-2 pt-2 border-t border-slate-800/80">
-            <div id="post-comments-list-${post.id}" class="space-y-2 max-h-56 overflow-y-auto"></div>
-            ${currentUser ? `
-            <div class="flex items-center gap-2">
-              <input type="text" id="post-comment-input-${post.id}" placeholder="${dict.writeCommentPlaceholder}" data-i18n-placeholder="writeCommentPlaceholder" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-white focus:outline-none focus:border-indigo-500" onkeydown="if(event.key==='Enter'){submitComment('${post.id}');}">
-              <button onclick="submitComment('${post.id}')" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-[10px] rounded-xl transition-all" data-i18n="sendCommentBtn">${dict.sendCommentBtn}</button>
-            </div>` : ''}
-          </div>
-        </div>`;
+        return `<div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3" data-post-id="${item.id}">${renderPostCardBody(item, dict)}</div>`;
       }).join('');
 
       if (openCommentsPostId) renderCommentsList(openCommentsPostId);
+    }
+
+    // ===== HOME PAGE: REPOST / QUOTE REPOST =====
+    function closeAllRepostMenus() {
+      if (openRepostMenuPostId) {
+        const prev = document.getElementById(`repost-menu-${openRepostMenuPostId}`);
+        if (prev) prev.classList.add('hidden');
+        openRepostMenuPostId = null;
+      }
+    }
+
+    function toggleRepostMenu(postId) {
+      const menu = document.getElementById(`repost-menu-${postId}`);
+      if (!menu) return;
+      const willOpen = menu.classList.contains('hidden');
+      closeAllRepostMenus();
+      if (willOpen) {
+        menu.classList.remove('hidden');
+        openRepostMenuPostId = postId;
+      }
+    }
+
+    async function handleRepostClick(postId) {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      closeAllRepostMenus();
+      const dict = i18nDict[currentLanguage];
+      const post = getPostById(postId);
+      if (!post) return;
+      const reposts = post.reposts || [];
+      const alreadyReposted = reposts.includes(currentUser.uid);
+      const repostDocId = `repost_${currentUser.uid}_${postId}`;
+
+      try {
+        if (alreadyReposted) {
+          await db.collection('posts').doc(repostDocId).delete();
+          await db.collection('posts').doc(postId).update({
+            reposts: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+          });
+          showToast(dict.repostRemovedToast);
+        } else {
+          await db.collection('posts').doc(repostDocId).set({
+            type: 'repost',
+            authorUid: currentUser.uid,
+            authorName: currentUser.name || '',
+            authorUsername: currentUser.username || '',
+            authorAvatar: currentUser.avatarUrl || '',
+            originalPostId: postId,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          await db.collection('posts').doc(postId).update({
+            reposts: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+          });
+          showToast(dict.repostSuccessToast);
+        }
+      } catch (e) {
+        showToast('Could not update repost: ' + e.message);
+      }
+    }
+
+    function openQuoteRepostComposer(postId) {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      closeAllRepostMenus();
+      const post = getPostById(postId);
+      if (!post) return;
+      const dict = i18nDict[currentLanguage];
+
+      quoteRepostTargetPostId = postId;
+      quoteRepostImageDataUrl = null;
+
+      const textInput = document.getElementById('quote-repost-text-input');
+      if (textInput) textInput.value = '';
+      removeQuoteRepostImageDraft();
+
+      const avatar = document.getElementById('quote-repost-avatar');
+      if (avatar) avatar.src = currentUser.avatarUrl || '';
+
+      const preview = document.getElementById('quote-repost-original-preview');
+      if (preview) preview.innerHTML = renderEmbeddedPostSnippet(postId, dict);
+
+      document.getElementById('quote-repost-modal').classList.remove('hidden');
+    }
+
+    function closeQuoteRepostComposer() {
+      const modal = document.getElementById('quote-repost-modal');
+      if (modal) modal.classList.add('hidden');
+      quoteRepostTargetPostId = null;
+      quoteRepostImageDataUrl = null;
+    }
+
+    async function attachQuoteRepostImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 720, 0.75);
+        quoteRepostImageDataUrl = dataUrl;
+        document.getElementById('quote-repost-image-preview').src = dataUrl;
+        document.getElementById('quote-repost-image-preview-wrap').classList.remove('hidden');
+      } catch (e) {
+        showToast('Could not process that image: ' + e.message);
+      }
+    }
+
+    function removeQuoteRepostImageDraft() {
+      quoteRepostImageDataUrl = null;
+      const img = document.getElementById('quote-repost-image-preview');
+      const wrap = document.getElementById('quote-repost-image-preview-wrap');
+      if (img) img.src = '';
+      if (wrap) wrap.classList.add('hidden');
+    }
+
+    async function submitQuoteRepost() {
+      if (!currentUser) { openAuthModal(); return showToast('Please log in first.'); }
+      if (!quoteRepostTargetPostId) return;
+      const dict = i18nDict[currentLanguage];
+      const textInput = document.getElementById('quote-repost-text-input');
+      const text = textInput ? textInput.value.trim() : '';
+      const targetId = quoteRepostTargetPostId;
+
+      const postPayload = {
+        type: 'quote',
+        authorUid: currentUser.uid,
+        authorName: currentUser.name || '',
+        authorUsername: currentUser.username || '',
+        authorAvatar: currentUser.avatarUrl || '',
+        text,
+        imageUrl: quoteRepostImageDataUrl || null,
+        quotedPostId: targetId,
+        likes: [],
+        commentCount: 0,
+        reposts: [],
+        quoteCount: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        await db.collection('posts').add(postPayload);
+        await db.collection('posts').doc(targetId).update({
+          quoteCount: firebase.firestore.FieldValue.increment(1)
+        });
+        closeQuoteRepostComposer();
+        showToast(dict.quoteRepostPublished);
+      } catch (e) {
+        showToast('Could not publish quote repost: ' + e.message);
+      }
     }
 
     async function toggleLikePost(postId) {
@@ -4875,7 +5156,21 @@
       const dict = i18nDict[currentLanguage];
       if (!confirm(dict.deletePostConfirm)) return;
       try {
+        const post = getPostById(postId);
         await db.collection('posts').doc(postId).delete();
+
+        if (post && post.type === 'quote' && post.quotedPostId) {
+          db.collection('posts').doc(post.quotedPostId).update({
+            quoteCount: firebase.firestore.FieldValue.increment(-1)
+          }).catch(() => {});
+        }
+
+        // Best-effort cleanup: remove any repost wrapper docs pointing at this
+        // post so they don't linger in the feed as "no longer available".
+        db.collection('posts').where('type', '==', 'repost').where('originalPostId', '==', postId).get()
+          .then(snap => snap.forEach(doc => doc.ref.delete().catch(() => {})))
+          .catch(() => {});
+
         showToast(dict.postDeleted);
       } catch (e) {
         showToast('Could not delete post: ' + e.message);
@@ -5295,6 +5590,13 @@
 
         if (ownerTrigger && ownerMenu && !ownerTrigger.contains(e.target) && !ownerMenu.contains(e.target)) {
           ownerMenu.classList.add('hidden');
+        }
+
+        if (openRepostMenuPostId) {
+          const repostWrap = document.querySelector(`[data-repost-wrap="${openRepostMenuPostId}"]`);
+          if (repostWrap && !repostWrap.contains(e.target)) {
+            closeAllRepostMenus();
+          }
         }
 
         if (tradeTrigger && tradeMenu && !tradeTrigger.contains(e.target) && !tradeMenu.contains(e.target)) {
