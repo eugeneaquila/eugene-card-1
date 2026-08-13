@@ -1294,6 +1294,194 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
   }
 </style>
 
+
+<style id="eugene-mobile-modal-safe-fix">
+/* =========================================================
+   EUGENE CARD — SAFE MOBILE MODAL FIX
+   CSS-only: preserves all existing modal JavaScript/features.
+   ========================================================= */
+
+/* Profile customisation */
+#profile-manager-modal{
+  box-sizing:border-box !important;
+  min-height:100vh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:12px !important;
+  overflow:hidden !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+#profile-manager-modal .profile-manager-modal-panel{
+  box-sizing:border-box !important;
+  width:min(520px,100%) !important;
+  max-width:520px !important;
+  height:auto !important;
+  max-height:calc(100dvh - 24px) !important;
+  min-height:0 !important;
+  margin:0 !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-gutter:stable;
+  flex:0 1 auto !important;
+}
+
+#profile-manager-modal .profile-manager-modal-panel > .space-y-3{
+  min-height:0 !important;
+  padding-bottom:max(20px,env(safe-area-inset-bottom)) !important;
+}
+
+#profile-manager-modal input,
+#profile-manager-modal textarea,
+#profile-manager-modal select,
+#profile-manager-modal button{
+  touch-action:manipulation;
+}
+
+#profile-manager-modal textarea{
+  max-height:180px;
+  overflow-y:auto;
+}
+
+/* Card details */
+#card-detail-modal{
+  box-sizing:border-box !important;
+  min-height:100vh !important;
+  min-height:100dvh !important;
+  max-height:100dvh !important;
+  padding:max(10px,env(safe-area-inset-top)) 10px
+          max(10px,env(safe-area-inset-bottom)) !important;
+  overflow:hidden !important;
+  overscroll-behavior:contain !important;
+}
+
+#card-detail-modal .card-detail-shell{
+  box-sizing:border-box !important;
+  width:min(980px,100%) !important;
+  max-width:980px !important;
+  height:auto !important;
+  max-height:calc(100dvh - 20px) !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+
+#card-detail-modal .card-detail-scroll{
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-height:0 !important;
+  max-height:calc(100dvh - 20px) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-gutter:stable;
+}
+
+@media (max-width:640px){
+  /* Keep the profile sheet fully inside the phone viewport. */
+  #profile-manager-modal{
+    align-items:flex-start !important;
+    justify-content:center !important;
+    padding:8px !important;
+  }
+
+  #profile-manager-modal .profile-manager-modal-panel{
+    width:100% !important;
+    max-width:none !important;
+    height:auto !important;
+    max-height:calc(100dvh - 16px) !important;
+    border-radius:22px !important;
+    padding:18px 16px max(18px,env(safe-area-inset-bottom)) !important;
+    margin:0 !important;
+  }
+
+  /* Make the scroll area obvious without forcing a visible scrollbar. */
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar,
+  #card-detail-modal .card-detail-scroll::-webkit-scrollbar{
+    width:5px;
+  }
+  #profile-manager-modal .profile-manager-modal-panel::-webkit-scrollbar-thumb,
+  #card-detail-modal .card-detail-scroll::-webkit-scrollbar-thumb{
+    background:rgba(148,163,184,.35);
+    border-radius:999px;
+  }
+
+  /* Card details become a full-height mobile sheet. */
+  #card-detail-modal{
+    align-items:flex-end !important;
+    justify-content:center !important;
+    padding:6px !important;
+  }
+
+  #card-detail-modal .card-detail-shell{
+    width:100% !important;
+    max-width:none !important;
+    max-height:calc(100dvh - 12px) !important;
+    border-radius:24px 24px 16px 16px !important;
+  }
+
+  #card-detail-modal .card-detail-scroll{
+    max-height:calc(100dvh - 12px) !important;
+    padding:14px !important;
+    padding-bottom:max(22px,env(safe-area-inset-bottom)) !important;
+  }
+
+  #card-detail-modal .card-detail-art{
+    height:min(58vw,330px) !important;
+    min-height:0 !important;
+    max-height:330px !important;
+  }
+
+  #card-detail-modal .card-detail-art img{
+    max-height:100% !important;
+    object-fit:contain !important;
+  }
+
+  #card-detail-modal .card-detail-close{
+    position:sticky !important;
+    top:0 !important;
+    z-index:30 !important;
+    flex-shrink:0 !important;
+  }
+}
+
+@media (max-width:380px){
+  #profile-manager-modal{
+    padding:5px !important;
+  }
+
+  #profile-manager-modal .profile-manager-modal-panel{
+    max-height:calc(100dvh - 10px) !important;
+    padding-left:13px !important;
+    padding-right:13px !important;
+  }
+
+  #card-detail-modal .card-detail-shell{
+    max-height:calc(100dvh - 10px) !important;
+  }
+
+  #card-detail-modal .card-detail-scroll{
+    max-height:calc(100dvh - 10px) !important;
+    padding-left:11px !important;
+    padding-right:11px !important;
+  }
+
+  #card-detail-modal .card-detail-art{
+    height:240px !important;
+  }
+}
+
+/* Prevent accidental horizontal overflow on either modal. */
+#profile-manager-modal *,
+#card-detail-modal *{
+  max-width:100%;
+  box-sizing:border-box;
+}
+</style>
+
 </head>
 <body class="premium-global min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
 
@@ -10404,277 +10592,6 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       }
     }
   });
-})();
-</script>
-
-
-<style id="eugene-mobile-modal-optimization">
-  /* ===== MOBILE MODAL FOUNDATION ===== */
-  :root{--eugene-vvh:100dvh}
-  body.eugene-profile-modal-open,
-  body.eugene-card-detail-open{
-    overflow:hidden !important;
-    overscroll-behavior:none !important;
-    touch-action:none !important;
-  }
-
-  /* ===== PROFILE CUSTOMISATION ===== */
-  #profile-manager-modal{
-    position:fixed !important;
-    inset:0 !important;
-    width:100% !important;
-    height:var(--eugene-vvh,100dvh) !important;
-    max-height:none !important;
-    padding:12px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    overflow:hidden !important;
-    overscroll-behavior:none !important;
-    touch-action:pan-y !important;
-    -webkit-overflow-scrolling:touch;
-  }
-  #profile-manager-modal.hidden{display:none !important}
-  #profile-manager-modal .profile-manager-modal-panel{
-    width:min(520px,100%) !important;
-    max-width:520px !important;
-    max-height:min(94dvh,900px) !important;
-    height:auto !important;
-    min-height:0 !important;
-    margin:0 !important;
-    padding:22px !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    overscroll-behavior:contain !important;
-    touch-action:pan-y !important;
-    -webkit-overflow-scrolling:touch !important;
-    scrollbar-gutter:stable;
-    box-sizing:border-box;
-    flex:0 1 auto !important;
-    isolation:isolate;
-  }
-  #profile-manager-modal .profile-manager-modal-panel > .space-y-3{
-    min-height:0;
-    padding-bottom:max(16px,env(safe-area-inset-bottom));
-  }
-  #profile-manager-modal .profile-manager-modal-panel input,
-  #profile-manager-modal .profile-manager-modal-panel textarea,
-  #profile-manager-modal .profile-manager-modal-panel button,
-  #profile-manager-modal .profile-manager-modal-panel select{
-    font-size:16px;
-  }
-  #profile-manager-modal .profile-manager-modal-panel textarea{
-    min-height:88px;
-  }
-
-  /* ===== CARD DETAILS ===== */
-  #card-detail-modal{
-    position:fixed !important;
-    inset:0 !important;
-    width:100% !important;
-    height:var(--eugene-vvh,100dvh) !important;
-    max-height:none !important;
-    padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom)) !important;
-    overflow:hidden !important;
-    overscroll-behavior:none !important;
-    touch-action:pan-y !important;
-    -webkit-overflow-scrolling:touch;
-    align-items:center !important;
-  }
-  #card-detail-modal.hidden{display:none !important}
-  #card-detail-modal .card-detail-shell{
-    width:min(980px,100%) !important;
-    max-width:980px !important;
-    max-height:calc(var(--eugene-vvh,100dvh) - 20px) !important;
-    min-height:0 !important;
-    overflow:hidden !important;
-    display:flex !important;
-    flex-direction:column !important;
-  }
-  #card-detail-modal .card-detail-scroll{
-    width:100%;
-    min-height:0;
-    max-height:none !important;
-    height:auto !important;
-    overflow-x:hidden !important;
-    overflow-y:auto !important;
-    overscroll-behavior:contain !important;
-    touch-action:pan-y !important;
-    -webkit-overflow-scrolling:touch !important;
-    scrollbar-gutter:stable;
-  }
-  #card-detail-modal .card-detail-art img{
-    content-visibility:auto;
-  }
-
-  @media (max-width:700px){
-    /* Profile becomes a comfortable mobile sheet with a guaranteed inner scroll. */
-    #profile-manager-modal{
-      align-items:flex-start !important;
-      padding:8px !important;
-    }
-    #profile-manager-modal .profile-manager-modal-panel{
-      width:100% !important;
-      max-width:none !important;
-      max-height:calc(var(--eugene-vvh,100dvh) - 16px) !important;
-      border-radius:22px !important;
-      padding:18px 16px max(18px,env(safe-area-inset-bottom)) !important;
-      margin:0 !important;
-    }
-    #profile-manager-modal .profile-manager-modal-panel > .space-y-3{
-      padding-bottom:max(22px,env(safe-area-inset-bottom));
-    }
-
-    /* Card detail uses almost the full viewport while keeping a small edge. */
-    #card-detail-modal{
-      align-items:flex-end !important;
-      padding:6px !important;
-    }
-    #card-detail-modal .card-detail-shell{
-      width:100% !important;
-      max-width:none !important;
-      max-height:calc(var(--eugene-vvh,100dvh) - 12px) !important;
-      border-radius:24px 24px 16px 16px !important;
-    }
-    #card-detail-modal .card-detail-scroll{
-      padding:14px !important;
-      padding-bottom:max(20px,env(safe-area-inset-bottom)) !important;
-    }
-    #card-detail-modal .card-detail-art{
-      min-height:0 !important;
-      height:min(58vw,330px) !important;
-      max-height:330px !important;
-      padding:10px !important;
-    }
-    #card-detail-modal .card-detail-art img{
-      max-height:100% !important;
-    }
-    #card-detail-modal .card-detail-art:hover img{
-      transform:none !important;
-    }
-    #card-detail-modal .card-detail-close{
-      width:42px !important;
-      height:42px !important;
-      border-radius:14px !important;
-      position:sticky;
-      top:0;
-      z-index:20;
-    }
-  }
-
-  @media (max-width:380px){
-    #profile-manager-modal .profile-manager-modal-panel{
-      padding-left:13px !important;
-      padding-right:13px !important;
-    }
-    #card-detail-modal .card-detail-scroll{padding-left:11px !important;padding-right:11px !important}
-    #card-detail-modal .card-detail-art{height:240px !important}
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    #card-detail-modal .card-detail-art img,
-    #card-detail-modal .card-detail-foil,
-    #card-detail-modal .detail-rarity-fill{
-      animation:none !important;
-      transition:none !important;
-    }
-  }
-</style>
-
-
-<script id="eugene-mobile-modal-optimization-js">
-(function(){
-  const root=document.documentElement;
-  const updateViewportHeight=()=>{
-    const vv=window.visualViewport;
-    const h=vv ? vv.height : window.innerHeight;
-    if(h) root.style.setProperty('--eugene-vvh',Math.round(h)+'px');
-  };
-  updateViewportHeight();
-  window.addEventListener('resize',updateViewportHeight,{passive:true});
-  window.visualViewport?.addEventListener('resize',updateViewportHeight,{passive:true});
-  window.visualViewport?.addEventListener('scroll',updateViewportHeight,{passive:true});
-
-  const lock=(cls)=>{
-    document.body.classList.add(cls);
-    updateViewportHeight();
-  };
-  const unlock=(cls)=>{
-    document.body.classList.remove(cls);
-    updateViewportHeight();
-  };
-
-  window.addEventListener('load',updateViewportHeight,{once:true});
-
-  /* Wrap the existing modal functions without replacing their feature logic. */
-  if(typeof window.openProfileManagerModal==='function'){
-    const originalOpenProfile=window.openProfileManagerModal;
-    window.openProfileManagerModal=function(){
-      originalOpenProfile.apply(this,arguments);
-      const modal=document.getElementById('profile-manager-modal');
-      const panel=modal?.querySelector('.profile-manager-modal-panel');
-      if(panel){
-        panel.scrollTop=0;
-        panel.setAttribute('tabindex','-1');
-      }
-      lock('eugene-profile-modal-open');
-      requestAnimationFrame(()=>panel?.focus({preventScroll:true}));
-    };
-  }
-
-  if(typeof window.closeProfileManagerModal==='function'){
-    const originalCloseProfile=window.closeProfileManagerModal;
-    window.closeProfileManagerModal=function(){
-      originalCloseProfile.apply(this,arguments);
-      unlock('eugene-profile-modal-open');
-    };
-  }
-
-  if(typeof window.openCardDetailModal==='function'){
-    const originalOpenCard=window.openCardDetailModal;
-    window.openCardDetailModal=function(){
-      originalOpenCard.apply(this,arguments);
-      const modal=document.getElementById('card-detail-modal');
-      const scroll=modal?.querySelector('.card-detail-scroll');
-      if(scroll) scroll.scrollTop=0;
-      lock('eugene-card-detail-open');
-      requestAnimationFrame(()=>{
-        const close=modal?.querySelector('.card-detail-close');
-        close?.focus({preventScroll:true});
-        const img=modal?.querySelector('#detail-card-img');
-        if(img && img.decode) img.decode().catch(()=>{});
-      });
-    };
-  }
-
-  if(typeof window.closeCardDetailModal==='function'){
-    const originalCloseCard=window.closeCardDetailModal;
-    window.closeCardDetailModal=function(){
-      originalCloseCard.apply(this,arguments);
-      unlock('eugene-card-detail-open');
-    };
-  }
-
-  /* Escape closes the active requested modal first. */
-  document.addEventListener('keydown',(e)=>{
-    if(e.key!=='Escape') return;
-    const profile=document.getElementById('profile-manager-modal');
-    const card=document.getElementById('card-detail-modal');
-    if(profile && !profile.classList.contains('hidden')){
-      window.closeProfileManagerModal?.();
-    }else if(card && !card.classList.contains('hidden')){
-      window.closeCardDetailModal?.();
-    }
-  });
-
-  /* If another code path hides a modal directly, release the body lock. */
-  const observer=new MutationObserver(()=>{
-    const profile=document.getElementById('profile-manager-modal');
-    const card=document.getElementById('card-detail-modal');
-    if(profile?.classList.contains('hidden')) unlock('eugene-profile-modal-open');
-    if(card?.classList.contains('hidden')) unlock('eugene-card-detail-open');
-  });
-  observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
 })();
 </script>
 
