@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "eugene-card-marketplace",
+  "private_key_id": "98901703dd2e6824d123abb55ea40ab17563220a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCwJaZejQB+tH4K\n2sUqd2zEoyqaP5FDoIcborlcghF9KNenl4RSng621bD/ya0rJwkSzfoFOcQNL2HJ\nhpbhE5XzcSXwxpLAx3UxWaSd2JrR6a574wzd+K+AzFer9Lbpqjf4fikCoq8ryzxD\n91zaTq/i9Nh+Go916W/6/4JtAjU9gH+huJdwx8QSEfBLtSKVcMOR15yvh1Tg4dqU\ngXm61KQw9JcUO0zUOCO3RFUdqUm2/Q34X40ZSCsvST50hJ1qCZsFWantVypu5dzS\noz24drM09PQqTbLqQmzYOp6+pZLTPTSo8aGLarkySKWt6+qr1svuwNPITUT+TViu\nZbBQ5d4hAgMBAAECggEADFu33m5aGImlRjGvH5mdYfZoqMXI9Uuv7vptstXVUEir\nSLDSsdExCxbXAjsuERb+Bfm5juBMpvgqDi+JKmVrYdcQaGImLaxQxpOZfxGRWyTf\n/wUhA/nMpmavx/q1UpOEtcR0MCEl1Ra/Na2HMDHRGUVAYyiN5CHqn1uJ1QgQoC3j\n9gRd4WpyE90QyJ0g37D7thFjBxhbhSKGG4isP8a1KBUr0/lQqgmXITbmOVtlAptV\nejmuois+O1MdpJoKtpgyiXxEiW/tG+HiJsRWhlb4zDBnbs1s1oLnpmcxMDP98mBd\nHpiHGNnQe4jGCa1uW6uEkkjbdDCLyb+0PFFjdiT0OQKBgQDbqlCEbCw3Uss16yfe\n0A61PmMR5nitWlP3MnoMikH9Ad0MdVv62Otwmpq3Sspspf3l3Mi9CTLYWkgfbvnN\nqWvTA7HD9KO0lWBL3otz8dw+R8LU/Wt1Y8bdnbfBdVbpC3hN1js3Fs08OoeSGPa4\nzkCyAkg/O50vVGI6JRj+RR5J8wKBgQDNSJCARGUD4J5Tncz8rqzOkt18neL4SNzE\npXcgG87XzRVRxFWnF1ipKCFaG2HnwZVBaM2pboRuannikqTLfE5vYyfz6DHtOwLy\nktrOajVlfsc+gndcmKXA0a5tE5HM8oLlxHqi8iuchFKjbK17TA4gSCVqEN0Sh4no\nwHCsuiKImwKBgQDZQ/KRl8CAE8bklKuByT3S7Frm2JMhuwbzqBxpjNJJ4e72JJoO\nWUE9xd0jT7k5j1C6aw6tUozUyy8s0AIJ9fms46mOzMiik2CEiiBaVK1neGjva5w+\npqqKhjW7BkkpBWw/aJZ3HXlvieCPk1tsXKxGpNU6nccRiiABrLG0xT55GwKBgAUu\nTadPEpWUd6p4kxHVfrr/7eMVQQMvI5M68dS3nvLHVEBqChdbeXtbbewOQNxOgGvU\nL0yVY3Y97bGQLeSM0JXzFLENLSVlld91YVxQReS33GNxe320xIonQJW0Jrvbav5N\nhSLTpdIfbM5/EanI85pQ99DDeDDdhtd+89kIIZL9AoGAPjJR9sgz9Fc/DTNWVlMW\nFb8+hdV7o+2x9vahkyNpLQC82DPGR7AoKHmqP0H25wPorvIl8EUafiP47NulC2lX\nVnMZP31C3ESUF5TFLmaG0VTg3b5ntOiHSF9mMXBB0G8uRQzdl4doFjJ8th4soYtv\nEUryPnqht8HOFnoQVxTQHoc=\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@eugene-card-marketplace.iam.gserviceaccount.com",
+  "client_id": "105682598051005932486",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40eugene-card-marketplace.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
