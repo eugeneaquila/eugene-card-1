@@ -1088,24 +1088,38 @@
 
     <!-- HOLDERS VIEW -->
     <section id="view-holders" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-        <h2 class="text-2xl font-black text-white uppercase tracking-wide" data-i18n="holdersTitle">Holders Directory</h2>
-        <p class="text-xs text-slate-400 mt-1" data-i18n="holdersSubtitle">Click on any collector row or card serial to view their collection and send direct trade offers.</p>
+      <div class="relative overflow-hidden bg-gradient-to-r from-teal-950/60 via-slate-900 to-indigo-950/40 border border-teal-500/30 rounded-3xl p-5 sm:p-6 shadow-xl">
+        <div class="pointer-events-none absolute -top-16 -right-16 w-56 h-56 rounded-full bg-teal-500/10 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-indigo-500/10 blur-3xl"></div>
+
+        <div class="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-950 border border-teal-500/40 p-1 flex items-center justify-center shadow-md shrink-0">
+              <i class="fa-solid fa-users text-teal-400 text-lg sm:text-xl"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 tracking-wider" data-i18n="holdersHeroBadge">COLLECTOR DIRECTORY</span>
+              <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 tracking-tight" data-i18n="holdersTitle">Holders Directory</h2>
+              <p class="text-xs text-slate-400 mt-1 max-w-md" data-i18n="holdersSubtitle">Click on any collector row or card serial to view their collection and send direct trade offers.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative grid grid-cols-2 gap-3 sm:gap-6 mt-5 pt-4 border-t border-slate-800/60">
+          <div class="text-center sm:text-left">
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-users text-teal-400"></i> <span data-i18n="statTotalHolders">Total Holders</span></p>
+            <p id="holders-stat-count" class="text-base sm:text-lg font-black font-mono text-white mt-0.5">0</p>
+          </div>
+          <div class="text-center sm:text-left">
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1"><i class="fa-solid fa-layer-group text-amber-400"></i> <span data-i18n="statCardsDistributed">Cards Distributed</span></p>
+            <p id="holders-stat-cards" class="text-base sm:text-lg font-black font-mono text-amber-400 mt-0.5">0</p>
+          </div>
+        </div>
       </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="p-3" data-i18n="thOwnerName">Owner Name</th>
-              <th class="p-3" data-i18n="thCardsOwned">Cards Owned</th>
-              <th class="p-3" data-i18n="thSerialsHeld">Serials Held</th>
-              <th class="p-3 text-right" data-i18n="thAction">Action</th>
-            </tr>
-          </thead>
-          <tbody id="holders-table-body" class="divide-y divide-slate-800"></tbody>
-        </table>
-      </div>
+
+      <div id="holders-directory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
+
 
     <!-- HOLDER VAULT VIEW (read-only, mirrors My Vault layout for the selected collector) -->
     <section id="view-holder-vault" class="hidden space-y-6">
@@ -2432,8 +2446,11 @@
         profileSettingsBtn: "Profile Settings",
         wishlistTitle: "Saved Wishlist",
         wishlistSubtitle: "Click on any card to directly propose a trade offer to its owner!",
+        holdersHeroBadge: "COLLECTOR DIRECTORY",
         holdersTitle: "Holders Directory",
         holdersSubtitle: "Click on any collector row or card serial to view their collection and send direct trade offers.",
+        statTotalHolders: "Total Holders",
+        statCardsDistributed: "Cards Distributed",
         thOwnerName: "Owner Name",
         thCardsOwned: "Cards Owned",
         thSerialsHeld: "Serials Held",
@@ -2740,8 +2757,11 @@
         profileSettingsBtn: "Pengaturan Profil",
         wishlistTitle: "Daftar Keinginan",
         wishlistSubtitle: "Klik kartu apa saja untuk langsung mengajukan penawaran tukar kepada pemiliknya!",
+        holdersHeroBadge: "DIREKTORI KOLEKTOR",
         holdersTitle: "Direktori Kolektor",
         holdersSubtitle: "Klik baris kolektor atau serial kartu untuk melihat koleksi dan mengirim tawaran.",
+        statTotalHolders: "Total Kolektor",
+        statCardsDistributed: "Kartu Terdistribusi",
         thOwnerName: "Nama Kolektor",
         thCardsOwned: "Jumlah Kartu",
         thSerialsHeld: "Serial Dipegang",
@@ -7993,8 +8013,8 @@
     }
 
     function renderHoldersTable() {
-      const tbody = document.getElementById('holders-table-body');
-      if (!tbody) return;
+      const grid = document.getElementById('holders-directory-grid');
+      if (!grid) return;
 
       const holdersMap = {};
       inventory.forEach(c => {
@@ -8005,53 +8025,70 @@
       });
 
       const entries = Object.entries(holdersMap);
+
+      const statCount = document.getElementById('holders-stat-count');
+      const statCards = document.getElementById('holders-stat-cards');
+      if (statCount) statCount.innerText = entries.length;
+      if (statCards) statCards.innerText = entries.reduce((sum, [, cards]) => sum + cards.length, 0);
+
       if (entries.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">${currentLanguage === 'ID' ? 'Belum ada kolektor sekunder eksternal terdaftar. Semua stok masih di rumah utama.' : 'No external secondary holders registered yet. All stock with primary house.'}</td></tr>`;
+        grid.innerHTML = `<div class="col-span-full text-center py-16 text-slate-500 text-xs">${currentLanguage === 'ID' ? 'Belum ada kolektor sekunder eksternal terdaftar. Semua stok masih di rumah utama.' : 'No external secondary holders registered yet. All stock with primary house.'}</div>`;
         return;
       }
 
-      tbody.innerHTML = entries.map(([ownerName, cards]) => {
-        const serialsList = cards.map(c => `<span class="inline-block bg-slate-950 border border-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-400 mr-1 mb-1">${c.serial}</span>`).join('');
+      // Show the most active collectors first.
+      entries.sort((a, b) => b[1].length - a[1].length);
+
+      grid.innerHTML = entries.map(([ownerName, cards]) => {
+        const serialsList = cards.map(c => `<span class="inline-block bg-slate-950 border border-slate-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-amber-400">${c.serial}</span>`).join('');
         const avatarUrl = getCollectorAvatar(ownerName);
         const isAdmin = isUserAdmin(ownerName);
         const displayName = getCollectorDisplayName(ownerName);
         const cardsHeldLabel = currentLanguage === 'ID' ? `${cards.length} kartu dimiliki` : `${cards.length} cards held`;
-        const cardsCountLabel = currentLanguage === 'ID' ? `${cards.length} Kartu` : `${cards.length} Cards`;
+        const cardsOwnedLabel = currentLanguage === 'ID' ? 'Kartu Dimiliki' : 'Cards Owned';
+        const serialsHeldLabel = currentLanguage === 'ID' ? 'Serial yang Dimiliki' : 'Serials Held';
         const viewVaultLabel = currentLanguage === 'ID' ? 'Lihat Brankas' : 'View Vault';
         const chatCollectorLabel = currentLanguage === 'ID' ? 'Chat Kolektor' : 'Chat Collector';
         const collectorInquiryContext = currentLanguage === 'ID' ? 'Pertanyaan Kolektor' : 'Collector Inquiry';
 
         return `
-          <tr class="hover:bg-slate-950/60 transition-colors">
-            <td class="p-3">
-              <div class="flex items-center gap-2.5">
-                <img src="${avatarUrl}" class="w-7 h-7 rounded-full object-cover border border-slate-700 bg-slate-950">
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-extrabold text-white text-xs">${displayName}</span>
-                    ${isAdmin ? `<span class="text-[8px] font-black px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">ADMIN</span>` : ''}
+          <div class="premium-panel rounded-3xl p-5 flex flex-col gap-4 border border-slate-800/60 hover:border-teal-500/40 transition-all">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <img src="${avatarUrl}" class="w-11 h-11 rounded-2xl object-cover border border-slate-700 bg-slate-950 shrink-0">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-extrabold text-white text-xs truncate">${displayName}</span>
+                    ${isAdmin ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">ADMIN</span>` : ''}
                   </div>
-                  <span class="text-[9px] text-slate-400 block">${cardsHeldLabel}</span>
+                  <span class="text-[10px] text-slate-500">${cardsHeldLabel}</span>
                 </div>
               </div>
-            </td>
-            <td class="p-3 font-mono font-bold text-indigo-400 text-xs">${cardsCountLabel}</td>
-            <td class="p-3">${serialsList}</td>
-            <td class="p-3 text-right">
-              <div class="flex justify-end gap-2">
-                ${currentUser && currentUser.isAdmin ? `
-                <button onclick="openAdminEditCollectorModal('${ownerName}')" title="Admin: Edit collector profile" class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 transition-all">
-                  <i class="fa-solid fa-user-pen text-[11px]"></i>
-                </button>` : ''}
-                <button onclick="openHolderVaultModal('${ownerName}')" class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] rounded-xl border border-amber-500/30 transition-all inline-flex items-center gap-1">
-                  <i class="fa-solid fa-vault"></i> ${viewVaultLabel}
-                </button>
-                <button onclick="openDirectChat('${ownerName}', '${collectorInquiryContext}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center gap-1">
-                  <i class="fa-solid fa-comments"></i> ${chatCollectorLabel}
-                </button>
-              </div>
-            </td>
-          </tr>
+              ${currentUser && currentUser.isAdmin ? `
+              <button onclick="openAdminEditCollectorModal('${ownerName}')" title="Admin: Edit collector profile" class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30 transition-all">
+                <i class="fa-solid fa-user-pen text-[11px]"></i>
+              </button>` : ''}
+            </div>
+
+            <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-2xl px-3 py-2">
+              <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">${cardsOwnedLabel}</span>
+              <span class="font-mono font-black text-teal-400 text-sm">${cards.length}</span>
+            </div>
+
+            <div>
+              <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">${serialsHeldLabel}</p>
+              <div class="flex flex-wrap gap-1">${serialsList}</div>
+            </div>
+
+            <div class="flex gap-2 pt-1 mt-auto">
+              <button onclick="openHolderVaultModal('${ownerName}')" class="flex-1 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[10px] rounded-xl border border-amber-500/30 transition-all inline-flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-vault"></i> ${viewVaultLabel}
+              </button>
+              <button onclick="openDirectChat('${ownerName}', '${collectorInquiryContext}')" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-xl shadow transition-all inline-flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-comments"></i> ${chatCollectorLabel}
+              </button>
+            </div>
+          </div>
         `;
       }).join('');
     }
