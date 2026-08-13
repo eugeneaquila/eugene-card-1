@@ -5376,7 +5376,13 @@
 
       let isTaken = false;
       for (let emailKey in globalCollectorProfiles) {
-        if (emailKey !== email) {
+        // BUGFIX: a collector's own entry in globalCollectorProfiles isn't always
+        // keyed by email — anyone adopted from the legacy "users" collection (see
+        // mapUsersDocToProfileShape above) is keyed by uid instead. Excluding only
+        // `email` let those accounts collide with themselves here on every login,
+        // appending a new random suffix each time even though the username was
+        // never actually taken by anyone else.
+        if (emailKey !== email && emailKey !== user.uid) {
           const p = globalCollectorProfiles[emailKey];
           if (p.username?.toLowerCase() === username) {
             isTaken = true;
@@ -5415,7 +5421,9 @@
       setCookie(`profile_${email}`, profilePayload, 30);
       try {
         await db.collection("profiles").doc(email).set(profilePayload, { merge: true });
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Error saving profile on login (username/name may not persist):', e);
+      }
       await syncProfileToUsersDoc(user.uid, profilePayload);
 
       startUserHeartbeat();
