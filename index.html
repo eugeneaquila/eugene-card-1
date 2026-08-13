@@ -1980,6 +1980,12 @@
     let payoutRequestsList = [];
     let viewedCollectorFilter = null;
     let globalCollectorProfiles = {};
+    // ===== PROFILES <-> USERS SYNC STATE =====
+    // Raw per-collection snapshots, kept separately so either collection's
+    // realtime listener can fire independently without wiping out the other's
+    // data (see rebuildGlobalCollectorProfiles() below).
+    let globalRawProfilesData = {};
+    let globalRawUsersData = {};
     let activeDetailCardId = null;
     let marketProfilePanelOpen = false;
     let chartInstances = {};
@@ -2735,16 +2741,106 @@
       return ADMIN_EMAILS.some(e => e.toLowerCase() === lower || e.split('@')[0].toLowerCase() === lower);
     }
 
+    // ===== PROFILES <-> USERS SYNC =====
+    // This app has always stored collector profile data (display name,
+    // avatar, bio, socials) in a "profiles" collection keyed by email. A
+    // separate, older "users" collection (keyed by Firebase Auth UID) also
+    // holds profile-shaped data for some accounts, using different field
+    // names (displayName instead of name, avatar instead of avatarUrl,
+    // instagram/tiktok/website instead of socialIg/socialTiktok/socialWeb).
+    // Nothing used to read that collection, so any collector whose data only
+    // lived there (e.g. accounts created before "profiles" existed) showed up
+    // as a raw username with a placeholder avatar in the Holders Directory,
+    // vault pages, and the admin relink picker. These helpers translate
+    // between the two shapes and keep both collections mirrored going
+    // forward — "name" (profiles) and "displayName" (users) always carry the
+    // same value.
+    function mapUsersDocToProfileShape(u) {
+      if (!u) return null;
+      return {
+        name: u.displayName || u.name || '',
+        username: u.username || '',
+        avatarUrl: u.avatar || u.avatarUrl || '',
+        bio: u.bio || '',
+        isPlusMember: !!u.isPlusMember,
+        socialIg: u.instagram || u.socialIg || '',
+        socialTwitter: u.twitter || u.socialTwitter || '',
+        socialTiktok: u.tiktok || u.socialTiktok || '',
+        socialWeb: u.website || u.socialWeb || ''
+      };
+    }
+
+    function mapProfileToUsersDocShape(p) {
+      if (!p) return null;
+      return {
+        displayName: p.name || '',
+        username: p.username || '',
+        avatar: p.avatarUrl || '',
+        bio: p.bio || '',
+        instagram: p.socialIg || '',
+        tiktok: p.socialTiktok || '',
+        website: p.socialWeb || ''
+      };
+    }
+
+    // Best-effort mirror write to the legacy "users/{uid}" doc so anyone
+    // still looking at that collection (or a not-yet-migrated part of the
+    // app) sees the same name/avatar/bio/socials as "profiles". Never throws —
+    // this is a secondary copy, not the source of truth.
+    async function syncProfileToUsersDoc(uid, profilePayload) {
+      if (!uid) return;
+      try {
+        await db.collection("users").doc(uid).set(mapProfileToUsersDocShape(profilePayload), { merge: true });
+      } catch (e) {
+        console.warn('Error mirroring profile to users collection:', e);
+      }
+    }
+
+    // Rebuilds globalCollectorProfiles from the latest "profiles" and "users"
+    // snapshots. A "profiles" entry always wins for a given person — "users"
+    // entries only fill in collectors who don't have a "profiles" doc yet
+    // (matched by username where possible, otherwise added under their own
+    // uid so they still resolve everywhere getCollectorProfile() is used).
+    function rebuildGlobalCollectorProfiles() {
+      globalCollectorProfiles = { ...globalRawProfilesData };
+
+      const existingUsernames = new Set(
+        Object.values(globalCollectorProfiles)
+          .map(p => (p.username || '').toLowerCase())
+          .filter(Boolean)
+      );
+
+      for (const uid in globalRawUsersData) {
+        const mapped = mapUsersDocToProfileShape(globalRawUsersData[uid]);
+        mapped.uid = uid;
+        const usernameKey = (mapped.username || '').toLowerCase();
+        if (usernameKey && existingUsernames.has(usernameKey)) continue; // already represented via "profiles"
+        if (!globalCollectorProfiles[uid]) {
+          globalCollectorProfiles[uid] = mapped;
+        }
+      }
+    }
+
     async function loadCollectorProfiles() {
       try {
         const snapshot = await db.collection("profiles").get();
-        globalCollectorProfiles = {};
+        globalRawProfilesData = {};
         snapshot.forEach(doc => {
-          globalCollectorProfiles[doc.id] = doc.data();
+          globalRawProfilesData[doc.id] = doc.data();
         });
       } catch (e) {
         console.warn('Error loading collector profiles:', e);
       }
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        globalRawUsersData = {};
+        usersSnapshot.forEach(doc => {
+          globalRawUsersData[doc.id] = doc.data();
+        });
+      } catch (e) {
+        console.warn('Error loading legacy user profiles:', e);
+      }
+      rebuildGlobalCollectorProfiles();
     }
 
     function getCollectorProfile(nameOrUsername) {
@@ -2834,12 +2930,13 @@
       currentUser.isAdmin = isUserAdmin(currentUser.email);
       currentUser.isPlusMember = false;
 
-      const profilePayload = { name: personaName, username: currentUser.username, avatarUrl: currentUser.avatarUrl, bio: currentUser.bio, isPlusMember: false, socialIg: currentUser.socialIg, socialTwitter: currentUser.socialTwitter, socialTiktok: currentUser.socialTiktok, socialWeb: currentUser.socialWeb };
+      const profilePayload = { name: personaName, username: currentUser.username, avatarUrl: currentUser.avatarUrl, bio: currentUser.bio, isPlusMember: false, socialIg: currentUser.socialIg, socialTwitter: currentUser.socialTwitter, socialTiktok: currentUser.socialTiktok, socialWeb: currentUser.socialWeb, uid: currentUser.uid || null };
       localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${currentUser.email}`, profilePayload, 30);
 
       try {
         await db.collection("profiles").doc(currentUser.email).set(profilePayload, { merge: true });
+        await syncProfileToUsersDoc(currentUser.uid, profilePayload);
         await loadCollectorProfiles();
       } catch (e) {}
 
@@ -3655,10 +3752,28 @@
       // Holders Directory kept showing raw usernames / placeholder avatars.
       // A live listener keeps globalCollectorProfiles current for everyone.
       db.collection("profiles").onSnapshot((snapshot) => {
-        globalCollectorProfiles = {};
+        globalRawProfilesData = {};
         snapshot.forEach(doc => {
-          globalCollectorProfiles[doc.id] = doc.data();
+          globalRawProfilesData[doc.id] = doc.data();
         });
+        rebuildGlobalCollectorProfiles();
+        renderHoldersTable();
+        const holderVaultView = document.getElementById('view-holder-vault');
+        if (viewingHolderName && holderVaultView && !holderVaultView.classList.contains('hidden')) {
+          renderHolderVaultPage(viewingHolderName);
+        }
+      });
+
+      // Mirrors the listener above for the legacy "users" collection (see the
+      // PROFILES <-> USERS SYNC comment near loadCollectorProfiles) so
+      // collectors who only exist there also show up live in the Holders
+      // Directory / vault pages without needing a page refresh.
+      db.collection("users").onSnapshot((snapshot) => {
+        globalRawUsersData = {};
+        snapshot.forEach(doc => {
+          globalRawUsersData[doc.id] = doc.data();
+        });
+        rebuildGlobalCollectorProfiles();
         renderHoldersTable();
         const holderVaultView = document.getElementById('view-holder-vault');
         if (viewingHolderName && holderVaultView && !holderVaultView.classList.contains('hidden')) {
@@ -4557,10 +4672,20 @@
       const email = user.email ? user.email.toLowerCase() : '';
 
       await loadCollectorProfiles();
-      const savedCustomProfile = globalCollectorProfiles[email] || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
+      const savedCustomProfile = globalRawProfilesData[email] || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
       let customData = {};
       if (savedCustomProfile) {
         try { customData = typeof savedCustomProfile === 'object' ? savedCustomProfile : JSON.parse(savedCustomProfile); } catch (e) {}
+      }
+
+      // Adopt any legacy "users/{uid}" data (see PROFILES <-> USERS SYNC
+      // comment near loadCollectorProfiles) for fields the "profiles" doc
+      // doesn't already have a value for, so a collector who signed up before
+      // "profiles" existed doesn't lose their name/avatar/bio/socials on
+      // their next login — and so the account gets adopted into "profiles"
+      // (keyed by their real email) instead of only ever resolving by uid.
+      if (globalRawUsersData[user.uid] && Object.keys(customData).length === 0) {
+        customData = mapUsersDocToProfileShape(globalRawUsersData[user.uid]);
       }
 
       const resolvedName = user.displayName || (email ? email.split('@')[0] : "Eugene");
@@ -4593,14 +4718,18 @@
       const socialTiktok = customData.socialTiktok || '';
       const socialWeb = customData.socialWeb || '';
 
-      currentUser = { name, username, email, isAdmin, isPlusMember, avatarUrl, bio, socialIg, socialTwitter, socialTiktok, socialWeb };
+      currentUser = { name, username, email, isAdmin, isPlusMember, avatarUrl, bio, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid };
 
-      const profilePayload = { name, username, avatarUrl, bio, isPlusMember, socialIg, socialTwitter, socialTiktok, socialWeb };
+      // uid is stored on the profile doc itself so any later edit path (self-
+      // service, persona switch, or admin edit) can find its way back to the
+      // matching "users/{uid}" doc to keep both collections in sync.
+      const profilePayload = { name, username, avatarUrl, bio, isPlusMember, socialIg, socialTwitter, socialTiktok, socialWeb, uid: user.uid };
       localStorage.setItem(`profile_${email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${email}`, profilePayload, 30);
       try {
         await db.collection("profiles").doc(email).set(profilePayload, { merge: true });
       } catch (e) {}
+      await syncProfileToUsersDoc(user.uid, profilePayload);
 
       closeAuthModal();
       renderAuthHeader();
@@ -4724,12 +4853,13 @@
       // admin status. Admin status is fixed to the authenticated email for the session.
       currentUser.isAdmin = isUserAdmin(currentUser.email);
 
-      const profilePayload = { name: newName, username: newUsername, avatarUrl: newAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb };
+      const profilePayload = { name: newName, username: newUsername, avatarUrl: newAvatar, bio: newBio, isPlusMember: false, socialIg: newIg, socialTwitter: newTwitter, socialTiktok: newTiktok, socialWeb: newWeb, uid: currentUser.uid || null };
       localStorage.setItem(`profile_${currentUser.email}`, JSON.stringify(profilePayload));
       setCookie(`profile_${currentUser.email}`, profilePayload, 30);
 
       try {
         await db.collection("profiles").doc(currentUser.email).set(profilePayload, { merge: true });
+        await syncProfileToUsersDoc(currentUser.uid, profilePayload);
         await loadCollectorProfiles();
 
         closeProfileManagerModal();
@@ -6546,11 +6676,17 @@
         socialIg: (existingProfile && existingProfile.socialIg) || '',
         socialTwitter: (existingProfile && existingProfile.socialTwitter) || '',
         socialTiktok: (existingProfile && existingProfile.socialTiktok) || '',
-        socialWeb: (existingProfile && existingProfile.socialWeb) || ''
+        socialWeb: (existingProfile && existingProfile.socialWeb) || '',
+        uid: (existingProfile && existingProfile.uid) || null
       };
 
       try {
         await db.collection("profiles").doc(docId).set(profilePayload, { merge: true });
+        // If this collector's record has a known uid — either because they've
+        // logged in before (see handleUserSession) or their only record so
+        // far was the legacy "users" doc itself — mirror the edit there too
+        // so the two collections don't drift apart again.
+        if (profilePayload.uid) await syncProfileToUsersDoc(profilePayload.uid, profilePayload);
         await loadCollectorProfiles();
 
         closeAdminEditCollectorModal();
