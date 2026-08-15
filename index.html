@@ -5390,6 +5390,8 @@ body.premium-global [class*="overflow-x-auto"] {
     }
 
     function setInboxFilter(filter) {
+      // The selected tab is the source of truth. Reading a message must never
+      // silently switch ALL into UNREAD.
       inboxFilter = ['ALL','UNREAD','ADMIN','PINNED'].includes(filter) ? filter : 'ALL';
       ['ALL','UNREAD','ADMIN','PINNED'].forEach(f => {
         const el = document.getElementById(`inbox-filter-${f}`);
@@ -5418,6 +5420,21 @@ body.premium-global [class*="overflow-x-auto"] {
     async function markInboxThreadRead(thread) {
       if (!thread?.id || !currentUser) return;
       const tokens = getChatIdentityTokens(currentUser);
+
+      // Update the local cache immediately. This prevents the ALL tab from
+      // briefly behaving like UNREAD while Firestore sends the next snapshot.
+      const cached = inboxThreadsCache.find(t => t.id === thread.id);
+      if (cached) {
+        const existing = Array.isArray(cached.readBy) ? [...cached.readBy] : [];
+        tokens.forEach(token => {
+          if (!existing.some(v => normalizeCollectorValue(v) === normalizeCollectorValue(token))) {
+            existing.push(token);
+          }
+        });
+        cached.readBy = existing;
+      }
+      renderInboxThreads();
+
       try {
         await db.collection('chats').doc(thread.id).set({
           readBy: firebase.firestore.FieldValue.arrayUnion(...tokens)
@@ -5444,6 +5461,9 @@ body.premium-global [class*="overflow-x-auto"] {
       const query = inboxSearchQuery;
       let list = inboxThreadsCache.filter(t => {
         const unread = isChatThreadUnread(t);
+
+        // ALL means ALL conversations. Read/unread status only affects the
+        // visual state and sorting here; it must never remove a conversation.
         if (inboxFilter === 'UNREAD' && !unread) return false;
         if (inboxFilter === 'ADMIN' && !t.isOtherAdmin) return false;
         if (inboxFilter === 'PINNED' && !inboxPinnedThreads.has(t.id)) return false;
