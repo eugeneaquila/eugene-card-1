@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
   <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
        browser by design (that's how PayPal's own JS SDK works). The Secret Key is
@@ -991,6 +992,15 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
   }
 }
 </style>
+    <style id="eugene-push-notification-ui">
+      #notification-dropdown{max-width:calc(100vw - 1rem);}
+      #notification-list > div{cursor:default;}
+      #notification-list > div:hover{background:rgba(15,23,42,.82);}
+      @media(max-width:640px){
+        #notification-dropdown{left:8px;right:8px;top:72px;width:auto !important;max-width:none;}
+        #enable-push-notifications-btn{font-size:8px;padding:.45rem .6rem;}
+      }
+    </style>
 
 
 <style id="eugene-premium-catalog-system">
@@ -1837,12 +1847,12 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         <button onclick="toggleLanguage()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-mono font-bold text-xs rounded-xl border border-slate-800 transition-all flex items-center gap-1" title="Switch Language / Ganti Bahasa">
           <i class="fa-solid fa-globe text-[11px]"></i>
-          <span id="current-lang-label">EN</span>
+          <span id="current-lang-label">ID</span>
         </button>
 
         <button id="notif-toggle-btn" onclick="toggleNotificationMenu()" class="relative p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 flex items-center justify-center transition-all">
           <i class="fa-solid fa-bell text-sm text-amber-400"></i>
-          <span id="notification-badge" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-600 text-white font-black text-[10px] rounded-full flex items-center justify-center border-2 border-slate-950">0</span>
+          <span id="notification-badge" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-600 text-white font-black text-[10px] rounded-full items-center justify-center border-2 border-slate-950 hidden">0</span>
         </button>
 
         <button onclick="toggleCartDrawer()" class="relative p-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-800 flex items-center justify-center transition-all">
@@ -1935,6 +1945,10 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       </div>
     </div>
     
+    <div class="px-3 py-2.5 border-b border-slate-800/80 bg-slate-950/70 flex items-center justify-between gap-3">
+      <div class="min-w-0"><p class="text-[10px] font-black text-white">Push Notification</p><p id="push-notification-status" class="text-[9px] text-amber-400 font-bold mt-0.5">Belum diaktifkan</p></div>
+      <button id="enable-push-notifications-btn" type="button" onclick="enablePushNotifications(true)" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black flex items-center gap-1.5"><i class="fa-solid fa-bell"></i> Aktifkan Notifikasi</button>
+    </div>
     <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-1">
       <div class="p-6 text-center text-xs text-slate-500" data-i18n="noNotifications">No recent notifications.</div>
     </div>
@@ -3746,6 +3760,151 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     const auth = firebase.auth();
     const analytics = firebase.analytics();
 
+    // ================================================================
+    // EUGENE CARD — PUSH NOTIFICATIONS / FCM
+    // ================================================================
+    let fcmMessaging = null;
+    let fcmServiceWorkerRegistration = null;
+    let fcmPushReady = false;
+    let notificationPermissionState = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    let inboxNotificationInitialized = false;
+    let knownChatNotificationTimes = new Map();
+    let knownPendingTransactionIds = new Set();
+
+    function updatePushPermissionUI() {
+      const btn = document.getElementById('enable-push-notifications-btn');
+      const status = document.getElementById('push-notification-status');
+      if (!btn && !status) return;
+      const permission = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+      notificationPermissionState = permission;
+      if (status) {
+        status.textContent = permission === 'granted'
+          ? 'Aktif'
+          : permission === 'denied'
+            ? 'Diblokir browser'
+            : permission === 'unsupported'
+              ? 'Tidak didukung browser'
+              : 'Belum diaktifkan';
+        status.className = 'text-[9px] font-bold ' + (permission === 'granted' ? 'text-emerald-400' : permission === 'denied' ? 'text-rose-400' : 'text-amber-400');
+      }
+      if (btn) {
+        btn.disabled = permission === 'unsupported' || permission === 'denied';
+        btn.classList.toggle('opacity-50', btn.disabled);
+        btn.innerHTML = permission === 'granted'
+          ? '<i class="fa-solid fa-check"></i> Notifikasi Aktif'
+          : '<i class="fa-solid fa-bell"></i> Aktifkan Notifikasi';
+      }
+    }
+
+    async function enablePushNotifications(showFeedback = true) {
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        if (showFeedback) showToast('Browser ini belum mendukung push notification.');
+        updatePushPermissionUI();
+        return null;
+      }
+      if (!window.isSecureContext) {
+        if (showFeedback) showToast('Push notification membutuhkan HTTPS.');
+        return null;
+      }
+      try {
+        const permission = Notification.permission === 'granted'
+          ? 'granted'
+          : await Notification.requestPermission();
+        notificationPermissionState = permission;
+        updatePushPermissionUI();
+        if (permission !== 'granted') {
+          if (showFeedback) showToast(permission === 'denied' ? 'Notifikasi diblokir browser.' : 'Izin notifikasi belum diberikan.');
+          return null;
+        }
+
+        if (!firebase.messaging || !(await firebase.messaging.isSupported())) {
+          if (showFeedback) showToast('FCM tidak didukung di browser ini.');
+          return null;
+        }
+
+        fcmServiceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        await navigator.serviceWorker.ready;
+        fcmMessaging = firebase.messaging();
+
+        // Firebase supports a default VAPID key, but a project-specific key is
+        // recommended for production. Set FCM_VAPID_KEY when you generate one.
+        const tokenOptions = { serviceWorkerRegistration: fcmServiceWorkerRegistration };
+        if (window.EUGENE_FCM_VAPID_KEY) tokenOptions.vapidKey = window.EUGENE_FCM_VAPID_KEY;
+        const token = await fcmMessaging.getToken(tokenOptions);
+        if (!token) throw new Error('FCM registration token tidak tersedia.');
+
+        localStorage.setItem('eugene_fcm_token', token);
+        fcmPushReady = true;
+        updatePushPermissionUI();
+
+        // Best-effort token registration. Firestore rules may intentionally
+        // reject this; the browser token is still kept locally for testing.
+        if (currentUser?.uid) {
+          try {
+            const tokenKey = btoa(token).replace(/[^a-zA-Z0-9]/g, '').slice(0, 80) || 'device';
+            await db.collection('notificationTokens').doc(currentUser.uid).collection('tokens').doc(tokenKey).set({
+              token,
+              uid: currentUser.uid,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              userAgent: navigator.userAgent.slice(0, 240)
+            }, { merge: true });
+          } catch (e) {
+            console.info('FCM token Firestore registration skipped by rules:', e.message);
+          }
+        }
+
+        if (!fcmMessaging.__eugeneOnMessageBound) {
+          fcmMessaging.onMessage((payload) => {
+            const data = payload?.data || {};
+            const title = payload?.notification?.title || data.title || 'Eugene Card';
+            const message = payload?.notification?.body || data.body || 'Ada aktivitas baru di Eugene Card.';
+            addNotification(title, message, data.iconClass || 'fa-bell text-amber-400', { browser: false });
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+              showBrowserNotification(title, message, data.url || '/');
+            }
+          });
+          fcmMessaging.__eugeneOnMessageBound = true;
+        }
+
+        if (showFeedback) showToast('Push notification Eugene Card sudah aktif.');
+        return token;
+      } catch (e) {
+        console.warn('FCM setup failed:', e);
+        fcmPushReady = false;
+        if (showFeedback) showToast('Push notification gagal diaktifkan: ' + (e.message || 'Unknown error'));
+        return null;
+      }
+    }
+
+    function showBrowserNotification(title, message, url = '/') {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      try {
+        const n = new Notification(String(title || 'Eugene Card'), {
+          body: String(message || ''),
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: 'eugene-card-' + Date.now()
+        });
+        n.onclick = () => {
+          try { window.focus(); } catch (e) {}
+          if (url && url !== '/') window.location.href = url;
+          n.close();
+        };
+      } catch (e) { console.warn('Browser notification failed:', e); }
+    }
+
+    function notifyUser(title, message, iconClass = 'fa-bell text-amber-400', url = '/') {
+      addNotification(title, message, iconClass, { browser: true, url });
+    }
+
+    function setupPushNotificationSystem() {
+      updatePushPermissionUI();
+      if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+      // Do not request permission automatically. Browsers expect notification
+      // permission to be triggered by a user gesture; the Bell menu provides it.
+      if (Notification.permission === 'granted') enablePushNotifications(false);
+    }
+
     // ---------------------------------------------------------------------
     // EmailJS — sends the admin (Eugene Card) a notification email every
     // time a new transaction lands in the Admin Hub approval queue
@@ -3837,7 +3996,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
     let activePaymentMethod = 'QRIS';
 
-    let currentLanguage = 'EN';
+    let currentLanguage = 'ID';
     let currentUser = null;
     let cart = [];
     let wishlist = new Set();
@@ -5179,28 +5338,31 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderNotifications();
     }
 
-    function addNotification(title, message, iconClass = 'fa-info-circle text-indigo-400') {
+    function addNotification(title, message, iconClass = 'fa-info-circle text-indigo-400', options = {}) {
       const newNotif = {
-        id: 'notif-' + Date.now(),
-        title,
-        message,
+        id: options.id || ('notif-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)),
+        title: String(title || 'Eugene Card'),
+        message: String(message || ''),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         iconClass
       };
       systemNotifications.unshift(newNotif);
-      if (systemNotifications.length > 20) systemNotifications.pop();
+      if (systemNotifications.length > 30) systemNotifications.pop();
       try {
         localStorage.setItem('eugene_notifications', JSON.stringify(systemNotifications));
         setCookie('eugene_notifications', systemNotifications, 7);
       } catch (e) {}
       renderNotifications();
+      if (options.browser && document.visibilityState !== 'visible') {
+        showBrowserNotification(newNotif.title, newNotif.message, options.url || '/');
+      }
     }
 
     function renderNotifications() {
       const badge = document.getElementById('notification-badge');
       const list = document.getElementById('notification-list');
       
-      if (badge) badge.innerText = systemNotifications.length;
+      if (badge) { badge.innerText = systemNotifications.length > 99 ? '99+' : String(systemNotifications.length); badge.classList.toggle('hidden', systemNotifications.length === 0); badge.classList.toggle('flex', systemNotifications.length > 0); }
       if (!list) return;
 
       if (systemNotifications.length === 0) {
@@ -5766,6 +5928,21 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         });
 
         inboxThreadsCache = [...deduped.values()];
+
+        // Notify for new incoming chats without requiring the Inbox tab to be open.
+        const nextChatTimes = new Map();
+        inboxThreadsCache.forEach(thread => {
+          const ts = thread.updatedAt?.toMillis ? thread.updatedAt.toMillis() : 0;
+          nextChatTimes.set(thread.id, ts);
+          const previousTs = knownChatNotificationTimes.get(thread.id) || 0;
+          if (inboxNotificationInitialized && ts > previousTs && isChatThreadUnread(thread) && thread.id !== currentChatContextId) {
+            const sender = thread.otherUser || 'Collector';
+            notifyUser('Pesan baru', `${sender} mengirim pesan baru.`, 'fa-comments text-violet-400', '#');
+          }
+        });
+        knownChatNotificationTimes = nextChatTimes;
+        inboxNotificationInitialized = true;
+
         updateInboxUnreadBadge(inboxThreadsCache.filter(isChatThreadUnread).length);
         renderInboxThreads();
       }, err => {
@@ -6154,7 +6331,24 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       db.collection("transactions").onSnapshot((snapshot) => {
         fetchTransactionHistory();
         if (currentUser?.isAdmin) {
+          const pendingNow = new Set();
+          snapshot.forEach(doc => {
+            const tx = doc.data() || {};
+            if (tx.status === 'PENDING') pendingNow.add(doc.id);
+          });
+          if (currentUser.isAdmin && knownPendingTransactionIds.size && pendingNow.size) {
+            pendingNow.forEach(id => {
+              if (!knownPendingTransactionIds.has(id)) {
+                const tx = snapshot.docs.find(d => d.id === id)?.data() || {};
+                const typeLabel = tx.type === 'SELLBACK' ? 'permintaan sell-back' : 'pesanan pembelian';
+                notifyUser('Admin Hub: tindakan baru', `Ada ${typeLabel} baru dari ${tx.user_name || 'collector'} yang menunggu persetujuan.`, 'fa-shield-halved text-rose-400', '#');
+              }
+            });
+          }
+          knownPendingTransactionIds = pendingNow;
           loadPendingTransactions();
+        } else {
+          knownPendingTransactionIds = new Set();
         }
       });
 
@@ -7707,6 +7901,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       switchTab('home'); // Home is the main landing page on first open
       trackSiteVisit();
       showOnboardingIfFirstVisit();
+      setupPushNotificationSystem();
 
       auth.onAuthStateChanged((user) => {
         if (user) {
@@ -7714,6 +7909,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         } else {
           currentUser = null;
           if (inboxUnsubscribe) { inboxUnsubscribe(); inboxUnsubscribe = null; }
+          knownChatNotificationTimes = new Map();
+          knownPendingTransactionIds = new Set();
+          inboxNotificationInitialized = false;
           updateInboxUnreadBadge(0);
           renderAuthHeader();
           updateAllViews();
@@ -7933,6 +8131,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       renderAuthHeader();
       updateAllViews();
       loadUserInboxThreads();
+      updatePushPermissionUI();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') enablePushNotifications(false);
 
       // First-ever login (or one where the popup was never completed/skipped
       // yet): ask the collector to confirm their display name, username, and
@@ -10598,7 +10798,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         await batch.commit();
 
         showToast(`Transaction ${txId} approved! Ownership updated.`);
-        addNotification('Transaction Approved', `Approved ${txId} for ${tx.user_name}.`, 'fa-circle-check text-emerald-400');
+        notifyUser('Transaksi disetujui', `Transaksi ${txId} untuk ${tx.user_name || 'collector'} telah disetujui.`, 'fa-circle-check text-emerald-400', '#');
 
         await loadAppState();
       } catch (e) {
@@ -10612,7 +10812,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       try {
         await db.collection("transactions").doc(txId).update({ status: 'REJECTED' });
         showToast(`Transaction ${txId} rejected.`);
-        addNotification('Transaction Rejected', `Rejected transaction ${txId}.`, 'fa-xmark text-rose-400');
+        notifyUser('Transaksi ditolak', `Transaksi ${txId} telah ditolak.`, 'fa-xmark text-rose-400', '#');
         await loadAppState();
       } catch (e) {
         showToast('Rejection error: ' + e.message);
@@ -10843,6 +11043,18 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       }
     }
   });
+})();
+</script>
+
+<script id="eugeneDefaultLanguageInit">
+(function(){
+  // Bahasa utama Eugene Card: Bahasa Indonesia.
+  // Tombol EN/ID tetap tersedia agar pengguna dapat beralih ke English.
+  document.documentElement.lang = 'id';
+  const label = document.getElementById('current-lang-label');
+  if (label) label.textContent = 'ID';
+  if (typeof currentLanguage !== 'undefined') currentLanguage = 'ID';
+  if (typeof applyTranslations === 'function') applyTranslations();
 })();
 </script>
 
