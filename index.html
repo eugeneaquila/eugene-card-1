@@ -1482,6 +1482,239 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
 }
 </style>
 
+
+<style id="eugene-mobile-overflow-fix">
+/* =========================================================
+   EUGENE CARD — MOBILE-FIRST OVERFLOW / LAYOUT FIX
+   Prevents the application viewport from drifting horizontally
+   while preserving horizontal scrolling only inside intentional
+   controls such as the top navigation and wide data tables.
+   ========================================================= */
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+img, video, canvas, svg, iframe {
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  max-width: 100%;
+}
+
+/* Prevent flex/grid children from forcing the page wider. */
+main, header, footer, section, article, aside, nav,
+main > *, header > *, footer > *, section > *, article > *, aside > * {
+  min-width: 0;
+}
+
+/* Long IDs, usernames, URLs and card metadata must wrap. */
+body.premium-global :where(p, span, div, h1, h2, h3, h4, h5, h6, label, a, button) {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Keep intentional single-line navigation labels intact. */
+body.premium-global nav button,
+body.premium-global nav a {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+/* The app's main content can never become wider than the viewport. */
+body.premium-global main {
+  width: 100% !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  overflow-x: clip;
+}
+
+/* Prevent decorative glows from creating a scrollable layout. */
+body.premium-global main::before,
+body.premium-global header::before,
+body.premium-global header::after {
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Intentional horizontal areas get their own scroll container instead of
+   making the whole page scroll sideways. */
+body.premium-global nav {
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+body.premium-global nav::-webkit-scrollbar { display:none; }
+
+/* Tables / code / charts can scroll internally when they genuinely need width. */
+body.premium-global .overflow-x-auto,
+body.premium-global [class*="overflow-x-auto"] {
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+
+  body.premium-global {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body.premium-global header {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: clip !important;
+  }
+
+  body.premium-global main {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    overflow-x: clip !important;
+  }
+
+  /* Stack common Tailwind two/three-column layouts on phones. */
+  body.premium-global main .grid.grid-cols-2,
+  body.premium-global main .grid.grid-cols-3,
+  body.premium-global main .grid.grid-cols-4,
+  body.premium-global main .grid.md\:grid-cols-2,
+  body.premium-global main .grid.lg\:grid-cols-2,
+  body.premium-global main .grid.lg\:grid-cols-3 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Make common flex rows wrap instead of pushing the viewport wider. */
+  body.premium-global main .flex-row,
+  body.premium-global main .flex.items-center.justify-between {
+    min-width: 0;
+  }
+
+  /* Home feed cards stay inside the phone width. */
+  body.premium-global main article,
+  body.premium-global main [class*="post"],
+  body.premium-global main [class*="feed"] {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Home post images: full artwork, no horizontal overflow. */
+  body.premium-global main img {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  /* Prevent media frames with fixed desktop dimensions from overflowing. */
+  body.premium-global main .aspect-video,
+  body.premium-global main .aspect-square,
+  body.premium-global main .aspect\:video {
+    max-width: 100% !important;
+  }
+
+  /* Modals and drawers must fit inside the safe viewport. */
+  body.premium-global [id$="-modal"],
+  body.premium-global [id*="modal"],
+  body.premium-global #chat-drawer,
+  body.premium-global #cart-drawer {
+    max-width: 100vw !important;
+    min-width: 0 !important;
+  }
+
+  body.premium-global [id$="-modal"] > div:not(.absolute),
+  body.premium-global [id*="modal"] > div:not(.absolute),
+  body.premium-global #chat-drawer > div,
+  body.premium-global #cart-drawer > div {
+    width: min(100%, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
+    min-width: 0 !important;
+  }
+
+  /* Prevent large card/detail artwork from forcing the modal wider. */
+  body.premium-global .card-detail-shell,
+  body.premium-global .card-detail-scroll,
+  body.premium-global .card-detail-art {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.premium-global .card-detail-art img {
+    width: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+  }
+
+  /* Profile customisation: internal scroll, never page-wide overflow. */
+  body.premium-global #profile-manager-modal,
+  body.premium-global #profile-manager-modal > div,
+  body.premium-global #profile-manager-modal .profile-manager-content {
+    max-width: 100vw !important;
+    min-width: 0 !important;
+  }
+
+  /* Action bars wrap on small screens. */
+  body.premium-global main .flex.gap-2,
+  body.premium-global main .flex.gap-3,
+  body.premium-global main .flex.gap-4 {
+    min-width: 0;
+  }
+
+  /* Inputs cannot create a wider layout through long values. */
+  body.premium-global input,
+  body.premium-global textarea,
+  body.premium-global select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  body.premium-global main {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  body.premium-global [id$="-modal"] > div:not(.absolute),
+  body.premium-global [id*="modal"] > div:not(.absolute),
+  body.premium-global #chat-drawer > div,
+  body.premium-global #cart-drawer > div {
+    width: calc(100vw - 10px) !important;
+    max-width: calc(100vw - 10px) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  body.premium-global main {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+}
+</style>
+
 </head>
 <body class="premium-global min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black relative">
 
