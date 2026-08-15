@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./eugene-card-icon-192.png">
   <title>Eugene Card Marketplace | Premium Beta Edition</title>
 
   <!-- Browser Tab Favicon -->
@@ -344,6 +350,11 @@
         transform: none !important;
       }
     }
+  
+    /* PWA install prompt helper */
+    #pwa-install-hint { position:fixed; left:50%; bottom:18px; transform:translate(-50%, 20px); opacity:0; pointer-events:none; z-index:10050; transition:opacity .2s ease, transform .2s ease; }
+    #pwa-install-hint.show { opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+    @media (max-width:640px){ #pwa-install-hint{ width:calc(100vw - 24px); } }
   </style>
 
 <style id="eugene-inbox-premium-css">
@@ -1951,6 +1962,19 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     </div>
     <div id="notification-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-1">
       <div class="p-6 text-center text-xs text-slate-500" data-i18n="noNotifications">No recent notifications.</div>
+    </div>
+  </div>
+
+  <!-- PWA INSTALL FALLBACK HINT -->
+  <div id="pwa-install-hint" class="bg-slate-900/95 border border-indigo-500/40 rounded-2xl shadow-2xl px-4 py-3 backdrop-blur-xl">
+    <div class="flex items-center gap-3">
+      <img src="./eugene-card-icon-192.png" class="w-10 h-10 rounded-xl border border-indigo-400/30" alt="Eugene Card">
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-black text-white">Install Eugene Card</p>
+        <p class="text-[10px] text-slate-400 mt-0.5">Pasang aplikasi untuk akses lebih cepat.</p>
+      </div>
+      <button id="pwa-install-fallback-btn" class="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black">Install</button>
+      <button id="pwa-install-dismiss-btn" class="shrink-0 w-8 h-8 rounded-xl text-slate-500 hover:text-white" aria-label="Tutup">×</button>
     </div>
   </div>
 
@@ -11058,5 +11082,64 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 })();
 </script>
 
+
+<script>
+(function(){
+  let deferredInstallPrompt = null;
+  const KEY = 'eugene_card_install_prompt_last';
+  const COOLDOWN = 7 * 24 * 60 * 60 * 1000;
+  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  function hideFallback(){ document.getElementById('pwa-install-hint')?.classList.remove('show'); }
+  function showFallback(){ document.getElementById('pwa-install-hint')?.classList.add('show'); }
+  function markPromptHandled(){ try{ localStorage.setItem(KEY, String(Date.now())); }catch(e){} }
+  function canPrompt(){ try{ return Date.now() - Number(localStorage.getItem(KEY)||0) > COOLDOWN; }catch(e){ return true; } }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+
+    // Let Chrome's install UI appear shortly after the app opens.
+    // The native prompt is used instead of a fake browser dialog.
+    if (!isStandalone() && canPrompt()) {
+      setTimeout(async () => {
+        if (!deferredInstallPrompt || isStandalone()) return;
+        try {
+          deferredInstallPrompt.prompt();
+          const choice = await deferredInstallPrompt.userChoice;
+          if (choice?.outcome === 'accepted' || choice?.outcome === 'dismissed') markPromptHandled();
+        } catch (err) {
+          // If Chrome refuses the automatic prompt, show our small fallback hint.
+          showFallback();
+        }
+        deferredInstallPrompt = null;
+      }, 1800);
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    markPromptHandled();
+    hideFallback();
+    try { if (typeof showToast === 'function') showToast('Eugene Card berhasil dipasang sebagai aplikasi.'); } catch(e){}
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const installBtn = document.getElementById('pwa-install-fallback-btn');
+    const dismissBtn = document.getElementById('pwa-install-dismiss-btn');
+    installBtn?.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) { hideFallback(); return; }
+      try {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+      } catch(e){}
+      deferredInstallPrompt = null;
+      markPromptHandled();
+      hideFallback();
+    });
+    dismissBtn?.addEventListener('click', () => { markPromptHandled(); hideFallback(); });
+  });
+})();
+</script>
 </body>
 </html>
