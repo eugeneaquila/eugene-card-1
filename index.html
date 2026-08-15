@@ -6779,7 +6779,14 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
           <p class="text-[11px] font-black text-white">${escapeHtml(q.authorName || 'Collector')} <span class="text-slate-600 font-normal ml-1">${escapeHtml(timeAgoShort(createdAt))}</span></p>
         </div>
         ${q.text ? `<p class="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(q.text)}</p>` : ''}
-        ${q.imageUrl ? `<img src="${q.imageUrl}" class="w-full max-h-56 object-cover rounded-xl border border-slate-800">` : ''}
+        ${q.imageUrl ? `<button type="button" class="block w-full text-left group cursor-zoom-in" onclick="event.stopPropagation(); openImagePreviewModal('${escapeHtml(q.imageUrl)}', 'Image — ${escapeHtml(q.authorName || 'Collector')}')">
+          <span class="relative block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/80">
+            <img src="${escapeHtml(q.imageUrl)}" loading="lazy" class="block w-full max-h-[520px] object-contain mx-auto rounded-xl transition-transform duration-200 group-hover:scale-[1.01]" alt="Post image">
+            <span class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-950/80 border border-white/10 text-[9px] font-black text-white opacity-80 group-hover:opacity-100">
+              <i class="fa-solid fa-expand"></i> View
+            </span>
+          </span>
+        </button>` : ''}
       </div>`;
     }
 
@@ -6804,7 +6811,14 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
         </div>
 
         ${post.text ? `<p class="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(post.text)}</p>` : ''}
-        ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full max-h-96 object-cover rounded-2xl border border-slate-800">` : ''}
+        ${post.imageUrl ? `<button type="button" class="block w-full text-left group cursor-zoom-in" onclick="event.stopPropagation(); openImagePreviewModal('${escapeHtml(post.imageUrl)}', 'Post Image — ${escapeHtml(post.authorName || 'Collector')}')">
+          <span class="relative block w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80">
+            <img src="${escapeHtml(post.imageUrl)}" loading="lazy" class="block w-full max-h-[560px] object-contain mx-auto rounded-2xl transition-transform duration-200 group-hover:scale-[1.01]" alt="Post image">
+            <span class="absolute right-3 bottom-3 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/85 border border-white/10 text-[9px] font-black text-white opacity-80 group-hover:opacity-100 shadow-lg">
+              <i class="fa-solid fa-expand"></i> View / Download
+            </span>
+          </span>
+        </button>` : ''}
         ${post.type === 'quote' && post.quotedPostId ? renderEmbeddedPostSnippet(post.quotedPostId, dict) : ''}
 
         ${renderPostActionsRow(post, dict)}
@@ -7594,7 +7608,9 @@ body.premium-global [id$="-modal"]:not(.hidden) > div:not(.absolute){
       if (!imgUrl) return showToast('No proof image available for this transaction.');
       document.getElementById('image-preview-title').innerText = title;
       document.getElementById('image-preview-img').src = imgUrl;
-      document.getElementById('image-preview-download').href = imgUrl;
+      const downloadEl = document.getElementById('image-preview-download');
+      downloadEl.href = imgUrl;
+      downloadEl.download = `eugene-card-${String(title || 'image').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'image'}.png`;
       document.getElementById('image-preview-modal').classList.remove('hidden');
     }
 
