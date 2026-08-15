@@ -48,11 +48,3 @@ self.addEventListener('notificationclick', (event) => {
     if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
   })());
 });
-
-
-// PWA service-worker fetch handler. Network-first keeps the existing app behavior
-// while making this service worker usable by the installed PWA.
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
-});

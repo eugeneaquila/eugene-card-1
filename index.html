@@ -5594,10 +5594,18 @@ body.premium-global [class*="overflow-x-auto"] {
       const thread = inboxThreadsCache.find(t => t.id === threadId);
       if (!thread) return;
       await markInboxThreadRead(thread);
-      return openDirectChat(thread.otherUser, 'Direct Chat', getChatIdentityProfile({ uid: thread.otherUid, username: thread.otherUsername, name: thread.otherUser }));
+      // IMPORTANT: open the exact thread selected from the inbox.
+      // Do not re-resolve it by participant identity because legacy username chats
+      // and newer UID chats can coexist and contain different message histories.
+      return openDirectChat(
+        thread.otherUser,
+        'Direct Chat',
+        getChatIdentityProfile({ uid: thread.otherUid, username: thread.otherUsername, name: thread.otherUser }),
+        thread.id
+      );
     }
 
-    async function openDirectChat(targetUserName, contextInfo = 'Trade Chat', resolvedProfile = null) {
+    async function openDirectChat(targetUserName, contextInfo = 'Trade Chat', resolvedProfile = null, forcedThreadId = null) {
       if (!currentUser) return showToast('Please log in to start a chat.');
       const targetProfile = resolvedProfile || getChatIdentityProfile(targetUserName);
       const targetDisplay = getChatDisplayName(targetProfile || targetUserName);
@@ -5607,7 +5615,10 @@ body.premium-global [class*="overflow-x-auto"] {
 
       currentChatTargetUser = targetDisplay;
       const cachedMatch = inboxThreadsCache.find(t => t.otherKey === targetKey);
-      const existingId = cachedMatch?.id || await findExistingChatIdForParticipants(currentUser, targetProfile || targetUserName);
+      // A thread selected from Inbox must always win over identity-based lookup.
+      // This prevents opening a different/empty legacy chat when multiple chat IDs
+      // exist for the same collector.
+      const existingId = forcedThreadId || cachedMatch?.id || await findExistingChatIdForParticipants(currentUser, targetProfile || targetUserName);
       if (existingId) {
         currentChatContextId = existingId;
       } else {
@@ -5684,15 +5695,38 @@ body.premium-global [class*="overflow-x-auto"] {
 
     function listenToChatMessages(chatId) {
       const container = document.getElementById('chat-messages-container');
-      if (!container) return;
+      if (!container || !chatId) return;
       if (chatUnsubscribe) chatUnsubscribe();
-      chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+
+      // Do NOT use Firestore orderBy(timestamp) here. Legacy messages can have a
+      // missing/different timestamp field, and Firestore excludes those documents
+      // from an ordered query. That was the main cause of missing chat history.
+      chatUnsubscribe = db.collection('chats').doc(chatId).collection('messages').onSnapshot(snapshot => {
         if (snapshot.empty) {
           container.innerHTML = `<div class="flex flex-col items-center justify-center h-full min-h-[300px] text-center"><div class="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-400/15 flex items-center justify-center mb-4"><i class="fa-regular fa-comments text-xl text-violet-300"></i></div><p class="text-sm font-black text-slate-300">${tr("startConversation","Start the conversation")}</p><p class="text-[10px] text-slate-600 mt-1">${tr("sendMessageOrScreenshot","Send a message or share a card screenshot.")}</p></div>`;
           return;
         }
+
+        const docs = [...snapshot.docs].sort((a, b) => {
+          const ma = a.data() || {};
+          const mb = b.data() || {};
+          const toMs = value => {
+            try {
+              if (!value) return 0;
+              if (typeof value.toMillis === 'function') return value.toMillis();
+              if (typeof value.toDate === 'function') return value.toDate().getTime();
+              const parsed = new Date(value).getTime();
+              return Number.isFinite(parsed) ? parsed : 0;
+            } catch (_) { return 0; }
+          };
+          const ta = toMs(ma.timestamp || ma.createdAt || ma.sentAt);
+          const tb = toMs(mb.timestamp || mb.createdAt || mb.sentAt);
+          if (ta !== tb) return ta - tb;
+          return String(a.id).localeCompare(String(b.id));
+        });
+
         let lastDateKey=null;
-        container.innerHTML=snapshot.docs.map(doc=>{
+        container.innerHTML=docs.map(doc=>{
           const msg=doc.data()||{};
           const senderProfile=getChatIdentityProfile({uid:msg.senderUid,username:msg.senderUsername,name:msg.senderName||msg.sender});
           const senderKey=getChatCanonicalKey(senderProfile||msg.sender);
@@ -5700,7 +5734,7 @@ body.premium-global [class*="overflow-x-auto"] {
           const senderName=senderProfile?.name||senderProfile?.username||msg.sender||'Collector';
           const isSenderAdmin=isUserAdmin(senderProfile?.username||senderName||msg.sender);
           const senderAvatar=senderProfile?.avatarUrl||getCollectorAvatar(senderName);
-          const ts=msg.timestamp?.toDate?msg.timestamp.toDate():(msg.timestamp?new Date(msg.timestamp):null);
+          const rawTs=msg.timestamp||msg.createdAt||msg.sentAt||null; const ts=rawTs?.toDate?rawTs.toDate():(rawTs?new Date(rawTs):null);
           const timestamp=ts&&!isNaN(ts)?ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
           const dateKey=ts&&!isNaN(ts)?ts.toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'}):'Today';
           let dateDivider=''; if(dateKey!==lastDateKey){lastDateKey=dateKey;dateDivider=`<div class="eugene-chat-date">${escapeHtml(dateKey)}</div>`;}
@@ -10915,7 +10949,7 @@ body.premium-global [class*="overflow-x-auto"] {
 /* Final chat bubble sizing fix: keeps normal messages horizontal on desktop/mobile. */
 #chat-drawer #chat-messages-container > div { min-width:0 !important; max-width:100% !important; }
 #chat-drawer #chat-messages-container .eugene-chat-bubble {
-  width:fit-content !important;
+  width:auto !important;
   min-width:44px !important;
   max-width:min(82vw,470px) !important;
   white-space:pre-wrap !important;
