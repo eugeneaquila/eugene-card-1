@@ -1945,12 +1945,38 @@ body.premium-global [class*="overflow-x-auto"] {
   <style>
     #chat-messages-container > div:not(.text-center){animation:chatMessageIn .22s ease-out}
     @keyframes chatMessageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-    .eugene-chat-bubble{position:relative;max-width:min(82%,470px);padding:11px 14px;border-radius:18px;font-size:12px;line-height:1.55;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+    /* Chat bubbles: prevent flex shrink from collapsing the bubble into a narrow column. */
+    #chat-messages-container > div { min-width:0; max-width:100%; }
+    #chat-messages-container > div > .flex { min-width:0; max-width:100%; }
+    #chat-messages-container > div > .flex > .flex-col { min-width:0; max-width:calc(100% - 42px); }
+    .eugene-chat-bubble{
+      position:relative;
+      display:block;
+      width:fit-content;
+      min-width:44px;
+      max-width:min(82vw,470px);
+      padding:11px 14px;
+      border-radius:18px;
+      font-size:12px;
+      line-height:1.55;
+      box-shadow:0 8px 28px rgba(0,0,0,.18);
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      box-sizing:border-box;
+    }
+    .eugene-chat-bubble img{display:block;max-width:100%;height:auto;border-radius:12px;}
     .eugene-chat-bubble.mine{color:#fff;background:linear-gradient(135deg,rgba(124,58,237,.95),rgba(79,70,229,.92));border:1px solid rgba(167,139,250,.28);border-bottom-right-radius:5px}
     .eugene-chat-bubble.theirs{color:#e5e7eb;background:linear-gradient(135deg,rgba(30,41,59,.88),rgba(15,23,42,.96));border:1px solid rgba(148,163,184,.12);border-bottom-left-radius:5px}
-    .eugene-chat-meta{display:flex;align-items:center;gap:6px;margin-bottom:5px}.eugene-chat-avatar{width:30px;height:30px;border-radius:11px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.25)}.eugene-chat-time{font-size:8px;color:rgba(148,163,184,.65)}
+    .eugene-chat-meta{display:flex;align-items:center;gap:6px;margin-bottom:5px;min-width:0;flex-wrap:wrap}.eugene-chat-avatar{width:30px;height:30px;border-radius:11px;object-fit:cover;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 14px rgba(0,0,0,.25)}.eugene-chat-time{font-size:8px;color:rgba(148,163,184,.65)}
     .eugene-chat-date{display:flex;align-items:center;gap:12px;margin:4px 0 2px;color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.16em}.eugene-chat-date:before,.eugene-chat-date:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(139,92,246,.25))}.eugene-chat-date:after{background:linear-gradient(90deg,rgba(139,92,246,.25),transparent)}
-    @media(max-width:640px){#chat-drawer{max-width:none}.eugene-chat-bubble{max-width:88%}}
+    @media(max-width:640px){
+      #chat-drawer{max-width:none;width:100%;}
+      #chat-messages-container{padding-left:12px;padding-right:12px;}
+      #chat-messages-container > div > .flex > .flex-col{max-width:calc(100% - 38px);}
+      .eugene-chat-bubble{max-width:min(84vw,420px);padding:10px 12px;font-size:12px;}
+      .eugene-chat-meta{gap:4px;}
+    }
   </style>
 
   <!-- FIXED FLOATING NOTIFICATION OVERLAY PANEL -->
@@ -10885,5 +10911,20 @@ body.premium-global [class*="overflow-x-auto"] {
 })();
 </script>
 
+<style id="eugene-chat-bubble-final-fix">
+/* Final chat bubble sizing fix: keeps normal messages horizontal on desktop/mobile. */
+#chat-drawer #chat-messages-container > div { min-width:0 !important; max-width:100% !important; }
+#chat-drawer #chat-messages-container .eugene-chat-bubble {
+  width:fit-content !important;
+  min-width:44px !important;
+  max-width:min(82vw,470px) !important;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+}
+@media (max-width:640px){
+  #chat-drawer #chat-messages-container .eugene-chat-bubble { max-width:min(84vw,420px) !important; }
+}
+</style>
 </body>
 </html>
