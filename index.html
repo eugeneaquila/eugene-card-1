@@ -2206,7 +2206,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
             </div>
             <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Market Pulse</span>
           </div>
-          <div id="trending-cards-row" class="flex xl:flex-col gap-3 overflow-x-auto xl:overflow-visible pb-1"></div>
+          <div id="trending-cards-row" class="flex flex-row gap-3 overflow-x-auto overflow-y-hidden pb-2 snap-x snap-mandatory"></div>
         </div>
       </div>
 
@@ -2756,51 +2756,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           </div>
         </div>
       </div>
-
-      <!-- YUJIN CLIENT PRIVILEGE EXPLAINER -->
-      <div class="bg-slate-900/80 border border-pink-500/20 rounded-3xl p-5 sm:p-6 shadow-xl shadow-pink-950/10">
-        <div class="flex flex-col md:flex-row md:items-start gap-4">
-          <div class="w-11 h-11 shrink-0 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-300">
-            <i class="fa-solid fa-crown"></i>
-          </div>
-          <div class="flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <h3 class="text-sm font-black text-white uppercase tracking-wide" data-i18n="yujinClientPrivilegeTitle">Yujin Client Edition Privileges</h3>
-              <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" data-i18n="yujinClientPrivilegeBadge">0% Trade & Auction Tax</span>
-            </div>
-            <p class="text-[11px] text-slate-400 mt-1.5 max-w-2xl" data-i18n="yujinClientPrivilegeDesc">Receiving a Yujin Client Gift unlocks special marketplace privileges. Your 0% benefit applies to trading and auctions, while official Catalog purchases and Sell Back / Redeem Asset keep the standard 2% platform tax.</p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-4">
-              <div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[.04] p-3">
-                <div class="flex items-center gap-2 text-emerald-300"><i class="fa-solid fa-right-left text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeTrade">Trading</span></div>
-                <div class="text-lg font-black text-white mt-1">0%</div>
-                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeTradeSub">No platform tax</div>
-              </div>
-              <div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[.04] p-3">
-                <div class="flex items-center gap-2 text-emerald-300"><i class="fa-solid fa-gavel text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeAuction">Auction</span></div>
-                <div class="text-lg font-black text-white mt-1">0%</div>
-                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeAuctionSub">No platform tax</div>
-              </div>
-              <div class="rounded-2xl border border-amber-500/15 bg-amber-500/[.04] p-3">
-                <div class="flex items-center gap-2 text-amber-300"><i class="fa-solid fa-store text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeCatalog">Catalog Purchase</span></div>
-                <div class="text-lg font-black text-white mt-1">2%</div>
-                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeCatalogSub">Standard platform tax</div>
-              </div>
-              <div class="rounded-2xl border border-amber-500/15 bg-amber-500/[.04] p-3">
-                <div class="flex items-center gap-2 text-amber-300"><i class="fa-solid fa-money-bill-transfer text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeRedeem">Sell Back / Redeem</span></div>
-                <div class="text-lg font-black text-white mt-1">2%</div>
-                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeRedeemSub">Standard platform tax</div>
-              </div>
-            </div>
-
-            <div class="mt-4 flex items-start gap-2 text-[10px] text-slate-500">
-              <i class="fa-solid fa-circle-info text-pink-300 mt-0.5"></i>
-              <span data-i18n="yujinClientPrivilegeNote">The privilege is tied to your Yujin Client status. It does not change the card's market price or asset value.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div id="client-gifts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
@@ -4378,18 +4333,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         aCollectorFallback: "a collector",
         tradeRoomTitle: "TRADING ROOM",
         tradeRoomSubtitle: "Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade",
-        yujinClientPrivilegeTitle: "Yujin Client Edition Privileges",
-        yujinClientPrivilegeBadge: "0% Trade & Auction Tax",
-        yujinClientPrivilegeDesc: "Receiving a Yujin Client Gift unlocks special marketplace privileges. Your 0% benefit applies to trading and auctions, while official Catalog purchases and Sell Back / Redeem Asset keep the standard 2% platform tax.",
-        yujinPrivilegeTrade: "Trading",
-        yujinPrivilegeTradeSub: "No platform tax",
-        yujinPrivilegeAuction: "Auction",
-        yujinPrivilegeAuctionSub: "No platform tax",
-        yujinPrivilegeCatalog: "Catalog Purchase",
-        yujinPrivilegeCatalogSub: "Standard platform tax",
-        yujinPrivilegeRedeem: "Sell Back / Redeem",
-        yujinPrivilegeRedeemSub: "Standard platform tax",
-        yujinClientPrivilegeNote: "The privilege is tied to your Yujin Client status. It does not change the card's market price or asset value.",
         listCardBtn: "List a Card",
         auctionRoomTitle: "AUCTION ROOM",
         auctionRoomSubtitle: "Place competitive bids on rare serial cards before timer expires.",
@@ -4750,18 +4693,6 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         aCollectorFallback: "seorang kolektor",
         tradeRoomTitle: "RUANG PERDAGANGAN",
         tradeRoomSubtitle: "Beli dan jual langsung dengan kolektor lain via QRIS / PayPal • Pajak 2% per transaksi",
-        yujinClientPrivilegeTitle: "Keuntungan Yujin Client Edition",
-        yujinClientPrivilegeBadge: "Pajak Trade & Auction 0%",
-        yujinClientPrivilegeDesc: "Menerima Yujin Client Gift membuka keuntungan khusus di marketplace. Pajak 0% berlaku untuk trade dan auction, sedangkan pembelian resmi dari Catalog dan Sell Back / Redeem Asset tetap menggunakan pajak platform standar 2%.",
-        yujinPrivilegeTrade: "Trade",
-        yujinPrivilegeTradeSub: "Tanpa pajak platform",
-        yujinPrivilegeAuction: "Auction",
-        yujinPrivilegeAuctionSub: "Tanpa pajak platform",
-        yujinPrivilegeCatalog: "Pembelian Catalog",
-        yujinPrivilegeCatalogSub: "Pajak platform standar",
-        yujinPrivilegeRedeem: "Sell Back / Redeem",
-        yujinPrivilegeRedeemSub: "Pajak platform standar",
-        yujinClientPrivilegeNote: "Keuntungan ini terikat pada status Yujin Client Anda. Keuntungan ini tidak mengubah harga pasar atau nilai aset kartu.",
         listCardBtn: "Jual/Tukar Kartu",
         auctionRoomTitle: "RUANG LELANG",
         auctionRoomSubtitle: "Ajukan penawaran kompetitif pada kartu langka sebelum waktu habis.",
@@ -7833,7 +7764,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         const watching = watcherCountsByCard[card.id] || 0;
         const views = viewCountsMap[card.id] || 0;
         return `
-          <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-xl p-2 relative shrink-0 w-32 cursor-pointer" onclick="openCardDetailModal('${card.id}')">
+          <div class="${isPremium ? 'card-holo-premium' : 'card-holo-standard'} rounded-xl p-2 relative shrink-0 w-32 snap-start cursor-pointer" onclick="openCardDetailModal('${card.id}')">
             ${isPremium ? '<div class="foil-sweep"></div>' : ''}
             ${hits > 0 ? `<span class="absolute top-1.5 left-1.5 z-[3] text-[8px] font-black px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white flex items-center gap-1"><i class="fa-solid fa-fire"></i> Hot</span>` : ''}
             <div class="w-full aspect-[4/5] bg-slate-950/80 rounded-lg border border-slate-800 overflow-hidden relative z-[2]">
