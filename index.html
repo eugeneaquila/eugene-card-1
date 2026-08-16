@@ -2756,6 +2756,51 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           </div>
         </div>
       </div>
+
+      <!-- YUJIN CLIENT PRIVILEGE EXPLAINER -->
+      <div class="bg-slate-900/80 border border-pink-500/20 rounded-3xl p-5 sm:p-6 shadow-xl shadow-pink-950/10">
+        <div class="flex flex-col md:flex-row md:items-start gap-4">
+          <div class="w-11 h-11 shrink-0 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-300">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-sm font-black text-white uppercase tracking-wide" data-i18n="yujinClientPrivilegeTitle">Yujin Client Edition Privileges</h3>
+              <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" data-i18n="yujinClientPrivilegeBadge">0% Trade & Auction Tax</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5 max-w-2xl" data-i18n="yujinClientPrivilegeDesc">Receiving a Yujin Client Gift unlocks special marketplace privileges. Your 0% benefit applies to trading and auctions, while official Catalog purchases and Sell Back / Redeem Asset keep the standard 2% platform tax.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-4">
+              <div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[.04] p-3">
+                <div class="flex items-center gap-2 text-emerald-300"><i class="fa-solid fa-right-left text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeTrade">Trading</span></div>
+                <div class="text-lg font-black text-white mt-1">0%</div>
+                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeTradeSub">No platform tax</div>
+              </div>
+              <div class="rounded-2xl border border-emerald-500/15 bg-emerald-500/[.04] p-3">
+                <div class="flex items-center gap-2 text-emerald-300"><i class="fa-solid fa-gavel text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeAuction">Auction</span></div>
+                <div class="text-lg font-black text-white mt-1">0%</div>
+                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeAuctionSub">No platform tax</div>
+              </div>
+              <div class="rounded-2xl border border-amber-500/15 bg-amber-500/[.04] p-3">
+                <div class="flex items-center gap-2 text-amber-300"><i class="fa-solid fa-store text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeCatalog">Catalog Purchase</span></div>
+                <div class="text-lg font-black text-white mt-1">2%</div>
+                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeCatalogSub">Standard platform tax</div>
+              </div>
+              <div class="rounded-2xl border border-amber-500/15 bg-amber-500/[.04] p-3">
+                <div class="flex items-center gap-2 text-amber-300"><i class="fa-solid fa-money-bill-transfer text-xs"></i><span class="text-[10px] font-black uppercase" data-i18n="yujinPrivilegeRedeem">Sell Back / Redeem</span></div>
+                <div class="text-lg font-black text-white mt-1">2%</div>
+                <div class="text-[9px] text-slate-500" data-i18n="yujinPrivilegeRedeemSub">Standard platform tax</div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-start gap-2 text-[10px] text-slate-500">
+              <i class="fa-solid fa-circle-info text-pink-300 mt-0.5"></i>
+              <span data-i18n="yujinClientPrivilegeNote">The privilege is tied to your Yujin Client status. It does not change the card's market price or asset value.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="client-gifts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
@@ -3130,25 +3175,54 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     </div>
   </div>
 
-  <!-- SELL-BACK QRIS UPLOAD MODAL -->
-  <div id="sellback-qris-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+  <!-- SELL-BACK PAYOUT MODAL -->
+  <div id="sellback-qris-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[92vh] overflow-y-auto">
       <button onclick="closeSellbackQrisModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-lg font-black text-white"><i class="fa-solid fa-qrcode text-amber-400 mr-1"></i> Upload Your QRIS / PayPal Tag to Receive Payout</h3>
+      <h3 class="text-lg font-black text-white pr-8"><i class="fa-solid fa-wallet text-amber-400 mr-1"></i> Sell Back — Payout Details</h3>
       <p class="text-[11px] text-slate-400">Selling back <strong id="sellback-modal-serial" class="text-amber-300"></strong> for <strong id="sellback-modal-price" class="text-emerald-400"></strong></p>
       <input type="hidden" id="sellback-card-id-target">
 
-      <div class="text-left space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-        <label class="block font-bold text-slate-300">Upload Your DANA / GoPay / PayPal / QRIS Code Screenshot</label>
-        <input type="file" id="sellback-qris-file-input" accept="image/*" onchange="handleSellbackQrisUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
-        <input type="hidden" id="sellback-qris-img-data" value="">
-        <div id="sellback-qris-preview-container" class="hidden text-center pt-2">
-          <img id="sellback-qris-preview-img" src="" class="h-24 mx-auto rounded border border-slate-700">
+      <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3">
+        <p class="text-[10px] font-black uppercase tracking-wider text-amber-300"><i class="fa-solid fa-circle-info mr-1"></i> Indonesian payout only</p>
+        <p class="text-[10px] text-slate-400 mt-1">Sell Back supports Indonesian payout methods. Upload your QRIS if you have one, or provide a DANA / GoPay / OVO / ShopeePay phone number.</p>
+      </div>
+
+      <div class="text-left space-y-4">
+        <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
+          <label class="block font-bold text-slate-300 mb-1">QRIS Attachment <span class="text-slate-500 font-normal">(optional if using e-wallet)</span></label>
+          <input type="file" id="sellback-qris-file-input" accept="image/*" onchange="handleSellbackQrisUpload(event)" class="w-full text-[11px] text-slate-400 bg-slate-900 border border-slate-800 rounded-xl p-2 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-500 file:text-slate-950">
+          <input type="hidden" id="sellback-qris-img-data" value="">
+          <div id="sellback-qris-preview-container" class="hidden text-center pt-2">
+            <img id="sellback-qris-preview-img" src="" class="h-24 max-w-full mx-auto rounded border border-slate-700 object-contain">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-[10px] text-slate-500">
+          <span class="h-px flex-1 bg-slate-800"></span><span>OR</span><span class="h-px flex-1 bg-slate-800"></span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">E-Wallet</label>
+          <select id="sellback-payout-provider" onchange="updateSellbackPayoutHint()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-500">
+            <option value="">Select e-wallet</option>
+            <option value="DANA">DANA</option>
+            <option value="GOPAY">GoPay</option>
+            <option value="OVO">OVO</option>
+            <option value="SHOPEEPAY">ShopeePay</option>
+            <option value="OTHER">Other e-wallet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Phone Number <span class="text-slate-500 font-normal">(required without QRIS)</span></label>
+          <input id="sellback-payout-phone" type="tel" inputmode="tel" autocomplete="tel" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white font-mono focus:outline-none focus:border-amber-500" placeholder="+62 81234567890">
+          <p id="sellback-payout-hint" class="text-[10px] text-slate-500 mt-1">Use international format with country code, e.g. +62. Phone is required when no QRIS attachment is provided.</p>
         </div>
       </div>
 
-      <p class="text-[10px] text-slate-500">Admin will process payout using your details, then confirm here with a receipt once it's sent.</p>
-      <button onclick="submitSellBackRequest()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all">Submit Sell-Back Request</button>
+      <p class="text-[10px] text-slate-500">Admin will process the payout using the details above and confirm it with a receipt once it's sent.</p>
+      <button onclick="submitSellBackRequest()" class="w-full py-3 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-emerald-400 transition-all"><i class="fa-solid fa-paper-plane mr-1"></i> Submit Sell-Back Request</button>
     </div>
   </div>
 
@@ -4304,6 +4378,18 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         aCollectorFallback: "a collector",
         tradeRoomTitle: "TRADING ROOM",
         tradeRoomSubtitle: "Buy and sell directly with other collectors via QRIS / PayPal • 2% tax per trade",
+        yujinClientPrivilegeTitle: "Yujin Client Edition Privileges",
+        yujinClientPrivilegeBadge: "0% Trade & Auction Tax",
+        yujinClientPrivilegeDesc: "Receiving a Yujin Client Gift unlocks special marketplace privileges. Your 0% benefit applies to trading and auctions, while official Catalog purchases and Sell Back / Redeem Asset keep the standard 2% platform tax.",
+        yujinPrivilegeTrade: "Trading",
+        yujinPrivilegeTradeSub: "No platform tax",
+        yujinPrivilegeAuction: "Auction",
+        yujinPrivilegeAuctionSub: "No platform tax",
+        yujinPrivilegeCatalog: "Catalog Purchase",
+        yujinPrivilegeCatalogSub: "Standard platform tax",
+        yujinPrivilegeRedeem: "Sell Back / Redeem",
+        yujinPrivilegeRedeemSub: "Standard platform tax",
+        yujinClientPrivilegeNote: "The privilege is tied to your Yujin Client status. It does not change the card's market price or asset value.",
         listCardBtn: "List a Card",
         auctionRoomTitle: "AUCTION ROOM",
         auctionRoomSubtitle: "Place competitive bids on rare serial cards before timer expires.",
@@ -4664,6 +4750,18 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         aCollectorFallback: "seorang kolektor",
         tradeRoomTitle: "RUANG PERDAGANGAN",
         tradeRoomSubtitle: "Beli dan jual langsung dengan kolektor lain via QRIS / PayPal • Pajak 2% per transaksi",
+        yujinClientPrivilegeTitle: "Keuntungan Yujin Client Edition",
+        yujinClientPrivilegeBadge: "Pajak Trade & Auction 0%",
+        yujinClientPrivilegeDesc: "Menerima Yujin Client Gift membuka keuntungan khusus di marketplace. Pajak 0% berlaku untuk trade dan auction, sedangkan pembelian resmi dari Catalog dan Sell Back / Redeem Asset tetap menggunakan pajak platform standar 2%.",
+        yujinPrivilegeTrade: "Trade",
+        yujinPrivilegeTradeSub: "Tanpa pajak platform",
+        yujinPrivilegeAuction: "Auction",
+        yujinPrivilegeAuctionSub: "Tanpa pajak platform",
+        yujinPrivilegeCatalog: "Pembelian Catalog",
+        yujinPrivilegeCatalogSub: "Pajak platform standar",
+        yujinPrivilegeRedeem: "Sell Back / Redeem",
+        yujinPrivilegeRedeemSub: "Pajak platform standar",
+        yujinClientPrivilegeNote: "Keuntungan ini terikat pada status Yujin Client Anda. Keuntungan ini tidak mengubah harga pasar atau nilai aset kartu.",
         listCardBtn: "Jual/Tukar Kartu",
         auctionRoomTitle: "RUANG LELANG",
         auctionRoomSubtitle: "Ajukan penawaran kompetitif pada kartu langka sebelum waktu habis.",
@@ -9460,6 +9558,9 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       document.getElementById('sellback-qris-file-input').value = '';
       document.getElementById('sellback-qris-preview-container').classList.add('hidden');
       document.getElementById('sellback-qris-preview-img').src = '';
+      document.getElementById('sellback-payout-provider').value = '';
+      document.getElementById('sellback-payout-phone').value = '';
+      updateSellbackPayoutHint();
 
       document.getElementById('sellback-qris-modal').classList.remove('hidden');
     }
@@ -9468,9 +9569,31 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       document.getElementById('sellback-qris-modal').classList.add('hidden');
     }
 
+    function updateSellbackPayoutHint() {
+      const provider = document.getElementById('sellback-payout-provider')?.value || '';
+      const hint = document.getElementById('sellback-payout-hint');
+      if (!hint) return;
+      const names = { DANA:'DANA', GOPAY:'GoPay', OVO:'OVO', SHOPEEPAY:'ShopeePay', OTHER:'your e-wallet' };
+      hint.textContent = provider
+        ? `Enter the ${names[provider] || 'e-wallet'} phone number in international format, e.g. +62 81234567890.`
+        : 'Use international format with country code, e.g. +62. Phone is required when no QRIS attachment is provided.';
+    }
+
+    function normalizePayoutPhone(value) {
+      return String(value || '').trim().replace(/[\s()-]/g, '');
+    }
+
+    function isValidInternationalPhone(value) {
+      return /^\+[1-9]\d{7,14}$/.test(value);
+    }
+
     function handleSellbackQrisUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        event.target.value = '';
+        return showToast('Please upload an image for your QRIS attachment.');
+      }
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('sellback-qris-img-data').value = e.target.result;
@@ -9486,21 +9609,45 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const cardId = document.getElementById('sellback-card-id-target').value;
       const card = inventory.find(c => c.id === cardId);
       if (!card) return showToast('Card not found.');
-      if (!card || (card.owner !== currentUser.name && card.owner !== currentUser.username)) return showToast('You do not own this card.');
+      if (card.owner !== currentUser.name && card.owner !== currentUser.username) return showToast('You do not own this card.');
 
+      // Sell Back is local-IDR payout only. PayPal is intentionally excluded.
       const payoutQrisData = document.getElementById('sellback-qris-img-data').value;
-      if (!payoutQrisData) return showToast('Please upload your QRIS / PayPal payout code screenshot to receive payout.');
+      const payoutProvider = document.getElementById('sellback-payout-provider').value;
+      const payoutPhone = normalizePayoutPhone(document.getElementById('sellback-payout-phone').value);
 
-      const activeUserIdent = currentUser.username || currentUser.name;
-      const orderRef = `SB-${Math.floor(1000 + Math.random() * 9000)}`;
+      // QRIS is preferred. Without a QRIS attachment, e-wallet + phone is mandatory.
+      if (!payoutQrisData) {
+        if (!payoutProvider) return showToast('Choose DANA, GoPay, OVO, ShopeePay, or another e-wallet when you do not have a QRIS attachment.');
+        if (!payoutPhone) return showToast('Enter your phone number with country code, e.g. +62 81234567890.');
+      }
+
+      if (payoutPhone && !isValidInternationalPhone(payoutPhone)) {
+        return showToast('Phone number must use an international country code, e.g. +62 81234567890.');
+      }
+
+      const activeUserIdent = currentUser.username || currentUser.name || currentUser.email;
+      const orderRef = `SB-${Date.now().toString(36).toUpperCase()}`;
+      const payoutMethod = payoutQrisData ? 'QRIS' : payoutProvider;
+      const grossAmount = Number(card.price || 0);
+      const sellBackTax = Math.round(grossAmount * 0.02);
+      const payoutAmount = Math.max(0, grossAmount - sellBackTax);
 
       const sellbackOrder = {
         id: orderRef,
         type: 'SELLBACK',
+        order_type: 'SELLBACK',
         user_name: activeUserIdent,
+        user_uid: currentUser.uid,
         items: [{ id: card.id, serial: card.serial, name: card.name, price: card.price }],
-        total_amount: card.price,
-        payoutQrisUrl: payoutQrisData,
+        total_amount: grossAmount,
+        fee: sellBackTax,
+        tax_rate: 0.02,
+        payoutAmount,
+        payoutMethod,
+        payoutProvider: payoutProvider || null,
+        payoutPhone: payoutPhone || null,
+        payoutQrisUrl: payoutQrisData || null,
         status: 'PENDING',
         created_at: new Date().toISOString()
       };
@@ -9514,7 +9661,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           order_type: 'SELLBACK',
           user_name: activeUserIdent,
           amount: formatIDR(card.price),
-          detail: `Sell-back request for ${card.serial} (${card.name})`
+          detail: `Sell-back request for ${card.serial} (${card.name}) • ${payoutMethod}${payoutPhone ? ` • ${payoutPhone}` : ''}`
         });
         closeSellbackQrisModal();
       } catch (e) {
@@ -10837,9 +10984,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         container.innerHTML = pendingList.map(tx => {
           const isSellback = tx.type === 'SELLBACK';
           if (tx.qrisProofUrl) proofUrlById[tx.id] = tx.qrisProofUrl;
-          const proofButton = tx.qrisProofUrl
-            ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</button>`
-            : `<span class="text-slate-500 text-[10px]">No Proof File Attached</span>`;
+          const proofButton = tx.type === 'SELLBACK' && tx.payoutQrisUrl
+            ? `<button type="button" onclick="openGenericImagePreview('${escapeHtml(tx.payoutQrisUrl)}', 'Sell-back QRIS')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> View QRIS</button>`
+            : (tx.qrisProofUrl
+              ? `<button type="button" onclick="viewTransactionProof('${tx.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-bold rounded-lg border border-slate-700 inline-flex items-center gap-1"><i class="fa-solid fa-image"></i> View Payment Proof</button>`
+              : `<span class="text-slate-500 text-[10px]">No Proof File Attached</span>`);
+          const payoutDetails = tx.type === 'SELLBACK'
+            ? `<div class="text-[10px] text-slate-400 bg-slate-900/70 border border-slate-800 rounded-xl p-2"><div><span class="font-black text-amber-300">Payout:</span> ${escapeHtml(tx.payoutMethod || 'QRIS')}${tx.payoutProvider ? ` • ${escapeHtml(tx.payoutProvider)}` : ''}${tx.payoutPhone ? ` • <span class="font-mono text-white">${escapeHtml(tx.payoutPhone)}</span>` : ''}</div><div class="mt-1"><span class="text-slate-500">2% Sell Back tax:</span> <span class="text-rose-300 font-mono">${formatIDR(tx.fee || 0)}</span> <span class="text-slate-500">→ payout ${formatIDR(tx.payoutAmount ?? Math.max(0, Number(tx.total_amount || 0) - Number(tx.fee || 0)))}</span></div></div>`
+            : '';
 
           return `
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
@@ -10851,6 +11003,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
                 <span class="font-mono text-emerald-400 font-black text-sm">${formatIDR(tx.total_amount)}</span>
               </div>
 
+              ${payoutDetails}
               <div class="flex items-center justify-between text-xs">
                 <div>${proofButton}</div>
                 <div class="flex gap-2">
@@ -11091,70 +11244,20 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         renderClientGifts();
         return;
       }
-
       try {
-        const gifts = new Map();
-        const addSnapshot = (snap) => {
-          snap.forEach(doc => gifts.set(doc.id, { id: doc.id, ...doc.data() }));
-        };
-
-        // IMPORTANT: do not use clientGifts.get() for normal collectors.
-        // Firestore security rules commonly allow a collector to read only
-        // documents where recipientUid == request.auth.uid. A collection-wide
-        // read is therefore rejected with PERMISSION_DENIED.
-        if (currentUser.isAdmin) {
-          try {
-            const adminSnap = await db.collection('clientGifts').get();
-            addSnapshot(adminSnap);
-          } catch (adminErr) {
-            // If the current Firebase rules do not expose the admin collection
-            // read yet, still try the signed-in user's own gifts so the Client
-            // tab does not crash. The Admin Hub will show the underlying error
-            // when an admin-only operation is attempted.
-            console.warn('Admin client-gift collection read denied:', adminErr);
-          }
-        }
-
-        if (currentUser.uid) {
-          const ownSnap = await db.collection('clientGifts')
-            .where('recipientUid', '==', currentUser.uid)
-            .get();
-          addSnapshot(ownSnap);
-        }
-
-        // Backward compatibility for gifts created before recipientUid was
-        // populated. These are attempted individually and ignored when the
-        // security rules correctly deny the broader legacy lookup.
-        const legacyFields = [
-          ['recipientUsername', currentUser.username],
-          ['recipientEmail', currentUser.email]
-        ].filter(([, value]) => value);
-
-        for (const [field, value] of legacyFields) {
-          try {
-            const legacySnap = await db.collection('clientGifts')
-              .where(field, '==', value)
-              .get();
-            addSnapshot(legacySnap);
-          } catch (legacyErr) {
-            console.debug(`Legacy gift lookup denied for ${field}:`, legacyErr);
-          }
-        }
-
-        clientGiftsList = Array.from(gifts.values())
-          .sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+        const candidates = [];
+        const keys = [currentUser.uid, currentUser.username, currentUser.name, currentUser.email].filter(Boolean).map(normalizeCollectorValue);
+        const snap = await db.collection('clientGifts').get();
+        snap.forEach(doc => {
+          const g = { id: doc.id, ...doc.data() };
+          const recipientKeys = [g.recipientUid, g.recipientUsername, g.recipientName, g.recipientEmail].filter(Boolean).map(normalizeCollectorValue);
+          if (recipientKeys.some(k => keys.includes(k)) || g.createdByUid === currentUser.uid || currentUser.isAdmin) candidates.push(g);
+        });
+        clientGiftsList = candidates.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
         renderClientGifts();
       } catch (e) {
         console.warn('Client gifts load error:', e);
-        clientGiftsList = [];
-        renderClientGifts();
-
-        const code = String(e?.code || '').toLowerCase();
-        if (code.includes('permission-denied') || /permission|insufficient/i.test(String(e?.message || ''))) {
-          showToast('Could not load client gifts: your Firebase rules do not allow this account to read its gifts.');
-        } else {
-          showToast('Could not load client gifts: ' + (e?.message || 'Unknown error'));
-        }
+        showToast('Could not load client gifts: ' + e.message);
       }
     }
 
@@ -11246,7 +11349,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     function renderAdminClientGifts() {
       const list = document.getElementById('admin-client-gifts-list');
       if (!list) return;
-      const gifts = clientGiftsList.filter(g => g.giftedByUid === currentUser?.uid || g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
+      const gifts = clientGiftsList.filter(g => g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
       if (!gifts.length) { list.innerHTML='<p class="text-xs text-slate-500">No client gifts created yet.</p>'; return; }
       list.innerHTML = gifts.slice(0,30).map(g => `<div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="text-[8px] uppercase tracking-widest font-black text-pink-300">${escapeHtml(g.status || 'ACTIVE')}</span><span class="font-mono text-[10px] text-slate-500">${escapeHtml(g.id)}</span></div><p class="text-xs font-black text-white mt-1">${escapeHtml(g.cardName || 'Eugene Card')} • ${escapeHtml(g.cardSerial || '')}</p><p class="text-[10px] text-slate-500">To ${escapeHtml(g.recipientName || g.recipientUsername || 'Client')} • ${formatIDR(g.assetValue)}</p></div><span class="text-[10px] text-pink-300 font-bold">${g.status === 'REDEEMED' ? 'Redeemed' : 'QRIS Eligible'}</span></div>`).join('');
     }
