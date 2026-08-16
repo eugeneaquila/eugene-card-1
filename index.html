@@ -1839,7 +1839,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         <button id="nav-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-vault text-amber-400"></i> <span data-i18n="navVault">My Vault</span>
         </button>
-        <button id="nav-gifts" onclick="switchTab('gifts')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+        <button id="nav-gifts" onclick="switchTab('gifts')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-pink-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-pink-950/30 border border-pink-500/30">
           <i class="fa-solid fa-gift text-pink-400"></i> <span data-i18n="navGifts">Client Gifts</span>
           <span id="gift-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-pink-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
         </button>
@@ -2744,13 +2744,13 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         <div class="pointer-events-none absolute -bottom-24 -left-10 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl"></div>
         <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[9px] font-black uppercase tracking-widest"><i class="fa-solid fa-gift"></i> Yujin Client Edition</span>
-            <h2 class="text-2xl font-black text-white mt-2">Client Gifts & Assets</h2>
-            <p class="text-xs text-slate-400 mt-1 max-w-xl">Cards gifted by Yujin can carry a dedicated IDR asset value and may be redeemed through QRIS.</p>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[9px] font-black uppercase tracking-widest"><i class="fa-solid fa-gift"></i> <span data-i18n="yujinClientEdition">Yujin Client Edition</span></span>
+            <h2 class="text-2xl font-black text-white mt-2" data-i18n="clientGiftsAssetsTitle">Client Gifts & Assets</h2>
+            <p class="text-xs text-slate-400 mt-1 max-w-xl" data-i18n="clientGiftsAssetsSubtitle">Cards gifted by Yujin can carry a dedicated IDR asset value and may be redeemed through QRIS.</p>
           </div>
           <div class="grid grid-cols-2 gap-2 min-w-[220px]">
-            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black">Active Gifts</p><strong id="gift-stat-active" class="text-lg text-pink-300 font-black">0</strong></div>
-            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black">Asset Value</p><strong id="gift-stat-value" class="text-lg text-emerald-400 font-black">Rp 0</strong></div>
+            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black" data-i18n="activeGifts">Active Gifts</p><strong id="gift-stat-active" class="text-lg text-pink-300 font-black">0</strong></div>
+            <div class="bg-slate-950/70 border border-white/5 rounded-2xl p-3"><p class="text-[9px] uppercase tracking-wider text-slate-500 font-black" data-i18n="assetValue">Asset Value</p><strong id="gift-stat-value" class="text-lg text-emerald-400 font-black">Rp 0</strong></div>
           </div>
         </div>
       </div>
@@ -2943,17 +2943,17 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       <!-- CLIENT GIFT GENERATOR -->
       <div class="bg-gradient-to-r from-pink-950/40 via-slate-900 to-violet-950/30 border border-pink-500/20 rounded-3xl p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div><h4 class="text-sm font-black text-white uppercase tracking-wider"><i class="fa-solid fa-gift text-pink-400 mr-2"></i>Yujin Client Gift Generator</h4><p class="text-[10px] text-slate-500 mt-1">Gift an available card with a separate IDR asset value redeemable through QRIS.</p></div>
-          <span class="text-[9px] text-emerald-300 bg-emerald-500/5 border border-emerald-500/15 px-2 py-1 rounded-lg">0% GIFT / REDEMPTION FEE</span>
+          <div><h4 class="text-sm font-black text-white uppercase tracking-wider"><i class="fa-solid fa-gift text-pink-400 mr-2"></i><span data-i18n="yujinClientGiftGenerator">Yujin Client Gift Generator</span></h4><p class="text-[10px] text-slate-500 mt-1" data-i18n="yujinClientGiftGeneratorSub">Gift an available card with a separate IDR asset value redeemable through QRIS.</p></div>
+          <span class="text-[9px] text-emerald-300 bg-emerald-500/5 border border-emerald-500/15 px-2 py-1 rounded-lg" data-i18n="giftFeeBadge">0% GIFT FEE / 2% REDEMPTION TAX</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Client</label><select id="gift-admin-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Available Card</label><select id="gift-admin-card" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Asset Value (IDR)</label><input id="gift-admin-value" type="number" min="1" placeholder="150000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></div>
+          <div><label class="block text-[10px] font-bold text-slate-400 mb-1"><span data-i18n="client">Client</span></label><select id="gift-admin-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
+          <div><label class="block text-[10px] font-bold text-slate-400 mb-1"><span data-i18n="availableCard">Available Card</span></label><select id="gift-admin-card" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></select></div>
+          <div><label class="block text-[10px] font-bold text-slate-400 mb-1"><span data-i18n="assetValueIdr">Asset Value (IDR)</span></label><input id="gift-admin-value" type="number" min="1" placeholder="150000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></div>
         </div>
-        <div><label class="block text-[10px] font-bold text-slate-400 mb-1">Gift Message</label><input id="gift-admin-message" placeholder="Thanks for working with me!" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></div>
-        <button onclick="adminCreateClientGift()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 text-xs font-black"><i class="fa-solid fa-gift mr-1"></i> Create Client Gift</button>
-        <div class="pt-3 border-t border-white/5"><p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-2">Gift History</p><div id="admin-client-gifts-list" class="space-y-2"></div></div>
+        <div><label class="block text-[10px] font-bold text-slate-400 mb-1"><span data-i18n="giftMessage">Gift Message</span></label><input id="gift-admin-message" placeholder="Thanks for working with me!" data-i18n-placeholder="giftMessagePlaceholder" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white"></div>
+        <button onclick="adminCreateClientGift()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 text-xs font-black"><i class="fa-solid fa-gift mr-1"></i> <span data-i18n="createClientGift">Create Client Gift</span></button>
+        <div class="pt-3 border-t border-white/5"><p class="text-[9px] uppercase tracking-widest font-black text-slate-500 mb-2"><span data-i18n="giftHistory">Gift History</span></p><div id="admin-client-gifts-list" class="space-y-2"></div></div>
       </div>
 
       <!-- PENDING ORDERS -->
@@ -3846,14 +3846,14 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
   <div id="gift-redeem-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9998] hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-pink-500/25 rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl">
       <button onclick="closeGiftRedeemModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-800 text-slate-400 text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-      <div><span class="text-[9px] uppercase tracking-widest font-black text-pink-300">Asset Redemption</span><h3 id="gift-redeem-title" class="text-lg font-black text-white mt-1">Redeem Client Gift</h3><p id="gift-redeem-sub" class="text-[11px] text-slate-400 mt-1"></p></div>
+      <div><span class="text-[9px] uppercase tracking-widest font-black text-pink-300" data-i18n="assetRedemption">Asset Redemption</span><h3 id="gift-redeem-title" class="text-lg font-black text-white mt-1" data-i18n="redeemClientGift">Redeem Client Gift</h3><p id="gift-redeem-sub" class="text-[11px] text-slate-400 mt-1"></p></div>
       <input type="hidden" id="gift-redeem-id">
       <input type="hidden" id="gift-redeem-card-id">
-      <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4"><p class="text-[9px] text-slate-500 uppercase font-black">Redeemable Asset</p><p id="gift-redeem-amount" class="text-2xl font-black text-emerald-400 font-mono mt-1">Rp 0</p><p class="text-[10px] text-slate-500 mt-1">No Eugene Card trading fee is charged for client-gift redemption.</p></div>
+      <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4"><p class="text-[9px] text-slate-500 uppercase font-black" data-i18n="redeemableAsset">Redeemable Asset</p><p id="gift-redeem-amount" class="text-2xl font-black text-emerald-400 font-mono mt-1">Rp 0</p><p class="text-[10px] text-slate-500 mt-1" data-i18n="clientGiftRedemptionTax">A 2% platform tax applies to Sell Back / asset redemption.</p></div>
       <div class="space-y-3 text-xs">
-        <div><label class="block font-bold text-slate-300 mb-1">QRIS / Payment ID</label><input id="gift-redeem-qris" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500" placeholder="e.g. QRIS name / merchant ID"></div>
-        <div><label class="block font-bold text-slate-300 mb-1">Recipient Name</label><input id="gift-redeem-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500"></div>
-        <button onclick="submitGiftRedemption()" class="w-full py-3 bg-pink-500 hover:bg-pink-400 text-slate-950 font-black rounded-xl transition-all"><i class="fa-solid fa-qrcode mr-1"></i> Request QRIS Redemption</button>
+        <div><label class="block font-bold text-slate-300 mb-1" data-i18n="qrisPaymentId">QRIS / Payment ID</label><input id="gift-redeem-qris" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500" placeholder="e.g. QRIS name / merchant ID" data-i18n-placeholder="qrisPaymentPlaceholder"></div>
+        <div><label class="block font-bold text-slate-300 mb-1" data-i18n="recipientName">Recipient Name</label><input id="gift-redeem-recipient" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-pink-500"></div>
+        <button onclick="submitGiftRedemption()" class="w-full py-3 bg-pink-500 hover:bg-pink-400 text-slate-950 font-black rounded-xl transition-all"><i class="fa-solid fa-qrcode mr-1"></i> <span data-i18n="requestQrisRedemption">Request QRIS Redemption</span></button>
       </div>
     </div>
   </div>
@@ -4543,6 +4543,53 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         totalIncTax: "Total (Inc. 2% Tax)",
         proceedQrisBtn: "Proceed to Payment",
         scanPayQris: "Scan & Pay via Official QRIS",
+        navGifts: "Client Gifts",
+        yujinClientEdition: "Yujin Client Edition",
+        clientGiftsAssetsTitle: "Client Gifts & Assets",
+        clientGiftsAssetsSubtitle: "Cards gifted by Yujin can carry a dedicated IDR asset value and may be redeemed through QRIS.",
+        activeGifts: "Active Gifts",
+        assetValue: "Asset Value",
+        noClientGifts: "No client gifts yet",
+        noClientGiftsSub: "Cards gifted to you by Yujin will appear here.",
+        redeemableAssetValue: "Redeemable Asset Value",
+        giftedBy: "Gifted by",
+        qrisEligible: "QRIS Eligible",
+        redeemViaQris: "Redeem via QRIS",
+        redemptionWaitingAdmin: "Redemption request is waiting for Admin.",
+        assetAlreadyRedeemed: "Asset already redeemed.",
+        assetRedemption: "Asset Redemption",
+        redeemClientGift: "Redeem Client Gift",
+        redeemableAsset: "Redeemable Asset",
+        clientGiftRedemptionTax: "A 2% platform tax applies to Sell Back / asset redemption.",
+        qrisPaymentId: "QRIS / Payment ID",
+        qrisPaymentPlaceholder: "e.g. QRIS name / merchant ID",
+        recipientName: "Recipient Name",
+        requestQrisRedemption: "Request QRIS Redemption",
+        yujinClientGiftGenerator: "Yujin Client Gift Generator",
+        yujinClientGiftGeneratorSub: "Gift an available card with a separate IDR asset value redeemable through QRIS.",
+        giftFeeBadge: "0% GIFT FEE / 2% REDEMPTION TAX",
+        client: "Client",
+        availableCard: "Available Card",
+        assetValueIdr: "Asset Value (IDR)",
+        giftMessage: "Gift Message",
+        giftMessagePlaceholder: "Thanks for working with me!",
+        createClientGift: "Create Client Gift",
+        giftHistory: "Gift History",
+        noClientGiftsCreated: "No client gifts created yet.",
+        redemption: "Redemption",
+        giftNotFound: "Gift not found.",
+        giftNotAvailable: "This gift is not available for redemption.",
+        pleaseLoginFirst: "Please log in first.",
+        giftNoLongerRedeemable: "Gift is no longer redeemable.",
+        enterQrisRecipient: "Please enter your QRIS/payment ID and recipient name.",
+        redemptionRequestSubmitted: "Redemption request {ref} submitted.",
+        giftRedemptionSubmitted: "Gift redemption submitted",
+        giftRedemptionWaiting: "Your {amount} QRIS redemption is waiting for Admin approval.",
+        redemptionError: "Redemption error: ",
+        adminAccessRequired: "Admin access required.",
+        giftCreatedFor: "Gift {id} created for {name}.",
+        couldNotCreateGift: "Could not create gift: ",
+        qrisRedemptionStatus: "QRIS Eligible",
         merchantLabel: "Merchant",
         totalPayAmount: "Total Payment Amount (Inc. 2% Platform Tax)",
         uploadReceiptLabel: "Upload QRIS Transfer Receipt Screenshot",
@@ -4903,6 +4950,53 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         totalIncTax: "Total (Termasuk Pajak 2%)",
         proceedQrisBtn: "Lanjutkan ke Pembayaran",
         scanPayQris: "Pindai & Bayar via QRIS Resmi",
+        navGifts: "Hadiah Klien",
+        yujinClientEdition: "Edisi Klien Yujin",
+        clientGiftsAssetsTitle: "Hadiah & Aset Klien",
+        clientGiftsAssetsSubtitle: "Kartu yang diberikan oleh Yujin dapat memiliki nilai aset khusus dalam IDR dan dapat dicairkan melalui QRIS.",
+        activeGifts: "Hadiah Aktif",
+        assetValue: "Nilai Aset",
+        noClientGifts: "Belum ada hadiah klien",
+        noClientGiftsSub: "Kartu yang diberikan Yujin kepada Anda akan muncul di sini.",
+        redeemableAssetValue: "Nilai Aset yang Dapat Dicairkan",
+        giftedBy: "Diberikan oleh",
+        qrisEligible: "Dapat Dicairkan via QRIS",
+        redeemViaQris: "Cairkan via QRIS",
+        redemptionWaitingAdmin: "Permintaan pencairan sedang menunggu Admin.",
+        assetAlreadyRedeemed: "Aset sudah dicairkan.",
+        assetRedemption: "Pencairan Aset",
+        redeemClientGift: "Cairkan Hadiah Klien",
+        redeemableAsset: "Aset yang Dapat Dicairkan",
+        clientGiftRedemptionTax: "Pajak platform 2% berlaku untuk Sell Back / pencairan aset.",
+        qrisPaymentId: "QRIS / ID Pembayaran",
+        qrisPaymentPlaceholder: "mis. nama QRIS / ID merchant",
+        recipientName: "Nama Penerima",
+        requestQrisRedemption: "Ajukan Pencairan QRIS",
+        yujinClientGiftGenerator: "Generator Hadiah Klien Yujin",
+        yujinClientGiftGeneratorSub: "Berikan kartu yang tersedia dengan nilai aset IDR terpisah yang dapat dicairkan melalui QRIS.",
+        giftFeeBadge: "BIAYA HADIAH 0% / PAJAK PENCAIRAN 2%",
+        client: "Klien",
+        availableCard: "Kartu Tersedia",
+        assetValueIdr: "Nilai Aset (IDR)",
+        giftMessage: "Pesan Hadiah",
+        giftMessagePlaceholder: "Terima kasih sudah bekerja sama dengan saya!",
+        createClientGift: "Buat Hadiah Klien",
+        giftHistory: "Riwayat Hadiah",
+        noClientGiftsCreated: "Belum ada hadiah klien yang dibuat.",
+        redemption: "Pencairan",
+        giftNotFound: "Hadiah tidak ditemukan.",
+        giftNotAvailable: "Hadiah ini tidak tersedia untuk dicairkan.",
+        pleaseLoginFirst: "Silakan masuk terlebih dahulu.",
+        giftNoLongerRedeemable: "Hadiah ini sudah tidak dapat dicairkan.",
+        enterQrisRecipient: "Masukkan ID QRIS/pembayaran dan nama penerima.",
+        redemptionRequestSubmitted: "Permintaan pencairan {ref} berhasil diajukan.",
+        giftRedemptionSubmitted: "Pencairan hadiah diajukan",
+        giftRedemptionWaiting: "Pencairan QRIS sebesar {amount} sedang menunggu persetujuan Admin.",
+        redemptionError: "Kesalahan pencairan: ",
+        adminAccessRequired: "Akses Admin diperlukan.",
+        giftCreatedFor: "Hadiah {id} dibuat untuk {name}.",
+        couldNotCreateGift: "Tidak dapat membuat hadiah: ",
+        qrisRedemptionStatus: "Dapat Dicairkan via QRIS",
         merchantLabel: "Pedagang",
         totalPayAmount: "Total Pembayaran (Termasuk Pajak 2%)",
         uploadReceiptLabel: "Unggah Tangkapan Layar Struk Transfer QRIS",
@@ -6120,7 +6214,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function exportInventoryBackup() {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
+      if (!currentUser?.isAdmin) return showToast(tr('adminAccessRequired'));
 
       showLoadingModal('Generating Fast Backup...', 'Formatting inventory array...', false);
 
@@ -6165,7 +6259,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     async function importInventoryBackup(event) {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
+      if (!currentUser?.isAdmin) return showToast(tr('adminAccessRequired'));
 
       const file = event.target.files[0];
       if (!file) return;
@@ -8373,7 +8467,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function openProfileManagerModal() {
-      if (!currentUser) return showToast('Please log in first.');
+      if (!currentUser) return showToast(tr('pleaseLoginFirst'));
       document.getElementById('profile-edit-name-input').value = currentUser.name || '';
       document.getElementById('profile-edit-username-input').value = currentUser.username || '';
       document.getElementById('profile-edit-email-input').value = currentUser.email || '';
@@ -9599,7 +9693,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function openListCardForTradeModal() {
-      if (!currentUser) return showToast('Please log in first.');
+      if (!currentUser) return showToast(tr('pleaseLoginFirst'));
       const myIdent = currentUser.username || currentUser.name;
       const myCards = inventory.filter(c => c.owner === currentUser.name || c.owner === currentUser.username);
       if (myCards.length === 0) return showToast('You do not own any cards to list.');
@@ -9619,7 +9713,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function openListCardModal(cardId, mode = 'trade') {
-      if (!currentUser) return showToast('Please log in first.');
+      if (!currentUser) return showToast(tr('pleaseLoginFirst'));
       const card = inventory.find(c => c.id === cardId);
       if (!card) return;
 
@@ -9730,7 +9824,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     function openProposeTradeModal() {
-      if (!currentUser) return showToast('Please log in first.');
+      if (!currentUser) return showToast(tr('pleaseLoginFirst'));
       const myIdent = currentUser.username || currentUser.name;
       
       const ownedByOthers = inventory.filter(c => c.owner && c.owner !== currentUser.name && c.owner !== currentUser.username);
@@ -10949,7 +11043,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     async function approveTransaction(txId) {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
+      if (!currentUser?.isAdmin) return showToast(tr('adminAccessRequired'));
 
       try {
         const doc = await db.collection("transactions").doc(txId).get();
@@ -10986,7 +11080,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     async function rejectTransaction(txId) {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
+      if (!currentUser?.isAdmin) return showToast(tr('adminAccessRequired'));
 
       try {
         await db.collection("transactions").doc(txId).update({ status: 'REJECTED' });
@@ -11206,24 +11300,24 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const badge = document.getElementById('gift-active-count-badge');
       if (badge) { badge.textContent = active.length; badge.classList.toggle('hidden', active.length === 0); }
       if (!currentUser) { grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 text-xs">Log in to view your client gifts.</div>'; return; }
-      if (!gifts.length) { grid.innerHTML = '<div class="col-span-full text-center py-16 bg-slate-900 border border-slate-800 rounded-3xl"><i class="fa-solid fa-gift text-pink-400 text-2xl"></i><p class="text-sm font-bold text-white mt-3">No client gifts yet</p><p class="text-[11px] text-slate-500 mt-1">Cards gifted to you by Yujin will appear here.</p></div>'; return; }
+      if (!gifts.length) { grid.innerHTML = `<div class="col-span-full text-center py-16 bg-slate-900 border border-slate-800 rounded-3xl"><i class="fa-solid fa-gift text-pink-400 text-2xl"></i><p class="text-sm font-bold text-white mt-3">${tr('noClientGifts')}</p><p class="text-[11px] text-slate-500 mt-1">${tr('noClientGiftsSub')}</p></div>`; return; }
       grid.innerHTML = gifts.map(g => {
         const status = String(g.status || 'ACTIVE').toUpperCase();
         const card = inventory.find(c => c.id === g.cardId) || {};
         const canRedeem = status === 'ACTIVE' && Number(g.assetValue || 0) > 0 && currentUser && (g.recipientUid === currentUser.uid || normalizeCollectorValue(g.recipientUsername) === normalizeCollectorValue(currentUser.username) || normalizeCollectorValue(g.recipientName) === normalizeCollectorValue(currentUser.name));
         const safeId = String(g.id).replace(/'/g,"\\'");
-        return `<article class="client-gift-card"><div class="gift-orb"></div><div class="relative z-10 space-y-3"><div class="flex items-start justify-between gap-3"><div><span class="gift-label">Yujin Client Edition</span><h3 class="text-base font-black text-white mt-1">${escapeHtml(g.cardName || card.name || 'Eugene Card')}</h3><p class="text-[10px] text-slate-500 font-mono mt-0.5">${escapeHtml(g.cardSerial || card.serial || g.cardId || '')}</p></div><span class="gift-status ${giftStatusClass(status)}">${escapeHtml(status.replaceAll('_',' '))}</span></div><div class="bg-slate-950/80 border border-white/5 rounded-2xl p-4"><p class="gift-label">Redeemable Asset Value</p><p class="gift-value mt-1">${formatIDR(g.assetValue)}</p></div><div class="flex items-center justify-between text-[10px]"><span class="text-slate-500">Gifted by <b class="text-slate-300">${escapeHtml(g.giftedByName || 'Yujin')}</b></span><span class="text-pink-300 font-bold">QRIS Eligible</span></div>${g.message ? `<p class="text-[11px] text-slate-400 italic border-l-2 border-pink-500/30 pl-3">“${escapeHtml(g.message)}”</p>` : ''}${canRedeem ? `<button onclick="openGiftRedeemModal('${safeId}')" class="w-full py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 font-black text-xs"><i class="fa-solid fa-qrcode mr-1"></i> Redeem via QRIS</button>` : status === 'PENDING_REDEMPTION' ? `<div class="text-center py-2 text-[10px] text-amber-300 bg-amber-500/5 rounded-xl border border-amber-500/15">Redemption request is waiting for Admin.</div>` : status === 'REDEEMED' ? `<div class="text-center py-2 text-[10px] text-slate-500 bg-slate-950 rounded-xl">Asset already redeemed.</div>` : ''}</div></article>`;
+        return `<article class="client-gift-card"><div class="gift-orb"></div><div class="relative z-10 space-y-3"><div class="flex items-start justify-between gap-3"><div><span class="gift-label">${tr('yujinClientEdition')}</span><h3 class="text-base font-black text-white mt-1">${escapeHtml(g.cardName || card.name || 'Eugene Card')}</h3><p class="text-[10px] text-slate-500 font-mono mt-0.5">${escapeHtml(g.cardSerial || card.serial || g.cardId || '')}</p></div><span class="gift-status ${giftStatusClass(status)}">${escapeHtml(status.replaceAll('_',' '))}</span></div><div class="bg-slate-950/80 border border-white/5 rounded-2xl p-4"><p class="gift-label">${tr('redeemableAssetValue')}</p><p class="gift-value mt-1">${formatIDR(g.assetValue)}</p></div><div class="flex items-center justify-between text-[10px]"><span class="text-slate-500">${tr('giftedBy')} <b class="text-slate-300">${escapeHtml(g.giftedByName || 'Yujin')}</b></span><span class="text-pink-300 font-bold">${tr('qrisEligible')}</span></div>${g.message ? `<p class="text-[11px] text-slate-400 italic border-l-2 border-pink-500/30 pl-3">“${escapeHtml(g.message)}”</p>` : ''}${canRedeem ? `<button onclick="openGiftRedeemModal('${safeId}')" class="w-full py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 font-black text-xs"><i class="fa-solid fa-qrcode mr-1"></i> ${tr('redeemViaQris')}</button>` : status === 'PENDING_REDEMPTION' ? `<div class="text-center py-2 text-[10px] text-amber-300 bg-amber-500/5 rounded-xl border border-amber-500/15">${tr('redemptionWaitingAdmin')}</div>` : status === 'REDEEMED' ? `<div class="text-center py-2 text-[10px] text-slate-500 bg-slate-950 rounded-xl">${tr('assetAlreadyRedeemed')}</div>` : ''}</div></article>`;
       }).join('');
     }
 
     function openGiftRedeemModal(giftId) {
       const g = clientGiftsList.find(x => x.id === giftId);
-      if (!g) return showToast('Gift not found.');
-      if (String(g.status || 'ACTIVE').toUpperCase() !== 'ACTIVE') return showToast('This gift is not available for redemption.');
+      if (!g) return showToast(tr('giftNotFound'));
+      if (String(g.status || 'ACTIVE').toUpperCase() !== 'ACTIVE') return showToast(tr('giftNotAvailable'));
       document.getElementById('gift-redeem-id').value = g.id;
       document.getElementById('gift-redeem-card-id').value = g.cardId || '';
-      document.getElementById('gift-redeem-title').textContent = g.cardName || 'Redeem Client Gift';
-      document.getElementById('gift-redeem-sub').textContent = `${g.cardSerial || ''} • Gifted by ${g.giftedByName || 'Yujin'}`;
+      document.getElementById('gift-redeem-title').textContent = g.cardName || tr('redeemClientGift');
+      document.getElementById('gift-redeem-sub').textContent = `${g.cardSerial || ''} • ${tr('giftedBy')} ${g.giftedByName || 'Yujin'}`;
       document.getElementById('gift-redeem-amount').textContent = formatIDR(g.assetValue);
       document.getElementById('gift-redeem-qris').value = g.qrisId || '';
       document.getElementById('gift-redeem-recipient').value = currentUser?.name || '';
@@ -11232,22 +11326,22 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     function closeGiftRedeemModal() { document.getElementById('gift-redeem-modal')?.classList.add('hidden'); }
 
     async function submitGiftRedemption() {
-      if (!currentUser) return showToast('Please log in first.');
+      if (!currentUser) return showToast(tr('pleaseLoginFirst'));
       const giftId = document.getElementById('gift-redeem-id').value;
       const gift = clientGiftsList.find(x => x.id === giftId);
       const qrisId = document.getElementById('gift-redeem-qris').value.trim();
       const recipientName = document.getElementById('gift-redeem-recipient').value.trim();
-      if (!gift || String(gift.status || '').toUpperCase() !== 'ACTIVE') return showToast('Gift is no longer redeemable.');
-      if (!qrisId || !recipientName) return showToast('Please enter your QRIS/payment ID and recipient name.');
+      if (!gift || String(gift.status || '').toUpperCase() !== 'ACTIVE') return showToast(tr('giftNoLongerRedeemable'));
+      if (!qrisId || !recipientName) return showToast(tr('enterQrisRecipient'));
       const ref = 'REDEEM-' + Date.now().toString(36).toUpperCase();
       const batch = db.batch();
       batch.update(db.collection('clientGifts').doc(giftId), { status:'PENDING_REDEMPTION', redemptionRequestedAt:firebase.firestore.FieldValue.serverTimestamp(), redemptionQrisId:qrisId, redemptionRecipientName:recipientName, redemptionRequestedByUid:currentUser.uid });
       batch.set(db.collection('transactions').doc(ref), { id:ref, type:'REDEMPTION', order_type:'REDEMPTION', user_name:currentUser.username || currentUser.name || currentUser.email, user_uid:currentUser.uid, giftId, cardId:gift.cardId || null, items:[], assetValue:Number(gift.assetValue||0), total_amount:Number(gift.assetValue||0), payoutMethod:'QRIS', qrisId, recipientName, status:'PENDING', created_at:new Date().toISOString(), createdBy:'CLIENT_GIFT' });
-      try { await batch.commit(); closeGiftRedeemModal(); await loadClientGifts(); showToast(`Redemption request ${ref} submitted.`); notifyUser('Gift redemption submitted', `Your ${formatIDR(gift.assetValue)} QRIS redemption is waiting for Admin approval.`, 'fa-qrcode text-pink-400', '#'); } catch(e) { showToast('Redemption error: ' + e.message); }
+      try { await batch.commit(); closeGiftRedeemModal(); await loadClientGifts(); showToast(tr('redemptionRequestSubmitted').replace('{ref}', ref)); notifyUser(tr('giftRedemptionSubmitted'), tr('giftRedemptionWaiting').replace('{amount}', formatIDR(gift.assetValue)), 'fa-qrcode text-pink-400', '#'); } catch(e) { showToast(tr('redemptionError') + e.message); }
     }
 
     async function adminCreateClientGift() {
-      if (!currentUser?.isAdmin) return showToast('Admin access required.');
+      if (!currentUser?.isAdmin) return showToast(tr('adminAccessRequired'));
       const recipient = document.getElementById('gift-admin-recipient')?.value;
       const cardId = document.getElementById('gift-admin-card')?.value;
       const value = Number(document.getElementById('gift-admin-value')?.value || 0);
@@ -11266,21 +11360,21 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         batch.update(db.collection('cards').doc(card.id), { owner, status:'SOLD', gifted:true, giftId, giftAssetValue:value, assetCurrency:'IDR', assetStatus:'ACTIVE', giftedBy:gift.giftedByName, giftedAt:new Date().toISOString() });
         batch.set(db.collection('transactions').doc(giftId), { id:giftId, type:'GIFT', order_type:'GIFT', user_name:owner, user_uid:profile.uid || null, giftId, cardId:card.id, items:[{id:card.id,serial:card.serial,name:card.name,price:Number(card.price||0)}], assetValue:value, total_amount:0, fee:0, status:'APPROVED', paymentMethod:'GIFT', created_at:new Date().toISOString(), giftedBy:gift.giftedByName });
         await batch.commit();
-        showToast(`Gift ${giftId} created for ${profile.name || owner}.`);
+        showToast(tr('giftCreatedFor').replace('{id}', giftId).replace('{name}', profile.name || owner));
         document.getElementById('gift-admin-message').value='';
         document.getElementById('gift-admin-value').value='';
         await loadAppState();
         await loadClientGifts();
         renderAdminClientGifts();
-      } catch(e) { showToast('Could not create gift: ' + e.message); }
+      } catch(e) { showToast(tr('couldNotCreateGift') + e.message); }
     }
 
     function renderAdminClientGifts() {
       const list = document.getElementById('admin-client-gifts-list');
       if (!list) return;
       const gifts = clientGiftsList.filter(g => g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
-      if (!gifts.length) { list.innerHTML='<p class="text-xs text-slate-500">No client gifts created yet.</p>'; return; }
-      list.innerHTML = gifts.slice(0,30).map(g => `<div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="text-[8px] uppercase tracking-widest font-black text-pink-300">${escapeHtml(g.status || 'ACTIVE')}</span><span class="font-mono text-[10px] text-slate-500">${escapeHtml(g.id)}</span></div><p class="text-xs font-black text-white mt-1">${escapeHtml(g.cardName || 'Eugene Card')} • ${escapeHtml(g.cardSerial || '')}</p><p class="text-[10px] text-slate-500">To ${escapeHtml(g.recipientName || g.recipientUsername || 'Client')} • ${formatIDR(g.assetValue)}</p></div><span class="text-[10px] text-pink-300 font-bold">${g.status === 'REDEEMED' ? 'Redeemed' : 'QRIS Eligible'}</span></div>`).join('');
+      if (!gifts.length) { list.innerHTML=`<p class="text-xs text-slate-500">${tr('noClientGiftsCreated')}</p>`; return; }
+      list.innerHTML = gifts.slice(0,30).map(g => `<div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="text-[8px] uppercase tracking-widest font-black text-pink-300">${escapeHtml(g.status || 'ACTIVE')}</span><span class="font-mono text-[10px] text-slate-500">${escapeHtml(g.id)}</span></div><p class="text-xs font-black text-white mt-1">${escapeHtml(g.cardName || 'Eugene Card')} • ${escapeHtml(g.cardSerial || '')}</p><p class="text-[10px] text-slate-500">To ${escapeHtml(g.recipientName || g.recipientUsername || 'Client')} • ${formatIDR(g.assetValue)}</p></div><span class="text-[10px] text-pink-300 font-bold">${g.status === 'REDEEMED' ? tr('assetAlreadyRedeemed') : tr('qrisEligible')}</span></div>`).join('');
     }
 
     function switchTab(tabName) {
