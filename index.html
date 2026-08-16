@@ -1792,6 +1792,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
       <!-- Navigation Tabs & External Pages Navigation -->
       <nav class="flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto max-w-full">
+        <!-- Core navigation: discovery → ownership → marketplace → communication -->
         <button id="nav-home" onclick="switchTab('home')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-house text-emerald-400"></i> <span data-i18n="navHome">Home</span>
           <span id="home-active-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
@@ -1808,8 +1809,15 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         <button id="nav-trade-req" onclick="switchTab('trade-req')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-handshake text-purple-400"></i> <span data-i18n="navRequests">Trade Requests</span>
         </button>
-        
-        <!-- Internal Tab + External Page Links for Analytics -->
+        <button id="nav-inbox" onclick="switchTab('inbox')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="navInbox">Inbox</span>
+          <span id="inbox-unread-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
+        </button>
+
+        <!-- Financial / analytics tools -->
+        <button id="nav-revenue" onclick="switchTab('revenue')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/30 border border-emerald-500/30">
+          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> <span data-i18n="navRevenueTab">Revenue</span>
+        </button>
         <button id="nav-analytics" onclick="switchTab('analytics')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-amber-950/30 border border-amber-500/30">
           <i class="fa-solid fa-chart-line text-amber-400"></i> <span data-i18n="navAnalytics">Analytics</span>
         </button>
@@ -1817,15 +1825,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
           <i class="fa-solid fa-chart-pie text-amber-400"></i> Analytics Hub
         </a>
 
-        <!-- Internal Revenue Tab -->
-        <button id="nav-revenue" onclick="switchTab('revenue')" class="analytics-nav-btn hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/30 border border-emerald-500/30">
-          <i class="fa-solid fa-sack-dollar text-emerald-400"></i> <span data-i18n="navRevenueTab">Revenue</span>
-        </button>
-
-        <button id="nav-inbox" onclick="switchTab('inbox')" class="relative px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="navInbox">Inbox</span>
-          <span id="inbox-unread-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center leading-none border border-slate-950">0</span>
-        </button>
+        <!-- Community / history -->
         <button id="nav-holders" onclick="switchTab('holders')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-users text-teal-400"></i> <span data-i18n="navHolders">Holders</span>
         </button>
@@ -1835,6 +1835,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         <div class="h-4 w-px bg-slate-800 mx-1 self-center hidden sm:block"></div>
 
+        <!-- Personal assets / rewards -->
         <button id="nav-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
           <i class="fa-solid fa-vault text-amber-400"></i> <span data-i18n="navVault">My Vault</span>
         </button>
@@ -1848,16 +1849,13 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
         <div id="admin-nav-separator" class="h-4 w-px bg-slate-800 mx-1 self-center hidden"></div>
 
-        <!-- External Link to Admin Command Center -->
+        <!-- Admin tools -->
         <a href="admin-command-center.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-violet-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-violet-950/40 border border-violet-500/30">
           <i class="fa-solid fa-gauge-high text-violet-400"></i> Command Center
         </a>
-
-        <!-- External Link to Revenue -->
         <a href="revenue.html" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-emerald-950/40 border border-emerald-500/30">
           <i class="fa-solid fa-sack-dollar text-emerald-400"></i> Revenue Hub
         </a>
-
         <button id="nav-inventory" onclick="switchTab('inventory')" class="admin-only-nav hidden px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap bg-rose-950/30 border border-rose-500/20">
           <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="navInventory">Inventory</span>
         </button>
