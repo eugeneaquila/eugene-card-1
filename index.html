@@ -11091,20 +11091,70 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         renderClientGifts();
         return;
       }
+
       try {
-        const candidates = [];
-        const keys = [currentUser.uid, currentUser.username, currentUser.name, currentUser.email].filter(Boolean).map(normalizeCollectorValue);
-        const snap = await db.collection('clientGifts').get();
-        snap.forEach(doc => {
-          const g = { id: doc.id, ...doc.data() };
-          const recipientKeys = [g.recipientUid, g.recipientUsername, g.recipientName, g.recipientEmail].filter(Boolean).map(normalizeCollectorValue);
-          if (recipientKeys.some(k => keys.includes(k)) || g.createdByUid === currentUser.uid || currentUser.isAdmin) candidates.push(g);
-        });
-        clientGiftsList = candidates.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+        const gifts = new Map();
+        const addSnapshot = (snap) => {
+          snap.forEach(doc => gifts.set(doc.id, { id: doc.id, ...doc.data() }));
+        };
+
+        // IMPORTANT: do not use clientGifts.get() for normal collectors.
+        // Firestore security rules commonly allow a collector to read only
+        // documents where recipientUid == request.auth.uid. A collection-wide
+        // read is therefore rejected with PERMISSION_DENIED.
+        if (currentUser.isAdmin) {
+          try {
+            const adminSnap = await db.collection('clientGifts').get();
+            addSnapshot(adminSnap);
+          } catch (adminErr) {
+            // If the current Firebase rules do not expose the admin collection
+            // read yet, still try the signed-in user's own gifts so the Client
+            // tab does not crash. The Admin Hub will show the underlying error
+            // when an admin-only operation is attempted.
+            console.warn('Admin client-gift collection read denied:', adminErr);
+          }
+        }
+
+        if (currentUser.uid) {
+          const ownSnap = await db.collection('clientGifts')
+            .where('recipientUid', '==', currentUser.uid)
+            .get();
+          addSnapshot(ownSnap);
+        }
+
+        // Backward compatibility for gifts created before recipientUid was
+        // populated. These are attempted individually and ignored when the
+        // security rules correctly deny the broader legacy lookup.
+        const legacyFields = [
+          ['recipientUsername', currentUser.username],
+          ['recipientEmail', currentUser.email]
+        ].filter(([, value]) => value);
+
+        for (const [field, value] of legacyFields) {
+          try {
+            const legacySnap = await db.collection('clientGifts')
+              .where(field, '==', value)
+              .get();
+            addSnapshot(legacySnap);
+          } catch (legacyErr) {
+            console.debug(`Legacy gift lookup denied for ${field}:`, legacyErr);
+          }
+        }
+
+        clientGiftsList = Array.from(gifts.values())
+          .sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
         renderClientGifts();
       } catch (e) {
         console.warn('Client gifts load error:', e);
-        showToast('Could not load client gifts: ' + e.message);
+        clientGiftsList = [];
+        renderClientGifts();
+
+        const code = String(e?.code || '').toLowerCase();
+        if (code.includes('permission-denied') || /permission|insufficient/i.test(String(e?.message || ''))) {
+          showToast('Could not load client gifts: your Firebase rules do not allow this account to read its gifts.');
+        } else {
+          showToast('Could not load client gifts: ' + (e?.message || 'Unknown error'));
+        }
       }
     }
 
@@ -11196,7 +11246,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     function renderAdminClientGifts() {
       const list = document.getElementById('admin-client-gifts-list');
       if (!list) return;
-      const gifts = clientGiftsList.filter(g => g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
+      const gifts = clientGiftsList.filter(g => g.giftedByUid === currentUser?.uid || g.createdByUid === currentUser?.uid || currentUser?.isAdmin);
       if (!gifts.length) { list.innerHTML='<p class="text-xs text-slate-500">No client gifts created yet.</p>'; return; }
       list.innerHTML = gifts.slice(0,30).map(g => `<div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="text-[8px] uppercase tracking-widest font-black text-pink-300">${escapeHtml(g.status || 'ACTIVE')}</span><span class="font-mono text-[10px] text-slate-500">${escapeHtml(g.id)}</span></div><p class="text-xs font-black text-white mt-1">${escapeHtml(g.cardName || 'Eugene Card')} • ${escapeHtml(g.cardSerial || '')}</p><p class="text-[10px] text-slate-500">To ${escapeHtml(g.recipientName || g.recipientUsername || 'Client')} • ${formatIDR(g.assetValue)}</p></div><span class="text-[10px] text-pink-300 font-bold">${g.status === 'REDEEMED' ? 'Redeemed' : 'QRIS Eligible'}</span></div>`).join('');
     }
