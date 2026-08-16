@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eugene Card — Admin Command Center 3.0</title>
+
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Firebase Compatibility SDKs (Matching index.html backend) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+
+  <style>
+    body { background: #020617; color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .glass { background: rgba(15, 23, 42, 0.76); backdrop-filter: blur(16px); border: 1px solid rgba(148, 163, 184, 0.14); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+
+    <!-- Header Section -->
+    <header class="glass rounded-3xl p-6 md:p-8 mb-5">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+        <div>
+          <span class="inline-flex px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-black uppercase tracking-widest">
+            Eugene Card 3.0
+          </span>
+          <h1 class="text-3xl md:text-5xl font-black mt-4">Admin Command Center</h1>
+          <p class="text-sm text-slate-400 mt-2 max-w-2xl">Marketplace control room: operations, collectors, inventory, auctions, trades and finance.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-800 text-xs font-bold hover:bg-slate-700 transition">
+            <i class="fa-solid fa-store mr-1 text-amber-400"></i> Marketplace
+          </a>
+          <a href="analytics.html" class="px-3 py-2 rounded-xl bg-amber-500/10 text-amber-300 text-xs font-bold hover:bg-amber-500/20 transition">
+            <i class="fa-solid fa-chart-line mr-1 text-amber-400"></i> Analytics Hub
+          </a>
+          <a href="revenue.html" class="px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 text-xs font-bold hover:bg-emerald-500/20 transition">
+            <i class="fa-solid fa-wallet mr-1 text-emerald-400"></i> Revenue Hub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Database Tools Panel -->
+    <div class="glass rounded-3xl p-6 mb-5">
+      <h2 class="text-xl font-black mb-4"><i class="fa-solid fa-database text-violet-400 mr-2"></i>Database Tools</h2>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="exportFirebaseInventory()" class="px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold text-sm transition inline-flex items-center">
+          <i class="fa-solid fa-download mr-2 text-amber-400"></i> Export Inventory Backup
+        </button>
+        <button onclick="triggerQuickSync()" class="px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-sm transition inline-flex items-center">
+          <i class="fa-solid fa-rotate mr-2"></i> Sync Realtime Database
+        </button>
+      </div>
+    </div>
+
+    <!-- Auth Alert Container -->
+    <div id="auth-state" class="mb-5"></div>
+
+    <!-- Metrics Dashboard -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-layer-group mr-1 text-indigo-400"></i> Total Cards</p>
+        <p id="cards" class="text-3xl font-black mt-1">—</p>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-coins mr-1 text-emerald-400"></i> Inventory Valuation</p>
+        <p id="inventory" class="text-3xl font-black mt-1">—</p>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-users mr-1 text-teal-400"></i> Active Collectors</p>
+        <p id="collectors" class="text-3xl font-black mt-1">—</p>
+      </div>
+      <div class="glass rounded-2xl p-5">
+        <p class="text-[10px] text-slate-500 uppercase font-black"><i class="fa-solid fa-handshake mr-1 text-purple-400"></i> Pending Requests</p>
+        <p id="trades" class="text-3xl font-black mt-1">—</p>
+      </div>
+    </section>
+
+    <!-- Operations & Health Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+      <div class="glass rounded-3xl p-5 lg:col-span-2">
+        <h2 class="font-black"><i class="fa-solid fa-sliders mr-2 text-violet-400"></i>Direct Operations Navigation</h2>
+        <p class="text-xs text-slate-500 mt-1">Select an operational module to launch in the main hub.</p>
+        <div class="grid sm:grid-cols-2 gap-3 mt-4">
+          <button onclick="navigateToIndexTab('inventory')" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-violet-500/40 transition text-left">
+            <b class="text-white flex items-center justify-between">Inventory Manager <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i></b>
+            <p class="text-[10px] text-slate-500 mt-1">Edit card parameters, prices, and upload assets.</p>
+          </button>
+          <button onclick="navigateToIndexTab('admin')" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-rose-500/40 transition text-left">
+            <b class="text-white flex items-center justify-between">Admin Approval Hub <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i></b>
+            <p class="text-[10px] text-slate-500 mt-1">Approve/reject pending QRIS orders & sell-backs.</p>
+          </button>
+          <button onclick="navigateToIndexTab('trade-req')" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-purple-500/40 transition text-left">
+            <b class="text-white flex items-center justify-between">Trade Requests <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i></b>
+            <p class="text-[10px] text-slate-500 mt-1">Audit active trade proposals and counter-offers.</p>
+          </button>
+          <button onclick="navigateToIndexTab('history')" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 transition text-left">
+            <b class="text-white flex items-center justify-between">Transaction Audit History <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i></b>
+            <p class="text-[10px] text-slate-500 mt-1">Audit past QRIS payments and tax records.</p>
+          </button>
+          <button onclick="navigateToIndexTab('admin')" class="p-4 rounded-2xl bg-slate-950 border border-pink-500/20 hover:border-pink-500/40 transition text-left">
+            <b class="text-white flex items-center justify-between">Client Gift Generator <i class="fa-solid fa-gift text-xs text-pink-400"></i></b>
+            <p class="text-[10px] text-slate-500 mt-1">Gift cards to clients with a separate IDR asset value and QRIS redemption.</p>
+          </button>
+        </div>
+      </div>
+
+      <div class="glass rounded-3xl p-5">
+        <h2 class="font-black"><i class="fa-solid fa-heart-pulse mr-2 text-emerald-400"></i>System Health</h2>
+        <div class="space-y-3 mt-4">
+          <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Database Connection</span>
+            <b id="db-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+          <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Admin Auth State</span>
+            <b id="admin-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+          <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950">
+            <span class="text-xs">Realtime Data Listener</span>
+            <b id="data-status" class="text-[10px] text-slate-400">CHECKING</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent Pending Orders Quick-View -->
+    <section class="glass rounded-3xl p-6 mt-5">
+      <h2 class="text-xl font-black mb-3"><i class="fa-solid fa-clock-rotate-left text-amber-400 mr-2"></i>Pending Actions Queue</h2>
+      <div id="pending-actions-list" class="space-y-2 text-xs">
+        <p class="text-slate-500">Loading pending requests...</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Page Logic Script -->
+  <script>
+    // Firebase Initialization (matches index.html config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCm13Nh6k6W9wsL0_OPpjKZNrbSg-pFsuA",
+      authDomain: "eugene-card-marketplace.firebaseapp.com",
+      projectId: "eugene-card-marketplace",
+      storageBucket: "eugene-card-marketplace.firebasestorage.app",
+      messagingSenderId: "789014481646",
+      appId: "1:789014481646:web:3858909b429985005a41ff",
+      measurementId: "G-MRPT21P9M1"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com', 'eugene.aquila06', 'admin house'];
+
+    function isUserAdmin(emailOrName) {
+      if (!emailOrName) return false;
+      const lower = emailOrName.toLowerCase().trim();
+      return ADMIN_EMAILS.some(e => e.toLowerCase() === lower || e.split('@')[0].toLowerCase() === lower);
+    }
+
+    function formatIDR(amount) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+    }
+
+    function navigateToIndexTab(tabName) {
+      // Directs to index.html and automatically switches to the requested view tab
+      window.location.href = `index.html?tab=${tabName}`;
+    }
+
+    async function exportFirebaseInventory() {
+      try {
+        const snapshot = await db.collection("cards").get();
+        const cards = [];
+        snapshot.forEach(doc => cards.push({ id: doc.id, ...doc.data() }));
+
+        const backupData = {
+          exportedAt: new Date().toISOString(),
+          inventoryCount: cards.length,
+          cards: cards
+        };
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eugene_inventory_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Failed to export inventory: ' + e.message);
+      }
+    }
+
+    function triggerQuickSync() {
+      initDashboard();
+    }
+
+    async function initDashboard() {
+      try {
+        // 1. Auth Status Check
+        auth.onAuthStateChanged(async (user) => {
+          const authStatusEl = document.getElementById("admin-status");
+          const authStateContainer = document.getElementById("auth-state");
+
+          if (user && (isUserAdmin(user.email) || isUserAdmin(user.displayName))) {
+            authStatusEl.textContent = "VERIFIED";
+            authStatusEl.className = "text-[10px] font-black text-emerald-400";
+            authStateContainer.innerHTML = `
+              <div class="glass rounded-2xl p-4 text-sm text-emerald-300 flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> Admin session verified: <b>${user.email}</b></span>
+                <span class="text-xs bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold">ACTIVE</span>
+              </div>`;
+          } else {
+            authStatusEl.textContent = "UNAUTHORIZED";
+            authStatusEl.className = "text-[10px] font-black text-amber-400";
+            authStateContainer.innerHTML = `
+              <div class="glass rounded-2xl p-4 text-sm text-amber-300 flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-circle-exclamation"></i> Running in guest view. Log in via Marketplace to activate admin rights.</span>
+                <a href="index.html" class="text-xs bg-amber-500 text-slate-950 px-3 py-1 rounded-lg font-black hover:bg-amber-400">Log In</a>
+              </div>`;
+          }
+        });
+
+        // 2. Fetch Cards Metrics from Firebase
+        const cardsSnapshot = await db.collection("cards").get();
+        const cards = [];
+        cardsSnapshot.forEach(doc => cards.push(doc.data()));
+
+        document.getElementById("cards").textContent = cards.length.toLocaleString();
+
+        const totalValue = cards.reduce((acc, c) => acc + Number(c.price || 0), 0);
+        document.getElementById("inventory").textContent = formatIDR(totalValue);
+
+        const uniqueOwners = new Set(cards.map(c => c.owner).filter(Boolean));
+        document.getElementById("collectors").textContent = uniqueOwners.size.toLocaleString();
+
+        // 3. Fetch Pending Requests Metrics
+        const tradeReqSnapshot = await db.collection("tradeRequests").where("status", "==", "PENDING").get();
+        const pendingTxSnapshot = await db.collection("transactions").where("status", "==", "PENDING").get();
+        
+        const totalPending = tradeReqSnapshot.size + pendingTxSnapshot.size;
+        document.getElementById("trades").textContent = totalPending.toLocaleString();
+
+        // System Health Status Update
+        document.getElementById("db-status").textContent = "CONNECTED (FIREBASE)";
+        document.getElementById("db-status").className = "text-[10px] font-black text-emerald-400";
+
+        document.getElementById("data-status").textContent = "LIVE";
+        document.getElementById("data-status").className = "text-[10px] font-black text-emerald-400";
+
+        // 4. Render Recent Pending Actions List
+        const pendingContainer = document.getElementById("pending-actions-list");
+        let pendingHtml = "";
+
+        pendingTxSnapshot.forEach(doc => {
+          const tx = doc.data();
+          pendingHtml += `
+            <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+              <div>
+                <span class="font-extrabold text-amber-400">[QRIS Order] ${doc.id}</span>
+                <p class="text-slate-400 text-[11px]">Buyer: ${tx.user_name || 'Collector'} — Amount: ${formatIDR(tx.total_amount || 0)}</p>
+              </div>
+              <button onclick="navigateToIndexTab('admin')" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[10px] rounded-lg">Review in Hub</button>
+            </div>`;
+        });
+
+        tradeReqSnapshot.forEach(doc => {
+          const req = doc.data();
+          pendingHtml += `
+            <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+              <div>
+                <span class="font-extrabold text-purple-400">[Trade Proposal] ${req.serial || 'Card'}</span>
+                <p class="text-slate-400 text-[11px]">Proposer: ${req.proposer} → Target Owner: ${req.targetOwner}</p>
+              </div>
+              <button onclick="navigateToIndexTab('trade-req')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[10px] rounded-lg">View Request</button>
+            </div>`;
+        });
+
+        if (!pendingHtml) {
+          pendingContainer.innerHTML = `<p class="text-slate-500 text-center py-4">No pending orders or trade requests requiring immediate action.</p>`;
+        } else {
+          pendingContainer.innerHTML = pendingHtml;
+        }
+
+      } catch (err) {
+        console.error("Dashboard Initialization Error:", err);
+        document.getElementById("db-status").textContent = "ERROR";
+        document.getElementById("db-status").className = "text-[10px] font-black text-rose-400";
+        document.getElementById("data-status").textContent = "OFFLINE";
+        document.getElementById("data-status").className = "text-[10px] font-black text-rose-400";
+      }
+    }
+
+    // Run initialization
+    initDashboard();
+  </script>
+</body>
+</html>
