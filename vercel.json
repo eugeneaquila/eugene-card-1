@@ -1,0 +1,3 @@
+{
+  "buildCommand": "python3 scripts/supabase-cutover.py"
+}
