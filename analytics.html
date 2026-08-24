@@ -293,14 +293,54 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
     Eugene Card Marketplace Analytics &copy; 2026
   </footer>
 
+  <!-- Supabase Firestore-compat adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. -->
   <script>
+  (function(){
     const SUPABASE_URL = "https://kbxqmgdnzxwshyzasssr.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
+    // FIX: the real client was never exposed (window.supabase stayed as the raw SDK
+    // namespace, which has no `.from`), and `auth`/`db` were never defined at all -
+    // so the admin-only auth gate below threw a ReferenceError on every page load
+    // and the page never got past checking who was logged in.
+    window.supabaseClient = client;
 
+    window.auth = {
+      onAuthStateChanged(cb) {
+        client.auth.getUser().then(({ data }) => cb(data?.user || null));
+        const { data } = client.auth.onAuthStateChange((_e, s) => cb(s?.user || null));
+        return () => data.subscription.unsubscribe();
+      },
+      async signInWithPopup() {
+        const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+        if (error) throw error;
+      },
+      async signOut() {
+        const { error } = await client.auth.signOut();
+        if (error) throw error;
+      }
+    };
 
+    const map={users:'profiles',profiles:'profiles',cards:'cards',transactions:'transactions',listings:'listings',tradeRequests:'trades',posts:'posts',clientGifts:'client_gifts',notifications:'notifications',cardViews:'card_views'};
+    const ts=()=>new Date().toISOString();
+    const norm=x=>map[x]||x;
+    function apply(q,ops){ for(const o of ops){ if(o.t==='where'){ const op=o.op==='=='?'eq':o.op==='!='?'neq':o.op==='>'?'gt':o.op==='>='?'gte':o.op==='<'?'lt':'lte'; q=q[op](o.f,o.v)} if(o.t==='order')q=q.order(o.f,{ascending:o.d!=='desc'}); } return q }
+    function docData(id,data){ return {id,data:()=>data,exists:!!data}; }
+    function makeQuery(name,ops=[]){ const table=norm(name); return {
+     where(f,op,v){return makeQuery(name,[...ops,{t:'where',f,op,v}])}, orderBy(f,d='asc'){return makeQuery(name,[...ops,{t:'order',f,d}])},
+     async get(){let q=apply(client.from(table).select('*'),ops); const {data,error}=await q;if(error)throw error; const rows=data||[]; return {empty:!rows.length,size:rows.length,docs:rows.map(r=>docData(r.id,r)),forEach:fn=>rows.forEach(r=>fn(docData(r.id,r)))}},
+     doc(id){return makeDoc(name,id)}, onSnapshot(fn){let active=true; const load=async()=>{try{const x=await this.get();if(active)fn(x)}catch(e){console.error(e)}};load(); const ch=client.channel('ec-'+table+'-'+Math.random()).on('postgres_changes',{event:'*',schema:'public',table},load).subscribe(); return ()=>{active=false;client.removeChannel(ch)} }
+    }}
+    function makeDoc(name,id){const table=norm(name); return {id,collection(sub){return makeQuery(sub)}, async get(){const {data,error}=await client.from(table).select('*').eq('id',id).maybeSingle();if(error)throw error;return docData(id,data)}, async set(obj,{merge=false}={}){let data={...obj,id}; const r=merge?await client.from(table).upsert(data,{onConflict:'id'}):await client.from(table).upsert(data,{onConflict:'id'});if(r.error)throw r.error}, async update(obj){const {error}=await client.from(table).update(obj).eq('id',id);if(error)throw error}, async delete(){const {error}=await client.from(table).delete().eq('id',id);if(error)throw error}, onSnapshot(fn){return makeQuery(name).where('id','==',id).onSnapshot(s=>fn(s.docs[0]||docData(id,null)))}}}
+    window.db={collection:n=>makeQuery(n),batch(){const ops=[];return{set:(r,d,o)=>ops.push(()=>r.set(d,o)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const f of ops)await f()}}}};
+    window.firebase={firestore:{FieldValue:{serverTimestamp:()=>ts(),increment:v=>v,arrayUnion:(...v)=>v,arrayRemove:(...v)=>v}}};
+    window.__EC_SUPABASE_PHASE4__=true;
+  })();
+  </script>
+
+  <script>
     let rawCardsData = [];
     let rawTradeCountsMap = {};
     let totalRealizedVolume = 0;
@@ -791,26 +831,5 @@ body{background:radial-gradient(circle at 12% 0%,rgba(99,102,241,.12),transparen
   }
   </script>
 </div>
-
-
-<script>
-/* Supabase Firestore-compat adapter: routes legacy collection calls to Phase 2 tables while UI migration is completed. */
-(function(){
- const map={users:'profiles',profiles:'profiles',cards:'cards',transactions:'transactions',listings:'listings',tradeRequests:'trades',posts:'posts',clientGifts:'client_gifts',notifications:'notifications',cardViews:'card_views'};
- const ts=()=>new Date().toISOString();
- const norm=x=>map[x]||x;
- function apply(q,ops){ for(const o of ops){ if(o.t==='where'){ const op=o.op==='=='?'eq':o.op==='!='?'neq':o.op==='>'?'gt':o.op==='>='?'gte':o.op==='<'?'lt':'lte'; q=q[op](o.f,o.v)} if(o.t==='order')q=q.order(o.f,{ascending:o.d!=='desc'}); } return q }
- function docData(id,data){ return {id,data:()=>data,exists:!!data}; }
- function makeQuery(name,ops=[]){ const table=norm(name); return {
-  where(f,op,v){return makeQuery(name,[...ops,{t:'where',f,op,v}])}, orderBy(f,d='asc'){return makeQuery(name,[...ops,{t:'order',f,d}])},
-  async get(){let q=apply(window.supabase.from(table).select('*'),ops); const {data,error}=await q;if(error)throw error; const rows=data||[]; return {empty:!rows.length,size:rows.length,docs:rows.map(r=>docData(r.id,r)),forEach:fn=>rows.forEach(r=>fn(docData(r.id,r)))}},
-  doc(id){return makeDoc(name,id)}, onSnapshot(fn){let active=true; const load=async()=>{try{const x=await this.get();if(active)fn(x)}catch(e){console.error(e)}};load(); const ch=window.supabase.channel('ec-'+table+'-'+Math.random()).on('postgres_changes',{event:'*',schema:'public',table},load).subscribe(); return ()=>{active=false;window.supabase.removeChannel(ch)} }
- }}
- function makeDoc(name,id){const table=norm(name); return {id,collection(sub){return makeQuery(sub)}, async get(){const {data,error}=await window.supabase.from(table).select('*').eq('id',id).maybeSingle();if(error)throw error;return docData(id,data)}, async set(obj,{merge=false}={}){let data={...obj,id}; const r=merge?await window.supabase.from(table).upsert(data,{onConflict:'id'}):await window.supabase.from(table).upsert(data,{onConflict:'id'});if(r.error)throw r.error}, async update(obj){const {error}=await window.supabase.from(table).update(obj).eq('id',id);if(error)throw error}, async delete(){const {error}=await window.supabase.from(table).delete().eq('id',id);if(error)throw error}, onSnapshot(fn){return makeQuery(name).where('id','==',id).onSnapshot(s=>fn(s.docs[0]||docData(id,null)))}}}
- window.db={collection:n=>makeQuery(n),batch(){const ops=[];return{set:(r,d,o)=>ops.push(()=>r.set(d,o)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const f of ops)await f()}}}};
- window.firebase={firestore:{FieldValue:{serverTimestamp:()=>ts(),increment:v=>v,arrayUnion:(...v)=>v,arrayRemove:(...v)=>v}}};
- window.__EC_SUPABASE_PHASE4__=true;
-})();
-</script>
 </body>
 </html>
