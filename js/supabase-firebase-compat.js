@@ -9,7 +9,18 @@
   const sb = window.supabaseClient;
   if (!sb) throw new Error('Supabase client is not initialized.');
 
-  const ADMIN_EMAIL = 'eugeneaquila06@gmail.com';
+  // BUGFIX (admin recognition): was 'eugeneaquila06@gmail.com' (missing the
+  // dot in "eugene.aquila06"), so it never matched the real admin account
+  // used everywhere else (index.html/revenue.html/admin-command-center.html/
+  // analytics.html all use ADMIN_EMAILS with the dotted address, plus a
+  // second admin 'yujinybwork@gmail.com' this file was missing entirely).
+  // isAdminEmail() below decides the `role` column written to the "profiles"
+  // table on every login/profile save, and phase8.sql's RLS policies gate
+  // real admin reads/writes on `profiles.role = 'admin'` — so the typo meant
+  // the admin account's row in Postgres never actually got marked admin,
+  // even though the client-side UI (which checks its own separate list)
+  // still showed the Admin Hub.
+  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com'];
   const tableMap = {
     profiles: 'profiles', cards: 'cards', user_cards: 'user_cards',
     listings: 'listings', transactions: 'transactions',
@@ -26,7 +37,7 @@
   ]);
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-  const isAdminEmail = (email) => String(email || '').toLowerCase().trim() === ADMIN_EMAIL;
+  const isAdminEmail = (email) => ADMIN_EMAILS.includes(String(email || '').toLowerCase().trim());
   const meta = row => row && row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
   const wrap = (row, id) => ({ id: id ?? row?.id, data: () => ({ ...(row || {}) }), exists: !!row });
 
@@ -282,5 +293,5 @@
   window.db = db;
   window.auth = auth;
   window.firebase = { firestore: { FieldValue: { serverTimestamp, increment, arrayUnion, arrayRemove } } };
-  window.EUGENE_ADMIN_EMAIL = ADMIN_EMAIL;
+  window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
 })();

@@ -2,14 +2,24 @@
 (function () {
   const URL = 'https://kbxqmgdnzxwshyzasssr.supabase.co';
   const KEY = 'sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
-  const ADMIN = 'eugeneaquila06@gmail.com';
+  // BUGFIX (admin recognition): this was 'eugeneaquila06@gmail.com' — missing
+  // the dot in "eugene.aquila06" — so it never matched the real admin account
+  // used everywhere else in the app (index.html's ADMIN_EMAILS, revenue.html,
+  // admin-command-center.html, analytics.html all use the dotted address).
+  // Since ensureSupabaseProfile() below uses this to decide whether to write
+  // profiles.role = 'admin', and phase8.sql's RLS policies gate real admin
+  // reads/writes on `profiles.role = 'admin'`, the mismatch meant the admin
+  // account's row in Postgres never actually got marked as admin — the UI
+  // could still *show* admin nav (that check lives separately in index.html),
+  // but any server-side admin-gated action would be silently denied.
+  const ADMIN_EMAILS = ['eugene.aquila06@gmail.com', 'yujinybwork@gmail.com'];
   if (!window.supabase) throw new Error('Supabase SDK missing');
 
   const sb = window.supabaseClient = window.supabase.createClient(URL, KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
   });
-  window.isUserAdmin = email => String(email || '').trim().toLowerCase() === ADMIN;
-  window.EUGENE_ADMIN_EMAIL = ADMIN;
+  window.isUserAdmin = email => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
+  window.EUGENE_ADMIN_EMAIL = ADMIN_EMAILS[0];
 
   const normalize = r => r ? ({
     ...r,
@@ -58,63 +68,25 @@
   }
   window.ensureSupabaseProfile = ensureSupabaseProfile;
 
-  function installVisibleAuth() {
-    if (!document.body) return false;
-    let box = document.getElementById('auth-header-container');
-    if (!box) {
-      box = document.getElementById('ec-auth-fixed');
-      if (!box) {
-        box = document.createElement('div');
-        box.id = 'ec-auth-fixed';
-        const header = document.querySelector('header');
-        (header?.querySelector('.max-w-7xl') || header || document.body).appendChild(box);
-      }
-    }
-    if (!document.getElementById('ec-auth-style')) {
-      const style = document.createElement('style');
-      style.id = 'ec-auth-style';
-      style.textContent = `#auth-header-container,#ec-auth-fixed{display:flex!important;align-items:center;gap:8px;min-width:fit-content}#auth-header-container .ec-login,#ec-auth-fixed .ec-login{border:1px solid rgba(99,102,241,.55);background:#4f46e5;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;white-space:nowrap}#auth-header-container .ec-user,#ec-auth-fixed .ec-user{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.12);background:#111827;color:#fff;border-radius:10px;padding:5px 8px;white-space:nowrap}#auth-header-container .ec-user img,#ec-auth-fixed .ec-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}#auth-header-container .ec-logout,#ec-auth-fixed .ec-logout{border:1px solid rgba(244,63,94,.3);background:#111827;color:#fb7185;border-radius:9px;padding:7px 9px;font-weight:800;cursor:pointer}`;
-      document.head.appendChild(style);
-    }
-    async function render() {
-      const { data } = await sb.auth.getUser();
-      const user = data?.user;
-      box.innerHTML = '';
-      if (!user) {
-        const login = document.createElement('button');
-        login.className = 'ec-login';
-        login.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
-        login.onclick = async () => {
-          const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
-          if (error) alert(error.message);
-        };
-        box.appendChild(login);
-        return;
-      }
-      const profile = await ensureSupabaseProfile(user);
-      const avatar = profile?.avatarUrl || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user.email || '')}`;
-      const userBox = document.createElement('div');
-      userBox.className = 'ec-user';
-      userBox.innerHTML = `<img src="${avatar}" alt=""><span>${profile?.display_name || user.email || 'Profile'}</span>`;
-      userBox.title = profile?.isAdmin ? 'Admin profile' : 'Open profile';
-      userBox.onclick = () => {
-        if (typeof window.openProfileModal === 'function') window.openProfileModal();
-        else if (typeof window.openProfile === 'function') window.openProfile();
-      };
-      box.appendChild(userBox);
-      const logout = document.createElement('button');
-      logout.className = 'ec-logout';
-      logout.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Logout';
-      logout.onclick = async () => { await sb.auth.signOut(); render(); };
-      box.appendChild(logout);
-    }
-    window.renderSupabaseAuth = render;
-    render();
-    sb.auth.onAuthStateChange((event) => {
-      if (['SIGNED_IN','SIGNED_OUT','USER_UPDATED','INITIAL_SESSION'].includes(event)) setTimeout(render, 80);
-    });
-    return true;
-  }
-
-  const timer = setInterval(() => { if (installVisibleAuth()) clearInterval(timer); }, 50);
+  // BUGFIX (login/logout buttons): this file used to run installVisibleAuth(),
+  // which injected its own second Login/Logout button into
+  // #auth-header-container on a 50ms poll and re-rendered it on every
+  // sb.auth.onAuthStateChange event (after an 80ms delay). index.html's own
+  // renderAuthHeader() + handleUserSession()/logoutUser() already fully own
+  // that same #auth-header-container element (Google sign-in, admin nav
+  // toggling, avatar, username badge, etc). Having two independent renderers
+  // fight over one element meant:
+  //   - whichever one rendered last (a timing race, not deterministic) won,
+  //     so the login/logout button would intermittently flicker or get
+  //     replaced by the plain non-admin-aware version from here;
+  //   - clicking this version's Logout button called sb.auth.signOut()
+  //     directly, skipping logoutUser()'s cleanup (unsubscribing realtime
+  //     listeners, resetting currentUser, clearing notification state), and
+  //     never re-showed the admin-only nav items being hidden;
+  //   - this version's admin check never showed/hid '.admin-only-nav', so an
+  //     admin whose button got overwritten by this one would visually lose
+  //     Admin Hub / Inventory / Revenue nav access.
+  // No other file calls ensureSupabaseProfile/renderSupabaseAuth, so removing
+  // the auto-run widget here doesn't affect anything else — the real auth UI
+  // continues to work exactly as index.html implements it.
 })();
