@@ -7,17 +7,8 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
-  // The legacy UI calls db.collection('profiles') with Firestore-shaped
-  // objects. The generic bridge intentionally normalizes only a few columns,
-  // so profiles need a small dedicated adapter to preserve all profile fields
-  // and to keep the Supabase UUID as the canonical row id.
-  function installProfileAdapter() {
-    if (!window.db || window.db.__profilesAdapterInstalled) return !!window.db;
-    const db = window.db;
-    const originalCollection = db.collection.bind(db);
-    const sb = window.supabaseClient;
-
-    const toProfile = (row) => row ? ({
+  function toProfile(row) {
+    return row ? ({
       ...row,
       name: row.name ?? row.display_name ?? null,
       display_name: row.display_name ?? row.name ?? null,
@@ -28,41 +19,83 @@
       socialTiktok: row.socialTiktok ?? row.social_tiktok ?? '',
       socialWeb: row.socialWeb ?? row.social_web ?? '',
       profileCompleted: row.profileCompleted ?? row.profile_completed ?? false,
-      isAdmin: row.isAdmin ?? row.role === 'admin'
+      isAdmin: row.isAdmin ?? row.role === 'admin',
+      __legacy: !!row.__legacy
     }) : null;
+  }
 
-    const toRow = (payload, id, existing) => {
-      const p = { ...(existing || {}), ...(payload || {}) };
-      const role = p.role ?? (p.isAdmin ? 'admin' : (existing?.role || 'user'));
-      return {
-        id: id || p.id,
-        username: p.username ?? null,
-        display_name: p.name ?? p.display_name ?? null,
-        avatar_url: p.avatarUrl ?? p.avatar_url ?? null,
-        bio: p.bio ?? null,
-        role,
-        is_plus_member: p.isPlusMember ?? p.is_plus_member ?? false,
-        social_ig: p.socialIg ?? p.social_ig ?? '',
-        social_twitter: p.socialTwitter ?? p.social_twitter ?? '',
-        social_tiktok: p.socialTiktok ?? p.social_tiktok ?? '',
-        social_web: p.socialWeb ?? p.social_web ?? '',
-        profile_completed: p.profileCompleted ?? p.profile_completed ?? false,
-        updated_at: new Date().toISOString()
-      };
+  function toRow(payload, id, existing) {
+    const p = { ...(existing || {}), ...(payload || {}) };
+    const role = p.role ?? (p.isAdmin ? 'admin' : (existing?.role || 'user'));
+    return {
+      id: id || p.id,
+      username: p.username ?? null,
+      display_name: p.name ?? p.display_name ?? null,
+      avatar_url: p.avatarUrl ?? p.avatar_url ?? null,
+      bio: p.bio ?? null,
+      role,
+      is_plus_member: p.isPlusMember ?? p.is_plus_member ?? false,
+      social_ig: p.socialIg ?? p.social_ig ?? '',
+      social_twitter: p.socialTwitter ?? p.social_twitter ?? '',
+      social_tiktok: p.socialTiktok ?? p.social_tiktok ?? '',
+      social_web: p.socialWeb ?? p.social_web ?? '',
+      profile_completed: p.profileCompleted ?? p.profile_completed ?? false,
+      updated_at: new Date().toISOString()
     };
+  }
+
+  function installProfileAdapter() {
+    if (!window.db || window.db.__profilesAdapterInstalled) return !!window.db;
+    const db = window.db;
+    const originalCollection = db.collection.bind(db);
+    const sb = window.supabaseClient;
+
+    async function readProfiles(filters, order) {
+      let q = sb.from('profiles').select('*');
+      for (const [field, value] of filters) {
+        const column = ({name:'display_name',avatarUrl:'avatar_url',isPlusMember:'is_plus_member',socialIg:'social_ig',socialTwitter:'social_twitter',socialTiktok:'social_tiktok',socialWeb:'social_web',profileCompleted:'profile_completed',isAdmin:'role'}[field] || field);
+        q = q.eq(column, field === 'isAdmin' ? (value ? 'admin' : 'user') : value);
+      }
+      if (order) q = q.order(order[0], { ascending: order[1] !== 'desc' });
+      const { data, error } = await q;
+      if (error) throw error;
+
+      // Legacy Firebase profiles are read-only compatibility records. They are
+      // merged only when there is no current Supabase profile with the same
+      // email/username, so a newly migrated account always wins.
+      let lq = sb.from('legacy_profiles').select('*');
+      for (const [field, value] of filters) {
+        const column = ({name:'display_name',avatarUrl:'avatar_url',isPlusMember:'is_plus_member',socialIg:'social_ig',socialTwitter:'social_twitter',socialTiktok:'social_tiktok',socialWeb:'social_web',profileCompleted:'profile_completed',isAdmin:'role'}[field] || field);
+        if (['display_name','avatar_url','is_plus_member','social_ig','social_twitter','social_tiktok','social_web','profile_completed','role','username','bio'].includes(column)) {
+          lq = lq.eq(column, field === 'isAdmin' ? (value ? 'admin' : 'user') : value);
+        }
+      }
+      const { data: legacy, error: legacyError } = await lq;
+      if (legacyError) console.warn('Legacy profile read:', legacyError);
+
+      const rows = (data || []).map(toProfile);
+      const keys = new Set(rows.flatMap(r => [r.id, r.email, r.username].filter(Boolean).map(String).map(s => s.toLowerCase())));
+      for (const raw of (legacy || [])) {
+        const keySet = [raw.email, raw.username, raw.legacy_id].filter(Boolean).map(String).map(s => s.toLowerCase());
+        if (!keySet.some(k => keys.has(k))) {
+          rows.push(toProfile({
+            ...raw,
+            id: raw.legacy_id,
+            __legacy: true,
+            display_name: raw.display_name,
+            avatar_url: raw.avatar_url,
+            is_plus_member: raw.is_plus_member,
+            profile_completed: raw.profile_completed
+          }));
+        }
+      }
+      return rows;
+    }
 
     function profileCollection(filters = [], order = null) {
       const api = {
         async get() {
-          let q = sb.from('profiles').select('*');
-          for (const [field, value] of filters) {
-            const column = ({name:'display_name',avatarUrl:'avatar_url',isPlusMember:'is_plus_member',socialIg:'social_ig',socialTwitter:'social_twitter',socialTiktok:'social_tiktok',socialWeb:'social_web',profileCompleted:'profile_completed',isAdmin:'role'}[field] || field);
-            q = q.eq(column, field === 'isAdmin' ? (value ? 'admin' : 'user') : value);
-          }
-          if (order) q = q.order(order[0], { ascending: order[1] !== 'desc' });
-          const { data, error } = await q;
-          if (error) throw error;
-          const rows = (data || []).map(toProfile);
+          const rows = await readProfiles(filters, order);
           const docs = rows.map(r => ({ id: r.id, data: () => ({ ...r }), exists: true }));
           return { empty: docs.length === 0, docs, forEach(cb) { docs.forEach(cb); } };
         },
@@ -76,11 +109,15 @@
             async get() {
               const { data, error } = await sb.from('profiles').select('*').eq('id', id).maybeSingle();
               if (error) throw error;
-              const row = toProfile(data);
+              if (data) return { id, data: () => ({ ...toProfile(data) }), exists: true };
+              const { data: legacy, error: legacyError } = await sb.from('legacy_profiles').select('*').or(`legacy_id.eq.${id},email.eq.${id},username.eq.${id}`).maybeSingle();
+              if (legacyError) console.warn('Legacy profile lookup:', legacyError);
+              const row = legacy ? toProfile({ ...legacy, id: legacy.legacy_id, __legacy: true }) : null;
               return { id, data: () => ({ ...(row || {}) }), exists: !!row };
             },
-            async set(payload, opts = {}) {
+            async set(payload) {
               const user = (await sb.auth.getUser()).data?.user;
+              if (payload?.__legacy) throw new Error('Legacy profiles are read-only.');
               const canonicalId = user && (id === user.email || id === user.id) ? user.id : id;
               const { data: existing, error: readError } = await sb.from('profiles').select('*').eq('id', canonicalId).maybeSingle();
               if (readError) throw readError;
@@ -111,6 +148,7 @@
           tick();
           const channel = sb.channel('profiles-adapter-' + Math.random().toString(36).slice(2))
             .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, tick)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'legacy_profiles' }, tick)
             .subscribe();
           const timer = setInterval(tick, 15000);
           return () => { active = false; clearInterval(timer); sb.removeChannel(channel); };
@@ -126,8 +164,6 @@
     return true;
   }
 
-  // supabase-init loads before the legacy compatibility bridge, so wait for
-  // window.db to exist before installing the profile adapter.
   const adapterTimer = setInterval(() => {
     if (installProfileAdapter()) clearInterval(adapterTimer);
   }, 25);
