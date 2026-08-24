@@ -73,13 +73,7 @@
     if (!document.getElementById('ec-auth-style')) {
       const style = document.createElement('style');
       style.id = 'ec-auth-style';
-      style.textContent = `
-        #auth-header-container,#ec-auth-fixed{display:flex!important;align-items:center;gap:8px;min-width:fit-content}
-        #auth-header-container .ec-login,#ec-auth-fixed .ec-login{border:1px solid rgba(99,102,241,.55);background:#4f46e5;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;white-space:nowrap}
-        #auth-header-container .ec-user,#ec-auth-fixed .ec-user{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.12);background:#111827;color:#fff;border-radius:10px;padding:5px 8px;white-space:nowrap}
-        #auth-header-container .ec-user img,#ec-auth-fixed .ec-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}
-        #auth-header-container .ec-logout,#ec-auth-fixed .ec-logout{border:1px solid rgba(244,63,94,.3);background:#111827;color:#fb7185;border-radius:9px;padding:7px 9px;font-weight:800;cursor:pointer}
-      `;
+      style.textContent = `#auth-header-container,#ec-auth-fixed{display:flex!important;align-items:center;gap:8px;min-width:fit-content}#auth-header-container .ec-login,#ec-auth-fixed .ec-login{border:1px solid rgba(99,102,241,.55);background:#4f46e5;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;white-space:nowrap}#auth-header-container .ec-user,#ec-auth-fixed .ec-user{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.12);background:#111827;color:#fff;border-radius:10px;padding:5px 8px;white-space:nowrap}#auth-header-container .ec-user img,#ec-auth-fixed .ec-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}#auth-header-container .ec-logout,#ec-auth-fixed .ec-logout{border:1px solid rgba(244,63,94,.3);background:#111827;color:#fb7185;border-radius:9px;padding:7px 9px;font-weight:800;cursor:pointer}`;
       document.head.appendChild(style);
     }
     async function render() {
@@ -98,9 +92,10 @@
         return;
       }
       const profile = await ensureSupabaseProfile(user);
+      const avatar = profile?.avatarUrl || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user.email || '')}`;
       const userBox = document.createElement('div');
       userBox.className = 'ec-user';
-      userBox.innerHTML = `<img src="${profile?.avatarUrl || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user.email || ''))}`}" alt=""><span>${profile?.display_name || user.email || 'Profile'}</span>`;
+      userBox.innerHTML = `<img src="${avatar}" alt=""><span>${profile?.display_name || user.email || 'Profile'}</span>`;
       userBox.title = profile?.isAdmin ? 'Admin profile' : 'Open profile';
       userBox.onclick = () => {
         if (typeof window.openProfileModal === 'function') window.openProfileModal();
