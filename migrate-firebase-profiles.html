@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Eugene Card — Profile Migration</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <style>
+    body{margin:0;background:#050817;color:#e8ecff;font:14px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}
+    main{width:min(760px,calc(100% - 32px));background:#0b1024;border:1px solid #29315f;border-radius:20px;padding:28px;box-shadow:0 20px 80px #0008}
+    h1{margin:0 0 8px} p{color:#9aa6c8;line-height:1.5}.row{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+    button{border:0;border-radius:10px;padding:12px 16px;font-weight:800;cursor:pointer}.google{background:white;color:#111}.run{background:#665cff;color:white}.muted{background:#1b2345;color:#dce3ff}
+    pre{white-space:pre-wrap;background:#050817;border:1px solid #20294d;border-radius:12px;padding:16px;min-height:160px;max-height:360px;overflow:auto;color:#b9c6ea}
+    .ok{color:#6ee7b7}.warn{color:#fbbf24}.err{color:#fb7185}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Restore Eugene Card collector profiles</h1>
+  <p>This one-time tool reads the old <b>eugene-card-marketplace</b> Firebase <code>profiles</code> collection and imports every collector into the new Supabase backend. Legacy profiles remain available even when the collector has not signed into Supabase yet.</p>
+  <div class="row">
+    <button class="google" id="loginOld">1. Sign in to old Firebase</button>
+    <button class="muted" id="loginNew">Sign in to Supabase</button>
+    <button class="run" id="migrate" disabled>2. Restore all profiles</button>
+  </div>
+  <div id="status">Waiting for administrator sign-in…</div>
+  <pre id="log"></pre>
+</main>
+<script>
+const SUPABASE_URL='https://kbxqmgdnzxwshyzasssr.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const firebaseConfig={
+  apiKey:'AIzaSyCm13Nh6k6W9wsL0_OPpjKZNrbSg-pFsuA',
+  authDomain:'eugene-card-marketplace.firebaseapp.com',
+  projectId:'eugene-card-marketplace',
+  storageBucket:'eugene-card-marketplace.firebasestorage.app',
+  messagingSenderId:'789014481646',
+  appId:'1:789014481646:web:3858909b429985005a41ff',
+  measurementId:'G-MRPT21P9M1'
+};
+firebase.initializeApp(firebaseConfig);
+const oldAuth=firebase.auth();
+const oldDb=firebase.firestore();
+const $=id=>document.getElementById(id);
+function log(msg,cls=''){ $('log').insertAdjacentHTML('beforeend',`<div class="${cls}">${String(msg).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</div>`); $('log').scrollTop=$('log').scrollHeight; }
+function isAdmin(email){return ['eugene.aquila06@gmail.com','yujinybwork@gmail.com'].includes(String(email||'').toLowerCase());}
+async function refresh(){
+  const old=oldAuth.currentUser; const nu=(await sb.auth.getUser()).data.user;
+  $('migrate').disabled=!(old && nu && isAdmin(nu.email));
+  $('status').innerHTML=`Old Firebase: <b>${old?.email||'not signed in'}</b><br>Supabase: <b>${nu?.email||'not signed in'}</b>`;
+  if(nu&&!isAdmin(nu.email)) $('status').innerHTML+='<p class="err">Supabase account is not an administrator.</p>';
+}
+$('loginOld').onclick=async()=>{try{await oldAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());log('Old Firebase Google sign-in successful.','ok');await refresh();}catch(e){log('Firebase sign-in failed: '+e.message,'err')}};
+$('loginNew').onclick=async()=>{try{const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});if(error)throw error;}catch(e){log('Supabase sign-in failed: '+e.message,'err')}};
+$('migrate').onclick=async()=>{
+  $('migrate').disabled=true; $('log').textContent=''; log('Reading old Firebase profiles…');
+  try{
+    const old=oldAuth.currentUser; const nu=(await sb.auth.getUser()).data.user;
+    if(!old||!nu||!isAdmin(nu.email)) throw new Error('Administrator must be signed into both Firebase and Supabase.');
+    const snap=await oldDb.collection('profiles').get();
+    log(`Found ${snap.size} old collector profiles.`);
+    const legacyRows=[];
+    snap.forEach(doc=>{
+      const d=doc.data()||{}; const email=String(d.email||doc.id||'').toLowerCase();
+      const role=(d.role==='admin'||d.isAdmin||isAdmin(email))?'admin':'user';
+      legacyRows.push({
+        legacy_id:doc.id,email:email||null,username:d.username||null,
+        display_name:d.name||d.display_name||null,avatar_url:d.avatarUrl||d.avatar_url||null,
+        bio:d.bio||null,role,is_plus_member:!!(d.isPlusMember??d.is_plus_member),
+        social_ig:d.socialIg||d.social_ig||null,social_twitter:d.socialTwitter||d.social_twitter||null,
+        social_tiktok:d.socialTiktok||d.social_tiktok||null,social_web:d.socialWeb||d.social_web||null,
+        profile_completed:!!(d.profileCompleted??d.profile_completed),xp:Number(d.xp||0),reputation:Number(d.reputation||0),raw_data:d
+      });
+    });
+    for(let i=0;i<legacyRows.length;i+=100){
+      const chunk=legacyRows.slice(i,i+100); const {error}=await sb.from('legacy_profiles').upsert(chunk,{onConflict:'legacy_id'}); if(error) throw error;
+      log(`Imported legacy profiles ${i+1}–${Math.min(i+chunk.length,legacyRows.length)}.`,'ok');
+    }
+    const mine=legacyRows.find(p=>p.email===String(nu.email||'').toLowerCase());
+    if(mine){
+      const real={id:nu.id,username:mine.username||null,display_name:mine.display_name||nu.user_metadata?.full_name||nu.email,avatar_url:mine.avatar_url||nu.user_metadata?.avatar_url||null,bio:mine.bio||null,role:'admin',is_plus_member:mine.is_plus_member,social_ig:mine.social_ig,social_twitter:mine.social_twitter,social_tiktok:mine.social_tiktok,social_web:mine.social_web,profile_completed:mine.profile_completed,xp:mine.xp,reputation:mine.reputation};
+      const {error}=await sb.from('profiles').upsert(real,{onConflict:'id'}); if(error) throw error;
+      log('Your administrator profile was also restored into public.profiles.','ok');
+    }
+    log(`DONE — ${legacyRows.length} collector profiles are now available in Supabase.`,'ok');
+    $('status').innerHTML='<span class="ok"><b>Migration complete.</b> Return to Eugene Card and hard-refresh.</span>';
+  }catch(e){log('Migration failed: '+(e?.message||e),'err');$('status').innerHTML='<span class="err">Migration failed. See the log below.</span>'}
+  finally{await refresh();}
+};
+oldAuth.onAuthStateChanged(refresh); sb.auth.onAuthStateChange(()=>setTimeout(refresh,0)); refresh();
+</script>
+</body>
+</html>
