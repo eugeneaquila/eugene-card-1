@@ -13,13 +13,10 @@
 
   <!-- Browser Tab Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%234f46e5' stroke-width='5' stroke-dasharray='210 50' transform='rotate(-45 50 50)'/><polygon points='50,18 80,35 80,68 50,85 20,68 20,35' fill='%236366f1'/><path d='M 32 42 C 38 32, 52 32, 58 40 C 62 46, 48 54, 40 60 C 35 64, 45 70, 60 62' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/></svg>">
-
-  <!-- Google Firebase Compatibility SDKs (v10.7.1) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+  <!-- Supabase Authentication + database (Firebase removed) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-init.js"></script>
+  <script src="./js/supabase-firebase-compat.js"></script>
   <!-- PAYPAL JS SDK — uses the PUBLIC Client ID only. This is safe to expose in the
        browser by design (that's how PayPal's own JS SDK works). The Secret Key is
        NEVER placed in this file — see the note near PAYPAL_CLIENT_ID below for why. -->
@@ -3878,20 +3875,13 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
 
   <!-- JAVASCRIPT LOGIC WITH FIREBASE CONFIG -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCm13Nh6k6W9wsL0_OPpjKZNrbSg-pFsuA",
-      authDomain: "eugene-card-marketplace.firebaseapp.com",
-      projectId: "eugene-card-marketplace",
-      storageBucket: "eugene-card-marketplace.firebasestorage.app",
-      messagingSenderId: "789014481646",
-      appId: "1:789014481646:web:3858909b429985005a41ff",
-      measurementId: "G-MRPT21P9M1"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const analytics = firebase.analytics();
+    // Supabase is the only authentication/database backend.
+    const db = window.db;
+    const auth = window.auth;
+    const analytics = null;
+    if (!db || !auth || !window.supabaseClient) {
+      throw new Error('Supabase failed to initialize. Check js/supabase-init.js and Supabase configuration.');
+    }
 
     // ================================================================
     // EUGENE CARD — PUSH NOTIFICATIONS / FCM
@@ -5321,15 +5311,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
         console.warn('Error loading collector profiles:', e);
         profilesFetchFailed = true;
       }
-      try {
-        const usersSnapshot = await db.collection("users").get();
-        globalRawUsersData = {};
-        usersSnapshot.forEach(doc => {
-          globalRawUsersData[doc.id] = doc.data();
-        });
-      } catch (e) {
-        console.warn('Error loading legacy user profiles:', e);
-      }
+      // Firebase's legacy users collection is no longer used; Supabase profiles are keyed by auth UUID.
       rebuildGlobalCollectorProfiles();
     }
 
@@ -8153,9 +8135,8 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
     }
 
     async function loginWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
       try {
-        await auth.signInWithPopup(provider);
+        await auth.signInWithPopup();
       } catch (error) {
         showToast('Google Login Error: ' + error.message);
       }
@@ -8165,7 +8146,7 @@ main, header, footer, section, article, aside, nav, form, .max-w-7xl {
       const email = user.email ? user.email.toLowerCase() : '';
 
       await loadCollectorProfiles();
-      const firestoreProfile = globalRawProfilesData[email];
+      const firestoreProfile = globalRawProfilesData[email] || globalRawProfilesData[user.id] || globalRawProfilesData[user.uid];
       const savedCustomProfile = firestoreProfile || localStorage.getItem(`profile_${email}`) || getCookie(`profile_${email}`);
       let customData = {};
       if (savedCustomProfile) {
