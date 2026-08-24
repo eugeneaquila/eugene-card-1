@@ -1,61 +1,125 @@
-/* Eugene Card — Supabase auth + profile bridge */
-(function(){
-  const URL='https://kbxqmgdnzxwshyzasssr.supabase.co';
-  const KEY='sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
-  const ADMIN='eugeneaquila06@gmail.com';
-  if(!window.supabase) return console.error('Supabase SDK missing');
-  const sb=window.supabaseClient=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  window.isUserAdmin=e=>String(e||'').trim().toLowerCase()===ADMIN;
+/* Eugene Card — Supabase-only auth/profile bootstrap */
+(function () {
+  const URL = 'https://kbxqmgdnzxwshyzasssr.supabase.co';
+  const KEY = 'sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
+  const ADMIN = 'eugeneaquila06@gmail.com';
+  if (!window.supabase) throw new Error('Supabase SDK missing');
 
-  const profile=(r)=>r?({...r,name:r.name??r.display_name??'',display_name:r.display_name??r.name??'',avatarUrl:r.avatarUrl??r.avatar_url??'',isPlusMember:r.isPlusMember??r.is_plus_member??false,socialIg:r.socialIg??r.social_ig??'',socialTwitter:r.socialTwitter??r.social_twitter??'',socialTiktok:r.socialTiktok??r.social_tiktok??'',socialWeb:r.socialWeb??r.social_web??'',profileCompleted:r.profileCompleted??r.profile_completed??false,isAdmin:r.isAdmin??r.role==='admin'}):null;
+  const sb = window.supabaseClient = window.supabase.createClient(URL, KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+  });
+  window.isUserAdmin = email => String(email || '').trim().toLowerCase() === ADMIN;
+  window.EUGENE_ADMIN_EMAIL = ADMIN;
 
-  async function ensureProfile(user){
-    if(!user) return null;
-    const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
-    if(p) return profile(p);
-    const {data:legacy}=await sb.from('legacy_profiles').select('*').eq('email',String(user.email||'').toLowerCase()).maybeSingle();
-    const m=legacy||{};
-    const row={id:user.id,username:m.username||null,display_name:m.display_name||user.user_metadata?.full_name||user.user_metadata?.name||String(user.email||'').split('@')[0],avatar_url:m.avatar_url||user.user_metadata?.avatar_url||null,bio:m.bio||null,role:window.isUserAdmin(user.email)?'admin':'user',is_plus_member:!!m.is_plus_member,social_ig:m.social_ig||'',social_twitter:m.social_twitter||'',social_tiktok:m.social_tiktok||'',social_web:m.social_web||'',profile_completed:!!m.profile_completed,updated_at:new Date().toISOString()};
-    const {data:created,error}=await sb.from('profiles').upsert(row,{onConflict:'id'}).select().single();
-    if(error){console.error('Profile create failed',error);return profile(row)}
-    return profile(created);
-  }
-  window.ensureSupabaseProfile=ensureProfile;
+  const normalize = r => r ? ({
+    ...r,
+    name: r.name ?? r.display_name ?? '',
+    display_name: r.display_name ?? r.name ?? '',
+    avatarUrl: r.avatarUrl ?? r.avatar_url ?? '',
+    isPlusMember: r.isPlusMember ?? r.is_plus_member ?? false,
+    socialIg: r.socialIg ?? r.social_ig ?? '',
+    socialTwitter: r.socialTwitter ?? r.social_twitter ?? '',
+    socialTiktok: r.socialTiktok ?? r.social_tiktok ?? '',
+    socialWeb: r.socialWeb ?? r.social_web ?? '',
+    profileCompleted: r.profileCompleted ?? r.profile_completed ?? false,
+    isAdmin: r.isAdmin ?? r.role === 'admin'
+  }) : null;
 
-  function installProfileBridge(){
-    if(!window.db||window.db.__supabaseProfiles) return !!window.db;
-    const db=window.db, original=db.collection.bind(db);
-    const mapField=f=>({name:'display_name',avatarUrl:'avatar_url',isPlusMember:'is_plus_member',socialIg:'social_ig',socialTwitter:'social_twitter',socialTiktok:'social_tiktok',socialWeb:'social_web',profileCompleted:'profile_completed',isAdmin:'role'}[f]||f);
-    const rows=async(filters=[],order)=>{
-      let q=sb.from('profiles').select('*');
-      for(const [f,v] of filters) q=q.eq(mapField(f),f==='isAdmin'?(v?'admin':'user'):v);
-      if(order) q=q.order(mapField(order[0]),{ascending:order[1]!=='desc'});
-      const a=await q;if(a.error)throw a.error;
-      let legacy=[];try{const l=await sb.from('legacy_profiles').select('*');if(!l.error)legacy=l.data||[]}catch(e){}
-      const out=(a.data||[]).map(profile), keys=new Set(out.flatMap(x=>[x.id,x.email,x.username].filter(Boolean).map(String).map(x=>x.toLowerCase())));
-      legacy.forEach(x=>{const ks=[x.email,x.username,x.legacy_id].filter(Boolean).map(String).map(x=>x.toLowerCase());if(!ks.some(k=>keys.has(k)))out.push(profile({...x,id:x.legacy_id,__legacy:true}))});
-      return out;
-    };
-    function coll(filters=[],order){
-      return {async get(){const r=await rows(filters,order),docs=r.map(x=>({id:x.id,data:()=>({...x}),exists:true}));return{empty:!docs.length,docs,forEach:f=>docs.forEach(f)}},where(f,o,v){return coll([...filters,[f,v]],order)},orderBy(f,d='asc'){return coll(filters,[f,d])},doc(id){return{async get(){const u=(await sb.auth.getUser()).data?.user;let qid=id;if(u&&String(id).toLowerCase()===String(u.email||'').toLowerCase())qid=u.id;let r=await sb.from('profiles').select('*').eq('id',qid).maybeSingle();if(r.error)throw r.error;if(r.data)return{id:r.data.id,data:()=>({...profile(r.data)}),exists:true};let l=await sb.from('legacy_profiles').select('*').or(`legacy_id.eq.${id},email.eq.${id},username.eq.${id}`).maybeSingle();const x=l.data?profile({...l.data,id:l.data.legacy_id,__legacy:true}):null;return{id,data:()=>({...x||{}}),exists:!!x}},async set(p){const u=(await sb.auth.getUser()).data?.user;if(!u)throw Error('Not authenticated');const row={id:u.id,username:p.username??null,display_name:p.name??p.display_name??null,avatar_url:p.avatarUrl??p.avatar_url??null,bio:p.bio??null,role:window.isUserAdmin(u.email)?'admin':(p.role==='admin'?'user':(p.role||'user')),is_plus_member:p.isPlusMember??p.is_plus_member??false,social_ig:p.socialIg??p.social_ig??'',social_twitter:p.socialTwitter??p.social_twitter??'',social_tiktok:p.socialTiktok??p.social_tiktok??'',social_web:p.socialWeb??p.social_web??'',profile_completed:p.profileCompleted??p.profile_completed??false,updated_at:new Date().toISOString()};const r=await sb.from('profiles').upsert(row,{onConflict:'id'});if(r.error)throw r.error},async update(p){const r=await this.set(p);return r},async delete(){const u=(await sb.auth.getUser()).data?.user;if(!u)throw Error('Not authenticated');if(u.id!==id&&!window.isUserAdmin(u.email))throw Error('Not allowed');const r=await sb.from('profiles').delete().eq('id',id);if(r.error)throw r.error}}},onSnapshot(cb){let live=true;const tick=()=>{if(live)rows(filters,order).then(r=>cb({empty:!r.length,docs:r.map(x=>({id:x.id,data:()=>({...x}),exists:true})),forEach:f=>r.forEach(x=>f({id:x.id,data:()=>({...x}),exists:true}))})).catch(console.warn)};tick();const c=sb.channel('profiles-ui').on('postgres_changes',{event:'*',schema:'public',table:'profiles'},tick).subscribe();return()=>{live=false;sb.removeChannel(c)}}};
+  async function ensureSupabaseProfile(user) {
+    if (!user) return null;
+    const email = String(user.email || '').toLowerCase().trim();
+    let { data: p } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (!p) {
+      const { data: legacy } = await sb.from('legacy_profiles').select('*').eq('email', email).maybeSingle();
+      const m = legacy || {};
+      const name = m.display_name || user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
+      const row = {
+        id: user.id,
+        username: m.username || name.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, ''),
+        display_name: name,
+        avatar_url: m.avatar_url || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`,
+        bio: m.bio || '',
+        role: window.isUserAdmin(email) ? 'admin' : 'user',
+        is_plus_member: !!m.is_plus_member,
+        social_ig: m.social_ig || '',
+        social_twitter: m.social_twitter || '',
+        social_tiktok: m.social_tiktok || '',
+        social_web: m.social_web || '',
+        profile_completed: !!m.profile_completed,
+        updated_at: new Date().toISOString()
+      };
+      const created = await sb.from('profiles').upsert(row, { onConflict: 'id' }).select().single();
+      p = created.data || row;
+    } else if (window.isUserAdmin(email) && p.role !== 'admin') {
+      const updated = await sb.from('profiles').update({ role: 'admin', updated_at: new Date().toISOString() }).eq('id', user.id).select().single();
+      p = updated.data || { ...p, role: 'admin' };
     }
-    db.collection=n=>n==='profiles'?coll():original(n);db.__supabaseProfiles=true;return true;
+    return normalize(p);
+  }
+  window.ensureSupabaseProfile = ensureSupabaseProfile;
+
+  function installVisibleAuth() {
+    if (!document.body) return false;
+    let box = document.getElementById('auth-header-container');
+    if (!box) {
+      box = document.getElementById('ec-auth-fixed');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'ec-auth-fixed';
+        const header = document.querySelector('header');
+        (header?.querySelector('.max-w-7xl') || header || document.body).appendChild(box);
+      }
+    }
+    if (!document.getElementById('ec-auth-style')) {
+      const style = document.createElement('style');
+      style.id = 'ec-auth-style';
+      style.textContent = `
+        #auth-header-container,#ec-auth-fixed{display:flex!important;align-items:center;gap:8px;min-width:fit-content}
+        #auth-header-container .ec-login,#ec-auth-fixed .ec-login{border:1px solid rgba(99,102,241,.55);background:#4f46e5;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;white-space:nowrap}
+        #auth-header-container .ec-user,#ec-auth-fixed .ec-user{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.12);background:#111827;color:#fff;border-radius:10px;padding:5px 8px;white-space:nowrap}
+        #auth-header-container .ec-user img,#ec-auth-fixed .ec-user img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+        #auth-header-container .ec-logout,#ec-auth-fixed .ec-logout{border:1px solid rgba(244,63,94,.3);background:#111827;color:#fb7185;border-radius:9px;padding:7px 9px;font-weight:800;cursor:pointer}
+      `;
+      document.head.appendChild(style);
+    }
+    async function render() {
+      const { data } = await sb.auth.getUser();
+      const user = data?.user;
+      box.innerHTML = '';
+      if (!user) {
+        const login = document.createElement('button');
+        login.className = 'ec-login';
+        login.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
+        login.onclick = async () => {
+          const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+          if (error) alert(error.message);
+        };
+        box.appendChild(login);
+        return;
+      }
+      const profile = await ensureSupabaseProfile(user);
+      const userBox = document.createElement('div');
+      userBox.className = 'ec-user';
+      userBox.innerHTML = `<img src="${profile?.avatarUrl || user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user.email || ''))}`}" alt=""><span>${profile?.display_name || user.email || 'Profile'}</span>`;
+      userBox.title = profile?.isAdmin ? 'Admin profile' : 'Open profile';
+      userBox.onclick = () => {
+        if (typeof window.openProfileModal === 'function') window.openProfileModal();
+        else if (typeof window.openProfile === 'function') window.openProfile();
+      };
+      box.appendChild(userBox);
+      const logout = document.createElement('button');
+      logout.className = 'ec-logout';
+      logout.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Logout';
+      logout.onclick = async () => { await sb.auth.signOut(); render(); };
+      box.appendChild(logout);
+    }
+    window.renderSupabaseAuth = render;
+    render();
+    sb.auth.onAuthStateChange((event) => {
+      if (['SIGNED_IN','SIGNED_OUT','USER_UPDATED','INITIAL_SESSION'].includes(event)) setTimeout(render, 80);
+    });
+    return true;
   }
 
-  function installVisibleAuth(){
-    if(document.getElementById('ec-auth-fixed')) return;
-    const style=document.createElement('style');style.id='ec-auth-style';style.textContent='#ec-auth-fixed{display:flex;align-items:center;gap:8px;margin-left:8px;z-index:99999}#ec-auth-fixed button{border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;background:#111827;color:#fff}#ec-auth-fixed .login{background:#4f46e5;border-color:#6366f1}#ec-auth-fixed .profile{display:flex;align-items:center;gap:7px}#ec-auth-fixed img{width:28px;height:28px;border-radius:50%;object-fit:cover}';document.head.appendChild(style);
-    const box=document.createElement('div');box.id='ec-auth-fixed';
-    const header=document.querySelector('header');const target=header?.querySelector('nav')||header||document.body;target.appendChild(box);
-    async function render(){
-      box.innerHTML='';const {data}=await sb.auth.getUser();const u=data?.user;
-      if(!u){const b=document.createElement('button');b.className='login';b.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> Login';b.onclick=async()=>{const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)alert(error.message)};box.appendChild(b);return}
-      const p=await ensureProfile(u);const b=document.createElement('button');b.className='profile';b.innerHTML=(p?.avatarUrl?`<img src="${p.avatarUrl}" alt="">`:'')+`<span>${p?.display_name||u.email||'Profile'}</span>`;b.onclick=()=>{try{if(typeof window.openProfileModal==='function')window.openProfileModal();else if(typeof window.showProfile==='function')window.showProfile();else location.hash='profile'}catch(e){console.warn(e)}};box.appendChild(b);
-      const out=document.createElement('button');out.innerHTML='<i class="fa-solid fa-right-from-bracket"></i> Logout';out.onclick=async()=>{await sb.auth.signOut();location.reload()};box.appendChild(out);
-    }
-    window.renderSupabaseAuth=render;render();sb.auth.onAuthStateChange((e)=>{if(e==='SIGNED_IN'||e==='SIGNED_OUT'||e==='USER_UPDATED')setTimeout(render,50)});
-    window.addEventListener('load',render);
-  }
-  const a=setInterval(()=>{if(installProfileBridge())clearInterval(a)},25);
-  const u=setInterval(()=>{if(document.body){clearInterval(u);installVisibleAuth()}},25);
+  const timer = setInterval(() => { if (installVisibleAuth()) clearInterval(timer); }, 50);
 })();
