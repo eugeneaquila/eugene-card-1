@@ -2,6 +2,7 @@
 (function () {
   const SUPABASE_URL = 'https://kbxqmgdnzxwshyzasssr.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable__tPM9ty9ELyh3X70Hl1S-Q_7hWvPe2R';
+  const ADMIN_EMAIL = 'eugeneaquila06@gmail.com';
   if (!window.supabase) throw new Error('Supabase JS SDK was not loaded.');
   window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
@@ -59,10 +60,6 @@
       if (order) q = q.order(order[0], { ascending: order[1] !== 'desc' });
       const { data, error } = await q;
       if (error) throw error;
-
-      // Legacy Firebase profiles are read-only compatibility records. They are
-      // merged only when there is no current Supabase profile with the same
-      // email/username, so a newly migrated account always wins.
       let lq = sb.from('legacy_profiles').select('*');
       for (const [field, value] of filters) {
         const column = ({name:'display_name',avatarUrl:'avatar_url',isPlusMember:'is_plus_member',socialIg:'social_ig',socialTwitter:'social_twitter',socialTiktok:'social_tiktok',socialWeb:'social_web',profileCompleted:'profile_completed',isAdmin:'role'}[field] || field);
@@ -72,22 +69,11 @@
       }
       const { data: legacy, error: legacyError } = await lq;
       if (legacyError) console.warn('Legacy profile read:', legacyError);
-
       const rows = (data || []).map(toProfile);
       const keys = new Set(rows.flatMap(r => [r.id, r.email, r.username].filter(Boolean).map(String).map(s => s.toLowerCase())));
       for (const raw of (legacy || [])) {
         const keySet = [raw.email, raw.username, raw.legacy_id].filter(Boolean).map(String).map(s => s.toLowerCase());
-        if (!keySet.some(k => keys.has(k))) {
-          rows.push(toProfile({
-            ...raw,
-            id: raw.legacy_id,
-            __legacy: true,
-            display_name: raw.display_name,
-            avatar_url: raw.avatar_url,
-            is_plus_member: raw.is_plus_member,
-            profile_completed: raw.profile_completed
-          }));
-        }
+        if (!keySet.some(k => keys.has(k))) rows.push(toProfile({ ...raw, id: raw.legacy_id, __legacy: true }));
       }
       return rows;
     }
@@ -157,14 +143,44 @@
       return api;
     }
 
-    db.collection = function(name) {
-      return name === 'profiles' ? profileCollection() : originalCollection(name);
-    };
+    db.collection = function(name) { return name === 'profiles' ? profileCollection() : originalCollection(name); };
     db.__profilesAdapterInstalled = true;
     return true;
   }
 
-  const adapterTimer = setInterval(() => {
-    if (installProfileAdapter()) clearInterval(adapterTimer);
-  }, 25);
+  function installAuthUiFix() {
+    if (!document.body) return false;
+    const container = document.getElementById('auth-header-container');
+    if (!container) return false;
+    if (!document.getElementById('ec-fixed-login-button') && !container.querySelector('button')) {
+      const btn = document.createElement('button');
+      btn.id = 'ec-fixed-login-button';
+      btn.type = 'button';
+      btn.className = 'px-3 py-2 bg-white hover:bg-slate-100 text-slate-950 rounded-xl text-xs font-black flex items-center gap-2 border border-slate-200 shadow-lg';
+      btn.innerHTML = '<i class="fa-brands fa-google text-red-500"></i><span>Login</span>';
+      btn.onclick = async () => {
+        try { await window.auth?.signInWithPopup(); }
+        catch (e) { console.error(e); alert('Google Login Error: ' + (e?.message || e)); }
+      };
+      container.appendChild(btn);
+    }
+    return true;
+  }
+
+  function enforceAdminUi() {
+    const emailPromise = window.supabaseClient.auth.getUser();
+    emailPromise.then(({data}) => {
+      const email = String(data?.user?.email || '').toLowerCase().trim();
+      const isAdmin = email === ADMIN_EMAIL;
+      document.querySelectorAll('.admin-only-nav').forEach(el => el.classList.toggle('hidden', !isAdmin));
+      const sep = document.getElementById('admin-nav-separator');
+      if (sep) sep.classList.toggle('hidden', !isAdmin);
+      const adminStatus = document.getElementById('admin-auth-status');
+      if (adminStatus) adminStatus.textContent = isAdmin ? 'ADMIN' : 'COLLECTOR';
+    }).catch(() => {});
+  }
+
+  const adapterTimer = setInterval(() => { if (installProfileAdapter()) clearInterval(adapterTimer); }, 25);
+  const uiTimer = setInterval(() => { installAuthUiFix(); enforceAdminUi(); }, 250);
+  document.addEventListener('DOMContentLoaded', () => { installAuthUiFix(); enforceAdminUi(); });
 })();
